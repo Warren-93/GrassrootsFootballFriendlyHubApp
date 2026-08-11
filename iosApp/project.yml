@@ -5,7 +5,7 @@ options:
 
 settings:
   base:
-    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
     CODE_SIGN_STYLE: Manual
     CODE_SIGNING_ALLOWED: NO
     CODE_SIGNING_REQUIRED: NO
@@ -17,7 +17,7 @@ targets:
   iosApp:
     type: application
     platform: iOS
-    deploymentTarget: "18.0"
+    deploymentTarget: "15.0"
     sources:
       - path: iosApp
     info:
@@ -34,14 +34,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.gffh.mobile.iosApp
         PRODUCT_NAME: iosApp
         TARGETED_DEVICE_FAMILY: "1"
-        # Compose Multiplatform's iOS interop (CMPLayoutRegion.o) references
-        # UIViewLayoutRegion, a UIKit class newer than this runner's SDK
-        # (18.2) has in its linkable stub - Compose's own object file was
-        # built assuming SDK 18.5. Compose almost certainly gates real use
-        # of it behind a runtime OS-version check, so treat it as weakly
-        # resolved instead of a hard link requirement: it'll link fine here
-        # and would only matter at runtime on an OS new enough to have it.
-        OTHER_LDFLAGS: "$(inherited) -Wl,-U,_OBJC_CLASS_$$_UIViewLayoutRegion"
     prebuildScripts:
       - name: Compile Kotlin Framework
         script: |
