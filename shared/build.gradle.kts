@@ -31,9 +31,12 @@ kotlin {
     // Kotlin/Native provisioning for iOS is deliberately opt-in - see
     // gradle.properties. Enable with -Pgffh.enableIos=true on a machine with
     // Xcode where the iosApp module can actually be built and run.
+    //
+    // No iosX64 (Intel simulator): Compose Multiplatform 1.11.1 doesn't
+    // publish artifacts for it ("Unresolved platforms: [iosX64]"), and every
+    // Mac capable of running current Xcode is Apple Silicon anyway.
     if (enableIos) {
         listOf(
-            iosX64(),
             iosArm64(),
             iosSimulatorArm64()
         ).forEach { target ->
@@ -94,12 +97,10 @@ kotlin {
             }
         }
         if (enableIos) {
-            val iosX64Main by getting
             val iosArm64Main by getting
             val iosSimulatorArm64Main by getting
             val iosMain by creating {
                 dependsOn(commonMain)
-                iosX64Main.dependsOn(this)
                 iosArm64Main.dependsOn(this)
                 iosSimulatorArm64Main.dependsOn(this)
                 dependencies {

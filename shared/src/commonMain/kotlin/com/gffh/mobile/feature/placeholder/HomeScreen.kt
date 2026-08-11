@@ -18,6 +18,11 @@ import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.datetime.*
+// Explicit import: kotlin.time.Clock (stdlib, since Kotlin 2.1) shadows the
+// wildcard-imported kotlinx.datetime.Clock, which is hidden on Kotlin/Native
+// in this kotlinx-datetime version ("Unresolved reference 'System'" when
+// compiling for iOS otherwise).
+import kotlin.time.Clock
 
 /**
  * SCR-HM-01 Dashboard. Purpose: answer "what needs my attention?" within two

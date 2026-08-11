@@ -18,6 +18,11 @@ import com.gffh.mobile.repository.VenueRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+// Explicit import: kotlin.time.Clock (stdlib, since Kotlin 2.1) shadows the
+// wildcard-imported kotlinx.datetime.Clock, which is hidden on Kotlin/Native
+// in this kotlinx-datetime version ("Unresolved reference 'System'" when
+// compiling for iOS otherwise).
+import kotlin.time.Clock
 
 /**
  * SCR-AV-03 Add / edit availability slot. Purpose: publish or amend a window
