@@ -29,6 +29,10 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # Compose Multiplatform's own startup sanity check throws a hard
+        # crash without this key (ProMotion/high-refresh-rate support) - see
+        # androidx.compose.ui.uikit.PlistSanityCheck.
+        CADisableMinimumFrameDurationOnPhone: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.gffh.mobile.iosApp
