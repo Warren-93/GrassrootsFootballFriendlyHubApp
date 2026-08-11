@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-variant-only override: allows cleartext HTTP so a debug build can
+  reach the API over plain http:// on a local network (emulator's 10.0.2.2 or
+  a physical device's LAN address) without standing up TLS for local dev.
+  Never merged into a release build - see build.gradle.kts's buildTypes.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="true" />
+</manifest>
