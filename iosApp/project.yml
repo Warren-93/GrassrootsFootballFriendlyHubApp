@@ -34,7 +34,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.gffh.mobile.iosApp
         PRODUCT_NAME: iosApp
         TARGETED_DEVICE_FAMILY: "1"
-    scripts:
+    prebuildScripts:
       - name: Compile Kotlin Framework
         script: |
           cd "$SRCROOT/.."
