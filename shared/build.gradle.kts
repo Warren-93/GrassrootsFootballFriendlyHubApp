@@ -50,12 +50,21 @@ kotlin {
                 // api, not implementation: androidApp's MainActivity calls
                 // setContent { App() } directly and needs these on its
                 // classpath too, transitively through :shared.
-                api("org.jetbrains.compose.runtime:runtime:1.7.3")
-                api("org.jetbrains.compose.foundation:foundation:1.7.3")
-                api("org.jetbrains.compose.material3:material3:1.7.3")
-                api("org.jetbrains.compose.material:material-icons-extended:1.7.3")
-                api("org.jetbrains.compose.ui:ui:1.7.3")
-                api("org.jetbrains.compose.components:components-resources:1.7.3")
+                //
+                // Using the compose.* accessors (not hardcoded coordinates)
+                // so these always resolve to whatever version the
+                // org.jetbrains.compose plugin itself is pinned to (1.11.1) -
+                // a hardcoded "1.7.3" here silently drifted behind the
+                // plugin version and produced a "runtime dependencies'
+                // versions don't match with plugin version" mismatch that
+                // crashed the Kotlin/Native compiler's IR lowering pass with
+                // a StackOverflowError when linking the iOS framework.
+                api(compose.runtime)
+                api(compose.foundation)
+                api(compose.material3)
+                api(compose.materialIconsExtended)
+                api(compose.ui)
+                api(compose.components.resources)
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
