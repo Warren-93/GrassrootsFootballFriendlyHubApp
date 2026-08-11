@@ -15,11 +15,17 @@ kotlin {
         namespace = "com.gffh.mobile"
         compileSdk = 34
         minSdk = 24
-        
+
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
-            freeCompilerArgs.add("-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi")
         }
+    }
+
+    // FlowRow (feature/arrange, feature/availability, feature/discover,
+    // feature/onboarding) is commonMain code compiled by every target,
+    // Android and iOS alike - opt in once here instead of per-target.
+    sourceSets.all {
+        languageSettings.optIn("androidx.compose.foundation.layout.ExperimentalLayoutApi")
     }
 
     // Kotlin/Native provisioning for iOS is deliberately opt-in - see
