@@ -36,6 +36,18 @@ jobs:
         working-directory: iosApp
         run: xcodegen generate
 
+      - name: Find a simulator device on the newest available iOS runtime
+        id: simulator
+        run: |
+          DEVICE_NAME=$(xcrun simctl list devices available | awk '
+            /^-- iOS/ { buf="" ; in_ios=1 ; next }
+            /^--/ { in_ios=0 ; next }
+            in_ios { buf = buf $0 "\n" }
+            END { printf "%s", buf }
+          ' | grep -m1 -E '^[[:space:]]+iPhone' | sed -E 's/^[[:space:]]+//; s/ \(.*//')
+          echo "Using simulator device: $DEVICE_NAME"
+          echo "device_name=$DEVICE_NAME" >> "$GITHUB_OUTPUT"
+
       - name: Build for iOS Simulator
         run: |
           xcodebuild \
@@ -44,7 +56,7 @@ jobs:
             -sdk iphonesimulator \
             -configuration Debug \
             -derivedDataPath iosApp/build \
-            -destination "platform=iOS Simulator,OS=latest" \
+            -destination "platform=iOS Simulator,name=${{ steps.simulator.outputs.device_name }},OS=latest" \
             CODE_SIGNING_ALLOWED=NO \
             build
 
