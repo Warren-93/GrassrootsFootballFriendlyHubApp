@@ -1,0 +1,42 @@
+name: iosApp
+
+options:
+  bundleIdPrefix: com.gffh.mobile
+
+settings:
+  base:
+    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+    ENABLE_BITCODE: NO
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: iosApp
+    info:
+      path: Generated/Info.plist
+      properties:
+        CFBundleDisplayName: GFFH
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gffh.mobile.iosApp
+        PRODUCT_NAME: iosApp
+        TARGETED_DEVICE_FAMILY: "1"
+    scripts:
+      - name: Compile Kotlin Framework
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :shared:embedAndSignAppleFrameworkForXcode -Pgffh.enableIos=true
+        basedOnDependencyAnalysis: false
