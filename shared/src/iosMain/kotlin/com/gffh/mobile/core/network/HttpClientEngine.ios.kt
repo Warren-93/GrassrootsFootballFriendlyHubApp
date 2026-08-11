@@ -10,4 +10,4 @@ actual fun httpClientEngineFactory(): HttpClientEngineFactory<*> = Darwin
 // nor a LAN IP is reachable here. Point this at a public tunnel to your local
 // backend (e.g. `ngrok http 8090`) before triggering the iOS Simulator Build
 // workflow, and keep the backend + tunnel running for the demo session.
-actual fun defaultApiBaseUrl(): String = "https://YOUR-NGROK-URL.ngrok-free.app"
+actual fun defaultApiBaseUrl(): String = "https://primp-resent-staging.ngrok-free.dev"
