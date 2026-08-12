@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "com.gffh.mobile.android"
-    compileSdk = 34
+    // Compose Multiplatform 1.10.3's Android dependencies require
+    // compileSdk 35+; bumped here to unbreak the build (was pinned at 34).
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.gffh.mobile.android"

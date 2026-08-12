@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -26,12 +25,8 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock as DateTimeClock
 import kotlinx.datetime.*
-// Explicit import: kotlin.time.Clock (stdlib, since Kotlin 2.1) shadows the
-// wildcard-imported kotlinx.datetime.Clock, which is hidden on Kotlin/Native
-// in this kotlinx-datetime version ("Unresolved reference 'System'" when
-// compiling for iOS otherwise).
-import kotlin.time.Clock
 
 /**
  * SCR-AV-01 Calendar (month). Purpose: show at a glance when the team is
@@ -211,4 +206,4 @@ private fun DayList(monthStart: LocalDate, monthEnd: LocalDate, datesWithSlots: 
     }
 }
 
-private fun todayDate(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
+

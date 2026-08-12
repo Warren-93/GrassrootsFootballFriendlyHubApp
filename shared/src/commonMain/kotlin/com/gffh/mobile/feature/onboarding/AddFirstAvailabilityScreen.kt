@@ -14,12 +14,8 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.VenueRepository
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock as DateTimeClock
 import kotlinx.datetime.*
-// Explicit import: kotlin.time.Clock (stdlib, since Kotlin 2.1) shadows the
-// wildcard-imported kotlinx.datetime.Clock, which is hidden on Kotlin/Native
-// in this kotlinx-datetime version ("Unresolved reference 'System'" when
-// compiling for iOS otherwise).
-import kotlin.time.Clock
 
 private fun nextSaturday(today: LocalDate): LocalDate {
     var d = today
@@ -42,7 +38,7 @@ fun AddFirstAvailabilityScreen(
     teamId: String,
     clubId: String
 ) {
-    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val today = DateTimeClock.System.todayIn(TimeZone.currentSystemDefault())
     var date by remember { mutableStateOf(nextSaturday(today)) }
     var startTime by remember { mutableStateOf(LocalTime(10, 0)) }
     var endTime by remember { mutableStateOf(LocalTime(13, 0)) }

@@ -17,12 +17,8 @@ import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.VenueRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock as DateTimeClock
 import kotlinx.datetime.*
-// Explicit import: kotlin.time.Clock (stdlib, since Kotlin 2.1) shadows the
-// wildcard-imported kotlinx.datetime.Clock, which is hidden on Kotlin/Native
-// in this kotlinx-datetime version ("Unresolved reference 'System'" when
-// compiling for iOS otherwise).
-import kotlin.time.Clock
 
 /**
  * SCR-AV-03 Add / edit availability slot. Purpose: publish or amend a window
@@ -32,6 +28,7 @@ import kotlin.time.Clock
  * (times are fixed at the spec's own defaults, 10:00-13:00), and "Repeat"
  * (SCR-AV-04, bulk add) is explicitly P2 in the spec - shown disabled.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditAvailabilitySlotScreen(
     availabilityRepository: AvailabilityRepository,
@@ -168,4 +165,4 @@ fun EditAvailabilitySlotScreen(
     }
 }
 
-private fun todayDate(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
+fun todayDate(): LocalDate = DateTimeClock.System.todayIn(TimeZone.currentSystemDefault())

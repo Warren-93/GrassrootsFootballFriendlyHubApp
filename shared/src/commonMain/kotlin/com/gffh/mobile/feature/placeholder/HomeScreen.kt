@@ -17,12 +17,8 @@ import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import kotlinx.datetime.Clock as DateTimeClock
 import kotlinx.datetime.*
-// Explicit import: kotlin.time.Clock (stdlib, since Kotlin 2.1) shadows the
-// wildcard-imported kotlinx.datetime.Clock, which is hidden on Kotlin/Native
-// in this kotlinx-datetime version ("Unresolved reference 'System'" when
-// compiling for iOS otherwise).
-import kotlin.time.Clock
 
 /**
  * SCR-HM-01 Dashboard. Purpose: answer "what needs my attention?" within two
@@ -56,7 +52,7 @@ fun HomeScreen(
         val teamResult = teamRepository.get(t.teamId)
         if (teamResult is ApiResult.Success) team = teamResult.value
 
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val today = DateTimeClock.System.todayIn(TimeZone.currentSystemDefault())
         val horizon = today.plus(56, DateTimeUnit.DAY)
         val slotResult = availabilityRepository.list(t.teamId, today.toString(), horizon.toString())
         if (slotResult is ApiResult.Success) futureSlots = slotResult.value

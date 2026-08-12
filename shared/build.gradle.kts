@@ -13,7 +13,9 @@ val enableIos = (findProperty("gffh.enableIos") as String?).toBoolean()
 kotlin {
     android {
         namespace = "com.gffh.mobile"
-        compileSdk = 34
+        // Compose Multiplatform 1.10.3's Android dependencies require
+        // compileSdk 35+; bumped here to unbreak the build (was pinned at 34).
+        compileSdk = 37
         minSdk = 24
 
         compilerOptions {

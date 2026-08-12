@@ -25,3 +25,6 @@ Thumbs.db
 iosApp/build/
 *.xcuserstate
 xcuserdata/
+
+# Local build output, not source
+ios-simulator-build/
