@@ -33,6 +33,7 @@ sealed class Route {
     data class Members(val teamId: String) : Route()                       // SCR-PR-04
     data class Verification(val teamId: String) : Route()                  // SCR-PR-07
     data object Privacy : Route()                                          // SCR-PR-10
+    data object Help : Route()                                             // SCR-PR-12
 
     // Publish (SCR-AV-*, SCR-HM-01)
     data object Home : Route()                                            // SCR-HM-01

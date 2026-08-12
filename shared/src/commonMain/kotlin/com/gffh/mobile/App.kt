@@ -30,6 +30,7 @@ import com.gffh.mobile.feature.profile.TeamProfileScreen
 import com.gffh.mobile.feature.profile.VenuesListScreen
 import com.gffh.mobile.feature.profile.VerificationScreen
 import com.gffh.mobile.feature.profile.PrivacyScreen
+import com.gffh.mobile.feature.profile.HelpScreen
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.*
@@ -94,6 +95,7 @@ fun App() {
             is Route.Members -> MembersScreen(memberRepository, navigator, route.teamId)
             is Route.Verification -> VerificationScreen(verificationRepository, teamRepository, navigator, route.teamId)
             is Route.Privacy -> PrivacyScreen(privacyRepository, authRepository, currentTeamStore, navigator)
+            is Route.Help -> HelpScreen(navigator)
 
             is Route.Home -> HomeScreen(
                 authRepository, teamRepository, availabilityRepository, fixtureRepository, currentTeamStore, navigator
