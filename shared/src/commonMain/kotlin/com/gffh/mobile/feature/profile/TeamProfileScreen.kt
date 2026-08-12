@@ -1,5 +1,6 @@
 package com.gffh.mobile.feature.profile
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -53,7 +54,11 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
 
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
         Text(current.name, style = MaterialTheme.typography.headlineSmall)
-        Text(current.clubName, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            current.clubName,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.clickable { navigator.push(Route.ClubProfile(current.clubId)) }
+        )
 
         Spacer(Modifier.height(16.dp))
         Text("Profile completeness", style = MaterialTheme.typography.labelLarge)

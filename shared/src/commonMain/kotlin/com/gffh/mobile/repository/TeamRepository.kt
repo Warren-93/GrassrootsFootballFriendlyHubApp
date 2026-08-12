@@ -26,4 +26,9 @@ class TeamRepository(private val api: ApiClient) {
         url("/api/v1/teams/$teamId")
         setBody(request)
     }
+
+    suspend fun listByClub(clubId: String): ApiResult<List<TeamView>> = api.request {
+        method = HttpMethod.Get
+        url("/api/v1/teams?clubId=$clubId")
+    }
 }
