@@ -105,7 +105,7 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
         }
 
         Spacer(Modifier.height(12.dp))
-        Card(onClick = { navigator.push(Route.Placeholder("Venues")) }, modifier = Modifier.fillMaxWidth()) {
+        Card(onClick = { navigator.push(Route.VenuesList(current.clubId)) }, modifier = Modifier.fillMaxWidth()) {
             Text("Venues (${venues.size})", modifier = Modifier.padding(16.dp))
         }
         Spacer(Modifier.height(12.dp))

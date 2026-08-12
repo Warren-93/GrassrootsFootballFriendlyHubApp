@@ -20,9 +20,11 @@ import com.gffh.mobile.feature.onboarding.*
 import com.gffh.mobile.feature.placeholder.HomeScreen
 import com.gffh.mobile.feature.placeholder.PlaceholderScreen
 import com.gffh.mobile.feature.profile.EditTeamScreen
+import com.gffh.mobile.feature.profile.EditVenueScreen
 import com.gffh.mobile.feature.profile.ReportBlockScreen
 import com.gffh.mobile.feature.profile.SettingsScreen
 import com.gffh.mobile.feature.profile.TeamProfileScreen
+import com.gffh.mobile.feature.profile.VenuesListScreen
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.*
@@ -75,6 +77,8 @@ fun App() {
             is Route.ReportBlock -> ReportBlockScreen(
                 reportRepository, currentTeamStore, navigator, route.teamId, route.teamName, route.fixtureId
             )
+            is Route.VenuesList -> VenuesListScreen(venueRepository, navigator, route.clubId)
+            is Route.EditVenue -> EditVenueScreen(venueRepository, navigator, route.venueId, route.clubId)
 
             is Route.Home -> HomeScreen(
                 authRepository, teamRepository, availabilityRepository, fixtureRepository, currentTeamStore, navigator

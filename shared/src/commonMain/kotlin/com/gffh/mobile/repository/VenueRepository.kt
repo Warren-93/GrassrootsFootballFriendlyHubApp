@@ -31,4 +31,9 @@ class VenueRepository(private val api: ApiClient) {
         method = HttpMethod.Post
         url("/api/v1/venues/$venueId/default")
     }
+
+    suspend fun delete(venueId: String): ApiResult<Unit> = api.request {
+        method = HttpMethod.Delete
+        url("/api/v1/venues/$venueId")
+    }
 }
