@@ -13,6 +13,7 @@ import com.gffh.mobile.model.FriendlyRequestView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.FriendlyRequestRepository
+import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 
 /**
@@ -26,7 +27,13 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RequestDetailScreen(friendlyRequestRepository: FriendlyRequestRepository, navigator: Navigator, requestId: String) {
+fun RequestDetailScreen(
+    friendlyRequestRepository: FriendlyRequestRepository,
+    currentTeamStore: CurrentTeamStore,
+    navigator: Navigator,
+    requestId: String
+) {
+    val activeTeam by currentTeamStore.active.collectAsState()
     var request by remember { mutableStateOf<FriendlyRequestView?>(null) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -138,6 +145,13 @@ fun RequestDetailScreen(friendlyRequestRepository: FriendlyRequestRepository, na
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                     ) { Text(if (action == "acceptChanges") "Accept changes" else "Send again") }
                 }
+            }
+            activeTeam?.let { ours ->
+                val otherTeamId = if (ours.teamId == r.senderTeamId) r.recipientTeamId else r.senderTeamId
+                TextButton(
+                    onClick = { navigator.push(Route.ReportBlock(otherTeamId, "this team")) },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Report or block", color = MaterialTheme.colorScheme.error) }
             }
         }
     }

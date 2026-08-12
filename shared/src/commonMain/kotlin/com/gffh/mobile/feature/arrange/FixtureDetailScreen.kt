@@ -11,7 +11,9 @@ import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.FixtureView
 import com.gffh.mobile.navigation.Navigator
+import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.FixtureRepository
+import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 
 /**
@@ -26,7 +28,13 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FixtureDetailScreen(fixtureRepository: FixtureRepository, navigator: Navigator, fixtureId: String) {
+fun FixtureDetailScreen(
+    fixtureRepository: FixtureRepository,
+    currentTeamStore: CurrentTeamStore,
+    navigator: Navigator,
+    fixtureId: String
+) {
+    val activeTeam by currentTeamStore.active.collectAsState()
     var fixture by remember { mutableStateOf<FixtureView?>(null) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -83,6 +91,15 @@ fun FixtureDetailScreen(fixtureRepository: FixtureRepository, navigator: Navigat
                 Text("Cost share: ${f.costShare}", style = MaterialTheme.typography.bodySmall)
                 Text("Referee: ${f.refereeArrangement}", style = MaterialTheme.typography.bodySmall)
                 f.venueId?.let { Text("Venue: $it", style = MaterialTheme.typography.bodySmall) }
+            }
+
+            activeTeam?.let { ours ->
+                val other = if (ours.teamId == f.homeTeam.id) f.awayTeam else f.homeTeam
+                Spacer(Modifier.height(12.dp))
+                TextButton(
+                    onClick = { navigator.push(Route.ReportBlock(other.id, other.name, f.id)) },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Report or block", color = MaterialTheme.colorScheme.error) }
             }
         }
     }

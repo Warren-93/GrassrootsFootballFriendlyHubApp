@@ -20,6 +20,7 @@ import com.gffh.mobile.feature.onboarding.*
 import com.gffh.mobile.feature.placeholder.HomeScreen
 import com.gffh.mobile.feature.placeholder.PlaceholderScreen
 import com.gffh.mobile.feature.profile.EditTeamScreen
+import com.gffh.mobile.feature.profile.ReportBlockScreen
 import com.gffh.mobile.feature.profile.SettingsScreen
 import com.gffh.mobile.feature.profile.TeamProfileScreen
 import com.gffh.mobile.navigation.Navigator
@@ -48,6 +49,7 @@ fun App() {
     val matchRepository = remember { MatchRepository(apiClient) }
     val friendlyRequestRepository = remember { FriendlyRequestRepository(apiClient) }
     val fixtureRepository = remember { FixtureRepository(apiClient) }
+    val reportRepository = remember { ReportRepository(apiClient) }
     val navigator = remember { Navigator(Route.Splash) }
 
     GffhTheme {
@@ -70,6 +72,9 @@ fun App() {
             is Route.TeamProfile -> TeamProfileScreen(teamRepository, venueRepository, navigator, route.teamId)
             is Route.EditTeam -> EditTeamScreen(teamRepository, navigator, route.teamId)
             is Route.Settings -> SettingsScreen(authRepository, currentTeamStore, navigator)
+            is Route.ReportBlock -> ReportBlockScreen(
+                reportRepository, currentTeamStore, navigator, route.teamId, route.teamName, route.fixtureId
+            )
 
             is Route.Home -> HomeScreen(
                 authRepository, teamRepository, availabilityRepository, fixtureRepository, currentTeamStore, navigator
@@ -93,11 +98,11 @@ fun App() {
             )
             is Route.InvitationReview -> InvitationReviewScreen(friendlyRequestRepository, invitationDraft, navigator)
             is Route.InvitationSent -> InvitationSentScreen(navigator, route.requestId)
-            is Route.RequestDetail -> RequestDetailScreen(friendlyRequestRepository, navigator, route.requestId)
+            is Route.RequestDetail -> RequestDetailScreen(friendlyRequestRepository, currentTeamStore, navigator, route.requestId)
             is Route.SuggestChanges -> SuggestChangesScreen(friendlyRequestRepository, navigator, route.requestId)
             is Route.DeclineRequest -> DeclineScreen(friendlyRequestRepository, navigator, route.requestId)
             is Route.Fixtures -> FixturesScreen(friendlyRequestRepository, fixtureRepository, currentTeamStore, navigator)
-            is Route.FixtureDetail -> FixtureDetailScreen(fixtureRepository, navigator, route.fixtureId)
+            is Route.FixtureDetail -> FixtureDetailScreen(fixtureRepository, currentTeamStore, navigator, route.fixtureId)
 
             is Route.Placeholder -> PlaceholderScreen(route.label, navigator)
         }

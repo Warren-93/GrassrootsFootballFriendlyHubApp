@@ -85,10 +85,16 @@ fun OpponentProfileScreen(resultsCache: SearchResultsCache, navigator: Navigator
             }
         }
 
-        Button(
-            onClick = { navigator.push(Route.InvitationComposer(match.team.id)) },
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) { Text("Invite to friendly") }
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Button(
+                onClick = { navigator.push(Route.InvitationComposer(match.team.id)) },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Invite to friendly") }
+            TextButton(
+                onClick = { navigator.push(Route.ReportBlock(match.team.id, match.team.name)) },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Report or block", color = MaterialTheme.colorScheme.error) }
+        }
     }
 }
 
