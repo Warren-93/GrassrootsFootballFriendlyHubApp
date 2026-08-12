@@ -13,11 +13,6 @@ import kotlinx.coroutines.launch
 /**
  * SCR-IN-06 Decline. Purpose: close a proposal cleanly, with enough signal to
  * improve future matching.
- *
- * As with Suggest changes, the reason/message collected here isn't sent to
- * the backend yet - `POST .../actions/decline` is a bare transition. Kept in
- * the UI because it's cheap to add server-side later and the spec treats the
- * reason as important signal, not because it does anything today.
  */
 @Composable
 fun DeclineScreen(friendlyRequestRepository: FriendlyRequestRepository, navigator: Navigator, requestId: String) {
@@ -57,8 +52,9 @@ fun DeclineScreen(friendlyRequestRepository: FriendlyRequestRepository, navigato
             onClick = {
                 sending = true
                 errorMessage = null
+                val reason = if (message.isBlank()) selectedReason else "$selectedReason: $message"
                 scope.launch {
-                    when (friendlyRequestRepository.act(requestId, "decline")) {
+                    when (friendlyRequestRepository.act(requestId, "decline", reason)) {
                         is ApiResult.Success -> navigator.pop()
                         is ApiResult.Failure -> { errorMessage = "Could not decline."; sending = false }
                     }

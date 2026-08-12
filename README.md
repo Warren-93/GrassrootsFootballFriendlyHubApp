@@ -162,11 +162,6 @@ work before their client screens can be built against a real contract:
 - **Reporting and blocking** (SCR-PR-11) — `BlockRepository` exists
   server-side but has no controller; there's no `reports` collection at all.
 - **Privacy/data rights** (SCR-PR-10) — no export or delete endpoints.
-- **Suggest-changes/decline reasons aren't persisted** (SCR-IN-05/06) — the
-  backend's `POST .../actions/{action}` is a bare status transition with no
-  request body, so the reason/message the client collects on these two
-  screens isn't sent anywhere yet. Cheap to add later; noted in both screens'
-  doc comments.
 - **Admin dashboard** (ADM-01 to 09) — a separate responsive web app per the
   specification, not part of this mobile client at all.
 

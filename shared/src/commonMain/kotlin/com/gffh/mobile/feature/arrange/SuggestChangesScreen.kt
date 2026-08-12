@@ -14,11 +14,9 @@ import kotlinx.coroutines.launch
  * SCR-IN-05 Suggest changes. Purpose: counter-propose without discarding what
  * both parties have already agreed.
  *
- * The backend's action endpoint is a bare status transition - it doesn't yet
- * accept edited terms or a reason (`POST .../actions/{action}` takes no
- * body). This collects a reason for the sender's benefit and transitions the
- * status correctly, but the reason itself isn't persisted or sent to the
- * other team yet; see gffh-mobile/README.md.
+ * The reason is sent to and shown to the other team once they open the
+ * request. Editing the terms themselves (date, venue, cost) isn't supported
+ * yet - only a free-text counter-proposal.
  */
 @Composable
 fun SuggestChangesScreen(friendlyRequestRepository: FriendlyRequestRepository, navigator: Navigator, requestId: String) {
@@ -30,7 +28,7 @@ fun SuggestChangesScreen(friendlyRequestRepository: FriendlyRequestRepository, n
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         Text("Suggest changes", style = MaterialTheme.typography.headlineSmall)
         Text(
-            "Not yet wired to carry edited terms or this reason to the other team - only the status changes for now.",
+            "Describe what you'd like to change - the other team will see this when they open the request.",
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
         )
@@ -53,7 +51,7 @@ fun SuggestChangesScreen(friendlyRequestRepository: FriendlyRequestRepository, n
                 sending = true
                 errorMessage = null
                 scope.launch {
-                    when (friendlyRequestRepository.act(requestId, "suggestChanges")) {
+                    when (friendlyRequestRepository.act(requestId, "suggestChanges", reason.ifBlank { null })) {
                         is ApiResult.Success -> navigator.pop()
                         is ApiResult.Failure -> { errorMessage = "Could not send changes."; sending = false }
                     }

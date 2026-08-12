@@ -83,6 +83,14 @@ fun RequestDetailScreen(friendlyRequestRepository: FriendlyRequestRepository, na
                 Text("Message", style = MaterialTheme.typography.titleSmall)
                 Text(it)
             }
+            r.actionReason?.let {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    if (r.status == "DECLINED") "Reason for declining" else "Requested changes",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(it)
+            }
 
             val contact = r.senderContact ?: r.recipientContact
             if (contact != null) {

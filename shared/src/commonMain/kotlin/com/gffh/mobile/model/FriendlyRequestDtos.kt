@@ -19,6 +19,11 @@ data class SendFriendlyRequest(
 )
 
 @Serializable
+data class FriendlyRequestActionRequest(
+    val reason: String? = null
+)
+
+@Serializable
 data class TeamContact(
     val teamId: String,
     val managerName: String? = null,
@@ -41,6 +46,7 @@ data class FriendlyRequestView(
     val costShare: String,
     val refereeArrangement: String,
     val message: String? = null,
+    val actionReason: String? = null,
     val availableActions: List<String>,
     val senderContact: TeamContact? = null,
     val recipientContact: TeamContact? = null

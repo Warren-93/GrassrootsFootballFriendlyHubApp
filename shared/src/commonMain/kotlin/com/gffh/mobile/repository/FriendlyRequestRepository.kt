@@ -2,6 +2,7 @@ package com.gffh.mobile.repository
 
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.model.FriendlyRequestActionRequest
 import com.gffh.mobile.model.FriendlyRequestView
 import com.gffh.mobile.model.SendFriendlyRequest
 import io.ktor.client.request.*
@@ -15,9 +16,10 @@ class FriendlyRequestRepository(private val api: ApiClient) {
         setBody(request)
     }
 
-    suspend fun act(requestId: String, action: String): ApiResult<FriendlyRequestView> = api.request {
+    suspend fun act(requestId: String, action: String, reason: String? = null): ApiResult<FriendlyRequestView> = api.request {
         method = HttpMethod.Post
         url("/api/v1/friendly-requests/$requestId/actions/$action")
+        if (reason != null) setBody(FriendlyRequestActionRequest(reason))
     }
 
     suspend fun list(teamId: String): ApiResult<List<FriendlyRequestView>> = api.request {
