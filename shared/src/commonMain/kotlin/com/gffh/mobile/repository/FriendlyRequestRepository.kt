@@ -10,10 +10,11 @@ import io.ktor.http.HttpMethod
 
 class FriendlyRequestRepository(private val api: ApiClient) {
 
-    suspend fun send(request: SendFriendlyRequest): ApiResult<FriendlyRequestView> = api.request {
+    suspend fun send(request: SendFriendlyRequest, idempotencyKey: String? = null): ApiResult<FriendlyRequestView> = api.request {
         method = HttpMethod.Post
         url("/api/v1/friendly-requests")
         setBody(request)
+        idempotencyKey?.let { header("Idempotency-Key", it) }
     }
 
     suspend fun act(requestId: String, action: String, reason: String? = null): ApiResult<FriendlyRequestView> = api.request {

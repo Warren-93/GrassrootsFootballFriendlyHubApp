@@ -12,11 +12,14 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.InvitationDraftState
 import kotlinx.coroutines.launch
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * SCR-IN-02 Invitation review. Purpose: give one last unambiguous read before
  * a commitment is sent to another club.
  */
+@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun InvitationReviewScreen(
     friendlyRequestRepository: FriendlyRequestRepository,
@@ -26,6 +29,10 @@ fun InvitationReviewScreen(
     var sending by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    // Generated once per visit to this screen, not per tap - so retrying a
+    // failed send (network blip, double-tap) reuses the same key and the
+    // backend can recognize it as the same attempt, never a second proposal.
+    val idempotencyKey = remember { Uuid.random().toString() }
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         Text("Review proposal", style = MaterialTheme.typography.headlineSmall)
@@ -83,7 +90,8 @@ fun InvitationReviewScreen(
                             costShare = draft.costShare,
                             refereeArrangement = draft.refereeArrangement,
                             message = draft.notes.ifBlank { null }
-                        )
+                        ),
+                        idempotencyKey
                     )
                     sending = false
                     when (result) {
