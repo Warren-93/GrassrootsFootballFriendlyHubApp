@@ -24,6 +24,7 @@ sealed class Route {
     data class OnboardingComplete(val teamId: String) : Route()             // SCR-ON-06
     data class TeamProfile(val teamId: String) : Route()                    // SCR-PR-01
     data class EditTeam(val teamId: String) : Route()                       // SCR-PR-02
+    data object Settings : Route()                                          // SCR-PR-08
 
     // Publish (SCR-AV-*, SCR-HM-01)
     data object Home : Route()                                            // SCR-HM-01

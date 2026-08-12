@@ -22,8 +22,8 @@ import com.gffh.mobile.repository.VenueRepository
  *
  * "Preview as opponent" is omitted here - it renders the team through the
  * SCR-FF-05 opponent-profile component, which belongs to the Discover slice.
- * Club, members, verification and settings rows route to
- * [Route.Placeholder] since SCR-PR-03/04/07/08 aren't built yet.
+ * Club, members and verification rows route to [Route.Placeholder] since
+ * SCR-PR-03/04/07 aren't built yet.
  */
 @Composable
 fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepository, navigator: Navigator, teamId: String) {
@@ -111,6 +111,11 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
         Spacer(Modifier.height(12.dp))
         Card(onClick = { navigator.push(Route.Placeholder("Members")) }, modifier = Modifier.fillMaxWidth()) {
             Text("Members", modifier = Modifier.padding(16.dp))
+        }
+
+        Spacer(Modifier.height(12.dp))
+        Card(onClick = { navigator.push(Route.Settings) }, modifier = Modifier.fillMaxWidth()) {
+            Text("Settings", modifier = Modifier.padding(16.dp))
         }
     }
 }
