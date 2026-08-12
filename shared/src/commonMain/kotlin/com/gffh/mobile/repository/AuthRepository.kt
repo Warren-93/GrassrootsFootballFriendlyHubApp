@@ -72,7 +72,7 @@ class AuthRepository(private val api: ApiClient, private val tokenStore: TokenSt
         setBody(PasswordResetConfirmRequest(token, newPassword))
     }
 
-    suspend fun resendVerification(): ApiResult<Unit> = api.request<Unit> {
+    suspend fun resendVerification(): ApiResult<VerificationResendResponse> = api.request<VerificationResendResponse> {
         method = io.ktor.http.HttpMethod.Post
         url("/api/v1/auth/verify/resend")
     }

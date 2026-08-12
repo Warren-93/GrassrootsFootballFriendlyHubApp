@@ -33,8 +33,13 @@ data class TokenResponse(
     val refreshToken: String,
     val tokenType: String,
     val expiresIn: Long,
-    val user: UserView
+    val user: UserView,
+    /** Only present while no real email provider is connected - see EmailVerificationScreen. */
+    val verificationToken: String? = null
 )
+
+@Serializable
+data class VerificationResendResponse(val verificationToken: String? = null)
 
 @Serializable
 data class UserView(

@@ -27,6 +27,8 @@ fun EmailVerificationScreen(authRepository: AuthRepository, navigator: Navigator
     var resendSecondsLeft by remember { mutableStateOf(0) }
     var checking by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
+    var verifyToken by remember { mutableStateOf<String?>(null) }
+    var verifying by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
@@ -43,6 +45,36 @@ fun EmailVerificationScreen(authRepository: AuthRepository, navigator: Navigator
             Text(it, style = MaterialTheme.typography.bodySmall)
         }
 
+        if (verifyToken != null) {
+            Spacer(Modifier.height(12.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                Column(Modifier.padding(12.dp)) {
+                    Text(
+                        "No email provider is connected yet, so we can't send this automatically.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Button(
+                        onClick = {
+                            val t = verifyToken ?: return@Button
+                            verifying = true
+                            scope.launch {
+                                when (val result = authRepository.confirmVerification(t)) {
+                                    is ApiResult.Success -> {
+                                        verifyToken = null
+                                        statusMessage = "Verified!"
+                                    }
+                                    is ApiResult.Failure -> statusMessage = result.message
+                                }
+                                verifying = false
+                            }
+                        },
+                        enabled = !verifying,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) { Text(if (verifying) "Verifying…" else "Verify now") }
+                }
+            }
+        }
+
         Spacer(Modifier.height(24.dp))
         Button(onClick = { openMailApp() }, modifier = Modifier.fillMaxWidth()) {
             Text("Open mail app")
@@ -51,7 +83,10 @@ fun EmailVerificationScreen(authRepository: AuthRepository, navigator: Navigator
         OutlinedButton(
             onClick = {
                 scope.launch {
-                    authRepository.resendVerification()
+                    when (val result = authRepository.resendVerification()) {
+                        is ApiResult.Success -> verifyToken = result.value.verificationToken
+                        is ApiResult.Failure -> statusMessage = result.message
+                    }
                     resendSecondsLeft = 60
                     while (resendSecondsLeft > 0) {
                         delay(1000)
