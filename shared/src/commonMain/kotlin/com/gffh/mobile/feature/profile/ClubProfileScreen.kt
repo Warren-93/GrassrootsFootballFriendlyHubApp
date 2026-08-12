@@ -90,7 +90,10 @@ fun ClubProfileScreen(
         ) { Text("Add team") }
 
         Spacer(Modifier.height(16.dp))
-        Card(onClick = { navigator.push(Route.Placeholder("Team members and permissions")) }, modifier = Modifier.fillMaxWidth()) {
+        Card(
+            onClick = { activeTeam?.let { navigator.push(Route.Members(it.teamId)) } },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("Officials", modifier = Modifier.padding(16.dp))
         }
         Spacer(Modifier.height(8.dp))

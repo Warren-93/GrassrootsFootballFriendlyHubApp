@@ -30,6 +30,7 @@ sealed class Route {
     data class EditVenue(val venueId: String?, val clubId: String) : Route() // SCR-PR-06
     data class ClubProfile(val clubId: String) : Route()                    // SCR-PR-03
     data class EditClub(val clubId: String) : Route()                       // SCR-PR-03
+    data class Members(val teamId: String) : Route()                       // SCR-PR-04
 
     // Publish (SCR-AV-*, SCR-HM-01)
     data object Home : Route()                                            // SCR-HM-01
