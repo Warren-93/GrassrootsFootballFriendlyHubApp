@@ -28,6 +28,7 @@ import com.gffh.mobile.feature.profile.ReportBlockScreen
 import com.gffh.mobile.feature.profile.SettingsScreen
 import com.gffh.mobile.feature.profile.TeamProfileScreen
 import com.gffh.mobile.feature.profile.VenuesListScreen
+import com.gffh.mobile.feature.profile.VerificationScreen
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.*
@@ -56,6 +57,7 @@ fun App() {
     val fixtureRepository = remember { FixtureRepository(apiClient) }
     val reportRepository = remember { ReportRepository(apiClient) }
     val memberRepository = remember { MemberRepository(apiClient) }
+    val verificationRepository = remember { VerificationRepository(apiClient) }
     val navigator = remember { Navigator(Route.Splash) }
 
     GffhTheme {
@@ -88,6 +90,7 @@ fun App() {
             )
             is Route.EditClub -> EditClubScreen(clubRepository, navigator, route.clubId)
             is Route.Members -> MembersScreen(memberRepository, navigator, route.teamId)
+            is Route.Verification -> VerificationScreen(verificationRepository, teamRepository, navigator, route.teamId)
 
             is Route.Home -> HomeScreen(
                 authRepository, teamRepository, availabilityRepository, fixtureRepository, currentTeamStore, navigator

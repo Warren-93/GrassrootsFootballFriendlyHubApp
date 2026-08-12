@@ -23,8 +23,6 @@ import com.gffh.mobile.repository.VenueRepository
  *
  * "Preview as opponent" is omitted here - it renders the team through the
  * SCR-FF-05 opponent-profile component, which belongs to the Discover slice.
- * The verification row still routes to [Route.Placeholder] since SCR-PR-07
- * isn't built yet.
  */
 @Composable
 fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepository, navigator: Navigator, teamId: String) {
@@ -102,7 +100,7 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
         }
 
         Spacer(Modifier.height(12.dp))
-        Card(onClick = { navigator.push(Route.Placeholder("Verification")) }, modifier = Modifier.fillMaxWidth()) {
+        Card(onClick = { navigator.push(Route.Verification(teamId)) }, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 Text("Verification", style = MaterialTheme.typography.titleSmall)
                 Text(current.verification, style = MaterialTheme.typography.bodySmall)
