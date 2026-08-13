@@ -14,6 +14,7 @@ import com.gffh.mobile.feature.availability.EditAvailabilitySlotScreen
 import com.gffh.mobile.feature.arrange.*
 import com.gffh.mobile.feature.discover.FiltersScreen
 import com.gffh.mobile.feature.discover.SuggestedMatchesScreen
+import com.gffh.mobile.feature.discover.ResultsMapScreen
 import com.gffh.mobile.feature.discover.MatchExplanationScreen
 import com.gffh.mobile.feature.discover.OpponentProfileScreen
 import com.gffh.mobile.feature.discover.ResultsListScreen
@@ -66,6 +67,7 @@ fun App() {
     val verificationRepository = remember { VerificationRepository(apiClient) }
     val privacyRepository = remember { PrivacyRepository(apiClient) }
     val notificationRepository = remember { NotificationRepository(apiClient) }
+    val geocodeRepository = remember { GeocodeRepository() }
     val messageRepository = remember { MessageRepository(apiClient) }
     val navigator = remember { Navigator(Route.Splash) }
 
@@ -124,6 +126,7 @@ fun App() {
             )
             is Route.Filters -> FiltersScreen(filterState, navigator)
             is Route.Results -> ResultsListScreen(matchRepository, currentTeamStore, filterState, resultsCache, navigator)
+            is Route.ResultsMap -> ResultsMapScreen(teamRepository, geocodeRepository, currentTeamStore, resultsCache, navigator)
             is Route.OpponentProfile -> OpponentProfileScreen(resultsCache, navigator, route.teamId)
             is Route.MatchExplanation -> MatchExplanationScreen(resultsCache, navigator, route.teamId)
 

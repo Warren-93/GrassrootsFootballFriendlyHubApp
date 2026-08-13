@@ -28,8 +28,8 @@ import kotlinx.coroutines.launch
  * next-action content inline, since the spec frames it as this screen's
  * Empty state rather than a separate destination.
  *
- * The map view toggle (SCR-FF-04) is omitted - it needs a maps SDK
- * integration that's out of scope.
+ * The map view (SCR-FF-04) is its own screen ([ResultsMapScreen]) rather
+ * than an inline toggle here, reachable via the app bar action.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +66,9 @@ fun ResultsListScreen(
             title = { Text("${response?.totalResults ?: 0} team${if (response?.totalResults == 1) "" else "s"} match") },
             navigationIcon = {
                 IconButton(onClick = { navigator.pop() }) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
+            },
+            actions = {
+                TextButton(onClick = { navigator.push(Route.ResultsMap) }) { Text("Map") }
             }
         )
 
