@@ -25,8 +25,9 @@ import kotlinx.datetime.*
  * in which the team can play.
  *
  * Simplifications from spec: no platform time-picker dialog is wired up yet
- * (times are fixed at the spec's own defaults, 10:00-13:00), and "Repeat"
- * (SCR-AV-04, bulk add) is explicitly P2 in the spec - shown disabled.
+ * (times are fixed at the spec's own defaults, 10:00-13:00). Repeating a slot
+ * across several dates is its own screen (SCR-AV-04, reachable from Calendar)
+ * rather than an option here.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -118,13 +119,6 @@ fun EditAvailabilitySlotScreen(
             value = notes, onValueChange = { if (it.length <= 280) notes = it },
             label = { Text("Notes (optional)") },
             supportingText = { Text("${notes.length}/280") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(16.dp))
-        OutlinedTextField(
-            value = "", onValueChange = {}, enabled = false,
-            label = { Text("Repeat (not available yet)") },
             modifier = Modifier.fillMaxWidth()
         )
 

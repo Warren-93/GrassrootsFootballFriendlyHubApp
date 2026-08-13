@@ -2,6 +2,8 @@ package com.gffh.mobile.repository
 
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.model.BulkCreateResult
+import com.gffh.mobile.model.BulkCreateSlotRequest
 import com.gffh.mobile.model.CreateSlotRequest
 import com.gffh.mobile.model.SlotView
 import io.ktor.client.request.*
@@ -12,6 +14,12 @@ class AvailabilityRepository(private val api: ApiClient) {
     suspend fun create(teamId: String, request: CreateSlotRequest): ApiResult<SlotView> = api.request {
         method = HttpMethod.Post
         url("/api/v1/teams/$teamId/availability")
+        setBody(request)
+    }
+
+    suspend fun createBulk(teamId: String, request: BulkCreateSlotRequest): ApiResult<BulkCreateResult> = api.request {
+        method = HttpMethod.Post
+        url("/api/v1/teams/$teamId/availability/bulk")
         setBody(request)
     }
 

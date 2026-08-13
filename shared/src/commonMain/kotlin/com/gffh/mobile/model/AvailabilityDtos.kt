@@ -26,3 +26,20 @@ data class SlotView(
     val notes: String? = null,
     val status: String
 )
+
+@Serializable
+data class BulkCreateSlotRequest(
+    val dates: List<String>,
+    val startTime: String,
+    val endTime: String,
+    val homeAwayPreference: String,
+    val venueId: String? = null,
+    val format: String? = null,
+    val notes: String? = null
+)
+
+@Serializable
+data class BulkCreateResult(
+    val created: List<SlotView>,
+    val skippedPastDates: List<String>
+)

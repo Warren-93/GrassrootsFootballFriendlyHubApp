@@ -134,12 +134,16 @@ fun CalendarScreen(
         Spacer(Modifier.weight(1f))
         Button(
             onClick = { navigator.push(Route.EditAvailabilitySlot(date = todayDate().toString())) },
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
         ) {
             Icon(Icons.Filled.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Add availability")
         }
+        OutlinedButton(
+            onClick = { navigator.push(Route.BulkAddAvailability) },
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) { Text("Bulk add") }
     }
 }
 

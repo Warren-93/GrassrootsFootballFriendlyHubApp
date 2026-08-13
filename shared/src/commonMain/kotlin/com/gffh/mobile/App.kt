@@ -7,6 +7,7 @@ import com.gffh.mobile.core.auth.createSettings
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.defaultApiBaseUrl
 import com.gffh.mobile.feature.auth.*
+import com.gffh.mobile.feature.availability.BulkAddAvailabilityScreen
 import com.gffh.mobile.feature.availability.CalendarScreen
 import com.gffh.mobile.feature.availability.DayDetailScreen
 import com.gffh.mobile.feature.availability.EditAvailabilitySlotScreen
@@ -112,6 +113,9 @@ fun App() {
             is Route.DayDetail -> DayDetailScreen(availabilityRepository, currentTeamStore, navigator, route.date)
             is Route.EditAvailabilitySlot -> EditAvailabilitySlotScreen(
                 availabilityRepository, venueRepository, currentTeamStore, navigator, route.slotId, route.date
+            )
+            is Route.BulkAddAvailability -> BulkAddAvailabilityScreen(
+                availabilityRepository, venueRepository, currentTeamStore, navigator
             )
 
             is Route.SuggestedMatches -> SuggestedMatchesScreen(matchRepository, currentTeamStore, resultsCache, navigator)

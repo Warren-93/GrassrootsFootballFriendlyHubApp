@@ -42,6 +42,7 @@ sealed class Route {
     data object Calendar : Route()                                         // SCR-AV-01
     data class DayDetail(val date: String) : Route()                       // SCR-AV-02
     data class EditAvailabilitySlot(val slotId: String? = null, val date: String? = null) : Route() // SCR-AV-03
+    data object BulkAddAvailability : Route()                              // SCR-AV-04
 
     // Discover (SCR-FF-*)
     data object SuggestedMatches : Route()                                  // SCR-HM-03
