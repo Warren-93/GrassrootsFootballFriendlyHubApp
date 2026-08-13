@@ -14,10 +14,8 @@ import com.gffh.mobile.session.CurrentTeamStore
  * SCR-PR-08 Settings. Purpose: account, notification, privacy and support
  * controls in one predictable place.
  *
- * Notifications still routes to [Route.Placeholder] - that screen (SCR-PR-09)
- * isn't built yet. Units and Appearance aren't shown: neither has anywhere to
- * persist to yet, and a toggle that resets on relaunch would be worse than no
- * toggle.
+ * Units and Appearance aren't shown: neither has anywhere to persist to yet,
+ * and a toggle that resets on relaunch would be worse than no toggle.
  */
 @Composable
 fun SettingsScreen(authRepository: AuthRepository, currentTeamStore: CurrentTeamStore, navigator: Navigator) {
@@ -42,7 +40,7 @@ fun SettingsScreen(authRepository: AuthRepository, currentTeamStore: CurrentTeam
         }
 
         Spacer(Modifier.height(12.dp))
-        SettingsRow("Notifications") { navigator.push(Route.Placeholder("Notification preferences")) }
+        SettingsRow("Notifications") { navigator.push(Route.NotificationPreferences) }
         SettingsRow("Privacy and data") { navigator.push(Route.Privacy) }
         SettingsRow("Help and support") { navigator.push(Route.Help) }
 

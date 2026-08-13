@@ -1,6 +1,8 @@
 package com.gffh.mobile.feature.placeholder
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +17,7 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.FixtureRepository
+import com.gffh.mobile.repository.NotificationRepository
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.datetime.Clock as DateTimeClock
@@ -36,6 +39,7 @@ fun HomeScreen(
     teamRepository: TeamRepository,
     availabilityRepository: AvailabilityRepository,
     fixtureRepository: FixtureRepository,
+    notificationRepository: NotificationRepository,
     currentTeamStore: CurrentTeamStore,
     navigator: Navigator
 ) {
@@ -45,7 +49,13 @@ fun HomeScreen(
     var team by remember { mutableStateOf<TeamView?>(null) }
     var futureSlots by remember { mutableStateOf<List<SlotView>>(emptyList()) }
     var fixtures by remember { mutableStateOf<List<FixtureView>>(emptyList()) }
+    var unreadCount by remember { mutableStateOf(0L) }
     var loaded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        val result = notificationRepository.unreadCount()
+        if (result is ApiResult.Success) unreadCount = result.value.count
+    }
 
     LaunchedEffect(activeTeam?.teamId) {
         val t = activeTeam ?: return@LaunchedEffect
@@ -65,9 +75,20 @@ fun HomeScreen(
     val nextFixture = fixtures.filter { it.status == "CONFIRMED" }.minByOrNull { it.date }
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
-        Text("Welcome, ${session?.displayName ?: ""}", style = MaterialTheme.typography.headlineSmall)
-        activeTeam?.let {
-            Text(it.teamName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+            Column {
+                Text("Welcome, ${session?.displayName ?: ""}", style = MaterialTheme.typography.headlineSmall)
+                activeTeam?.let {
+                    Text(it.teamName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+            BadgedBox(badge = {
+                if (unreadCount > 0) Badge { Text(if (unreadCount > 99) "99+" else unreadCount.toString()) }
+            }) {
+                IconButton(onClick = { navigator.push(Route.Notifications) }) {
+                    Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
+                }
+            }
         }
 
         if (session?.emailVerified == false) {

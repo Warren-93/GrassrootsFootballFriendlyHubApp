@@ -17,8 +17,10 @@ import com.gffh.mobile.feature.discover.OpponentProfileScreen
 import com.gffh.mobile.feature.discover.ResultsListScreen
 import com.gffh.mobile.feature.discover.SearchEntryScreen
 import com.gffh.mobile.feature.onboarding.*
+import com.gffh.mobile.feature.home.NotificationsScreen
 import com.gffh.mobile.feature.placeholder.HomeScreen
 import com.gffh.mobile.feature.placeholder.PlaceholderScreen
+import com.gffh.mobile.feature.profile.NotificationPreferencesScreen
 import com.gffh.mobile.feature.profile.ClubProfileScreen
 import com.gffh.mobile.feature.profile.EditClubScreen
 import com.gffh.mobile.feature.profile.EditTeamScreen
@@ -61,6 +63,8 @@ fun App() {
     val memberRepository = remember { MemberRepository(apiClient) }
     val verificationRepository = remember { VerificationRepository(apiClient) }
     val privacyRepository = remember { PrivacyRepository(apiClient) }
+    val notificationRepository = remember { NotificationRepository(apiClient) }
+    val messageRepository = remember { MessageRepository(apiClient) }
     val navigator = remember { Navigator(Route.Splash) }
 
     GffhTheme {
@@ -96,10 +100,13 @@ fun App() {
             is Route.Verification -> VerificationScreen(verificationRepository, teamRepository, navigator, route.teamId)
             is Route.Privacy -> PrivacyScreen(privacyRepository, authRepository, currentTeamStore, navigator)
             is Route.Help -> HelpScreen(navigator)
+            is Route.NotificationPreferences -> NotificationPreferencesScreen(notificationRepository, navigator)
 
             is Route.Home -> HomeScreen(
-                authRepository, teamRepository, availabilityRepository, fixtureRepository, currentTeamStore, navigator
+                authRepository, teamRepository, availabilityRepository, fixtureRepository,
+                notificationRepository, currentTeamStore, navigator
             )
+            is Route.Notifications -> NotificationsScreen(notificationRepository, navigator)
             is Route.Calendar -> CalendarScreen(availabilityRepository, currentTeamStore, navigator)
             is Route.DayDetail -> DayDetailScreen(availabilityRepository, currentTeamStore, navigator, route.date)
             is Route.EditAvailabilitySlot -> EditAvailabilitySlotScreen(
@@ -123,7 +130,9 @@ fun App() {
             is Route.SuggestChanges -> SuggestChangesScreen(friendlyRequestRepository, navigator, route.requestId)
             is Route.DeclineRequest -> DeclineScreen(friendlyRequestRepository, navigator, route.requestId)
             is Route.Fixtures -> FixturesScreen(friendlyRequestRepository, fixtureRepository, currentTeamStore, navigator)
-            is Route.FixtureDetail -> FixtureDetailScreen(fixtureRepository, currentTeamStore, navigator, route.fixtureId)
+            is Route.FixtureDetail -> FixtureDetailScreen(
+                fixtureRepository, messageRepository, currentTeamStore, navigator, route.fixtureId
+            )
 
             is Route.Placeholder -> PlaceholderScreen(route.label, navigator)
         }

@@ -34,9 +34,11 @@ sealed class Route {
     data class Verification(val teamId: String) : Route()                  // SCR-PR-07
     data object Privacy : Route()                                          // SCR-PR-10
     data object Help : Route()                                             // SCR-PR-12
+    data object NotificationPreferences : Route()                          // SCR-PR-09
 
     // Publish (SCR-AV-*, SCR-HM-01)
     data object Home : Route()                                            // SCR-HM-01
+    data object Notifications : Route()                                    // SCR-HM-02
     data object Calendar : Route()                                         // SCR-AV-01
     data class DayDetail(val date: String) : Route()                       // SCR-AV-02
     data class EditAvailabilitySlot(val slotId: String? = null, val date: String? = null) : Route() // SCR-AV-03

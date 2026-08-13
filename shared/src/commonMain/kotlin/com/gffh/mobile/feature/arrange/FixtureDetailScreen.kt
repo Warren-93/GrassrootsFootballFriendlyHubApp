@@ -1,18 +1,24 @@
 package com.gffh.mobile.feature.arrange
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.FixtureView
+import com.gffh.mobile.model.MessageView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.FixtureRepository
+import com.gffh.mobile.repository.MessageRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 
@@ -23,13 +29,14 @@ import kotlinx.coroutines.launch
  * server-side disclosure rule that makes this screen safe to build plainly.
  *
  * Cancel is omitted here - it belongs on the underlying friendly request
- * (SCR-IN-04's "cancel" action, already built), and messaging (SCR-FX-05)
- * isn't part of this pass.
+ * (SCR-IN-04's "cancel" action, already built). SCR-FX-05 fixture messages
+ * are the thread at the bottom, visible only to the two teams involved.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FixtureDetailScreen(
     fixtureRepository: FixtureRepository,
+    messageRepository: MessageRepository,
     currentTeamStore: CurrentTeamStore,
     navigator: Navigator,
     fixtureId: String
@@ -38,7 +45,20 @@ fun FixtureDetailScreen(
     var fixture by remember { mutableStateOf<FixtureView?>(null) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var messages by remember { mutableStateOf<List<MessageView>>(emptyList()) }
+    var newMessage by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    var messageError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    fun loadMessages() {
+        scope.launch {
+            when (val result = messageRepository.list(fixtureId)) {
+                is ApiResult.Success -> messages = result.value
+                is ApiResult.Failure -> {}
+            }
+        }
+    }
 
     LaunchedEffect(fixtureId) {
         scope.launch {
@@ -47,6 +67,23 @@ fun FixtureDetailScreen(
                 is ApiResult.Failure -> errorMessage = result.message
             }
             loading = false
+        }
+        loadMessages()
+    }
+
+    fun sendMessage() {
+        if (newMessage.isBlank()) return
+        sending = true
+        messageError = null
+        scope.launch {
+            when (val result = messageRepository.send(fixtureId, newMessage.trim())) {
+                is ApiResult.Success -> {
+                    newMessage = ""
+                    loadMessages()
+                }
+                is ApiResult.Failure -> messageError = result.message
+            }
+            sending = false
         }
     }
 
@@ -68,7 +105,7 @@ fun FixtureDetailScreen(
             return
         }
 
-        Column(Modifier.padding(24.dp)) {
+        Column(Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
             Text("${f.homeTeam.name} vs ${f.awayTeam.name}", style = MaterialTheme.typography.headlineSmall)
             Text("${f.date}, kick-off ${f.startTime}", style = MaterialTheme.typography.bodyMedium)
             Text(f.status, style = MaterialTheme.typography.bodySmall)
@@ -91,6 +128,39 @@ fun FixtureDetailScreen(
                 Text("Cost share: ${f.costShare}", style = MaterialTheme.typography.bodySmall)
                 Text("Referee: ${f.refereeArrangement}", style = MaterialTheme.typography.bodySmall)
                 f.venueId?.let { Text("Venue: $it", style = MaterialTheme.typography.bodySmall) }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Text("Messages", style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(4.dp))
+            if (messages.isEmpty()) {
+                Text("No messages yet.", style = MaterialTheme.typography.bodySmall)
+            } else {
+                messages.forEach { m ->
+                    val senderName = if (m.senderTeamId == f.homeTeam.id) f.homeTeam.name else f.awayTeam.name
+                    Card(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                        Column(Modifier.padding(10.dp)) {
+                            Text("$senderName · ${m.createdAt.replace("T", " ").take(16)}", style = MaterialTheme.typography.labelSmall)
+                            Text(m.body, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+            messageError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            if (activeTeam?.teamId == f.homeTeam.id || activeTeam?.teamId == f.awayTeam.id) {
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = newMessage,
+                        onValueChange = { newMessage = it },
+                        placeholder = { Text("Message the other team…") },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Button(onClick = { sendMessage() }, enabled = !sending && newMessage.isNotBlank()) { Text("Send") }
+                }
             }
 
             activeTeam?.let { ours ->
