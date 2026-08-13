@@ -20,3 +20,17 @@ data class MemberView(
     val scope: String,
     val joinedAt: String
 )
+
+@Serializable
+data class JoinCodeView(val code: String)
+
+@Serializable
+data class RedeemJoinCodeRequest(val code: String)
+
+@Serializable
+data class JoinResultView(
+    val teamId: String,
+    val teamName: String,
+    val clubId: String,
+    val membership: MemberView
+)

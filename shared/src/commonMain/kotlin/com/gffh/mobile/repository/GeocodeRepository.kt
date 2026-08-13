@@ -40,6 +40,29 @@ class GeocodeRepository {
             null
         }
     }
+
+    /**
+     * Full-postcode precision, for real location entry (create club/team,
+     * add venue) - distinct from geocodeOutcode's deliberately coarser
+     * outward-code-only resolution used for the privacy-preserving map.
+     */
+    suspend fun geocodePostcode(postcode: String): GeoPoint? {
+        val trimmed = postcode.trim()
+        if (trimmed.isEmpty()) return null
+        val key = "full:${trimmed.uppercase()}"
+        cache[key]?.let { return it }
+        if (cache.containsKey(key)) return null
+
+        return try {
+            val response: OutcodeResponse = client.get("https://api.postcodes.io/postcodes/$trimmed").body()
+            val point = response.result?.let { GeoPoint(it.latitude, it.longitude) }
+            cache[key] = point
+            point
+        } catch (e: Exception) {
+            cache[key] = null
+            null
+        }
+    }
 }
 
 data class GeoPoint(val latitude: Double, val longitude: Double)

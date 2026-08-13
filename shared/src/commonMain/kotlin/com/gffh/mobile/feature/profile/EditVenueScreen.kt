@@ -2,36 +2,47 @@ package com.gffh.mobile.feature.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.CreateVenueRequest
 import com.gffh.mobile.model.PitchSurface
 import com.gffh.mobile.model.UpdateVenueRequest
 import com.gffh.mobile.navigation.Navigator
+import com.gffh.mobile.repository.GeoPoint
+import com.gffh.mobile.repository.GeocodeRepository
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
 
 /**
  * SCR-PR-06 Add / edit venue, as its own reachable screen (not just inline
  * during onboarding) - opened from the Venues list for both "new" (venueId
  * null) and editing an existing one.
+ *
+ * Editing seeds `coordinates` from the venue's existing lat/lon so leaving
+ * the postcode field untouched keeps the current location rather than
+ * forcing a re-lookup for an edit that has nothing to do with location.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun EditVenueScreen(venueRepository: VenueRepository, navigator: Navigator, venueId: String?, clubId: String) {
+fun EditVenueScreen(
+    venueRepository: VenueRepository,
+    geocodeRepository: GeocodeRepository,
+    navigator: Navigator,
+    venueId: String?,
+    clubId: String
+) {
     val isNew = venueId == null
     var loading by remember { mutableStateOf(!isNew) }
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
-    var longitude by remember { mutableStateOf("") }
-    var latitude by remember { mutableStateOf("") }
+    var postcode by remember { mutableStateOf("") }
+    var coordinates by remember { mutableStateOf<GeoPoint?>(null) }
     var surface by remember { mutableStateOf<PitchSurface?>(null) }
     var accessNotes by remember { mutableStateOf("") }
     var submitting by remember { mutableStateOf(false) }
@@ -47,8 +58,7 @@ fun EditVenueScreen(venueRepository: VenueRepository, navigator: Navigator, venu
                 if (venue != null) {
                     name = venue.name
                     address = venue.address
-                    longitude = venue.longitude.toString()
-                    latitude = venue.latitude.toString()
+                    coordinates = GeoPoint(venue.latitude, venue.longitude)
                     surface = venue.pitchSurface?.let { s -> PitchSurface.entries.find { it.name == s } }
                     accessNotes = venue.accessNotes ?: ""
                 } else {
@@ -60,10 +70,7 @@ fun EditVenueScreen(venueRepository: VenueRepository, navigator: Navigator, venu
         loading = false
     }
 
-    val lon = longitude.toDoubleOrNull()
-    val lat = latitude.toDoubleOrNull()
-    val formValid = name.trim().length in 3..80 && address.isNotBlank() &&
-        lon != null && lon in -180.0..180.0 && lat != null && lat in -90.0..90.0
+    val formValid = name.trim().length in 3..80 && address.isNotBlank() && coordinates != null
 
     if (loading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -78,15 +85,17 @@ fun EditVenueScreen(venueRepository: VenueRepository, navigator: Navigator, venu
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
-        Row {
-            OutlinedTextField(
-                value = latitude, onValueChange = { latitude = it }, label = { Text("Latitude") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(12.dp))
-            OutlinedTextField(
-                value = longitude, onValueChange = { longitude = it }, label = { Text("Longitude") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f)
+        PostcodeLocationField(
+            geocodeRepository = geocodeRepository,
+            postcode = postcode, onPostcodeChange = { postcode = it },
+            coordinates = coordinates, onCoordinatesChange = { coordinates = it }
+        )
+        if (!isNew && postcode.isBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Keeping the existing location. Enter a postcode above to change it.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -121,7 +130,8 @@ fun EditVenueScreen(venueRepository: VenueRepository, navigator: Navigator, venu
                         venueRepository.create(
                             CreateVenueRequest(
                                 clubId = clubId, name = name.trim(), address = address.trim(),
-                                longitude = lon!!, latitude = lat!!, pitchSurface = surface?.name,
+                                longitude = coordinates!!.longitude, latitude = coordinates!!.latitude,
+                                pitchSurface = surface?.name,
                                 accessNotes = accessNotes.ifBlank { null }
                             )
                         )
@@ -129,7 +139,8 @@ fun EditVenueScreen(venueRepository: VenueRepository, navigator: Navigator, venu
                         venueRepository.update(
                             venueId!!,
                             UpdateVenueRequest(
-                                name = name.trim(), address = address.trim(), longitude = lon, latitude = lat,
+                                name = name.trim(), address = address.trim(),
+                                longitude = coordinates?.longitude, latitude = coordinates?.latitude,
                                 pitchSurface = surface?.name, accessNotes = accessNotes.ifBlank { null }
                             )
                         )

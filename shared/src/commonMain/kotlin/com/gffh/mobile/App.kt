@@ -80,10 +80,10 @@ fun App() {
             is Route.ForgotPassword -> ForgotPasswordScreen(authRepository, navigator, route.prefilledEmail)
             is Route.EmailVerification -> EmailVerificationScreen(authRepository, navigator)
 
-            is Route.RoleSelection -> RoleSelectionScreen(navigator)
-            is Route.CreateClub -> CreateClubScreen(clubRepository, authRepository, navigator)
-            is Route.CreateTeam -> CreateTeamScreen(teamRepository, navigator, route.clubId)
-            is Route.AddFirstVenue -> AddFirstVenueScreen(venueRepository, navigator, route.clubId, route.teamId)
+            is Route.RoleSelection -> RoleSelectionScreen(memberRepository, currentTeamStore, navigator)
+            is Route.CreateClub -> CreateClubScreen(clubRepository, geocodeRepository, authRepository, navigator)
+            is Route.CreateTeam -> CreateTeamScreen(teamRepository, geocodeRepository, navigator, route.clubId)
+            is Route.AddFirstVenue -> AddFirstVenueScreen(venueRepository, geocodeRepository, navigator, route.clubId, route.teamId)
             is Route.AddFirstAvailability -> AddFirstAvailabilityScreen(
                 availabilityRepository, venueRepository, navigator, route.teamId, route.clubId
             )
@@ -95,7 +95,7 @@ fun App() {
                 reportRepository, currentTeamStore, navigator, route.teamId, route.teamName, route.fixtureId
             )
             is Route.VenuesList -> VenuesListScreen(venueRepository, navigator, route.clubId)
-            is Route.EditVenue -> EditVenueScreen(venueRepository, navigator, route.venueId, route.clubId)
+            is Route.EditVenue -> EditVenueScreen(venueRepository, geocodeRepository, navigator, route.venueId, route.clubId)
             is Route.ClubProfile -> ClubProfileScreen(
                 clubRepository, teamRepository, currentTeamStore, navigator, route.clubId
             )

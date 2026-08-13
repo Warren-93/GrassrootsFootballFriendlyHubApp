@@ -2,12 +2,10 @@ package com.gffh.mobile.feature.onboarding
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.CreateVenueRequest
@@ -15,22 +13,30 @@ import com.gffh.mobile.model.PitchSurface
 import com.gffh.mobile.model.VenueFacility
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.repository.GeoPoint
+import com.gffh.mobile.repository.GeocodeRepository
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
 
 /**
  * SCR-ON-04 Add first venue. Purpose: capture a home venue so that home
- * fixtures can be proposed. No map/geocoding integration (see
- * gffh-mobile/README.md) - latitude/longitude are entered directly rather
- * than a draggable pin.
+ * fixtures can be proposed. Longitude/latitude are resolved from a postcode
+ * via postcodes.io rather than a draggable pin - see PostcodeLocationField.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AddFirstVenueScreen(venueRepository: VenueRepository, navigator: Navigator, clubId: String, teamId: String) {
+fun AddFirstVenueScreen(
+    venueRepository: VenueRepository,
+    geocodeRepository: GeocodeRepository,
+    navigator: Navigator,
+    clubId: String,
+    teamId: String
+) {
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
-    var longitude by remember { mutableStateOf("") }
-    var latitude by remember { mutableStateOf("") }
+    var postcode by remember { mutableStateOf("") }
+    var coordinates by remember { mutableStateOf<GeoPoint?>(null) }
     var surface by remember { mutableStateOf<PitchSurface?>(null) }
     var facilities by remember { mutableStateOf(setOf<VenueFacility>()) }
     var accessNotes by remember { mutableStateOf("") }
@@ -38,10 +44,7 @@ fun AddFirstVenueScreen(venueRepository: VenueRepository, navigator: Navigator, 
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    val lon = longitude.toDoubleOrNull()
-    val lat = latitude.toDoubleOrNull()
-    val formValid = name.trim().length in 3..80 && address.isNotBlank() &&
-        lon != null && lon in -180.0..180.0 && lat != null && lat in -90.0..90.0
+    val formValid = name.trim().length in 3..80 && address.isNotBlank() && coordinates != null
 
     fun proceed() = navigator.push(Route.AddFirstAvailability(teamId, clubId))
 
@@ -61,21 +64,11 @@ fun AddFirstVenueScreen(venueRepository: VenueRepository, navigator: Navigator, 
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(12.dp))
-        Row {
-            OutlinedTextField(
-                value = latitude, onValueChange = { latitude = it },
-                label = { Text("Latitude") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(12.dp))
-            OutlinedTextField(
-                value = longitude, onValueChange = { longitude = it },
-                label = { Text("Longitude") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
-            )
-        }
+        PostcodeLocationField(
+            geocodeRepository = geocodeRepository,
+            postcode = postcode, onPostcodeChange = { postcode = it },
+            coordinates = coordinates, onCoordinatesChange = { coordinates = it }
+        )
 
         Spacer(Modifier.height(16.dp))
         Text("Pitch surface", style = MaterialTheme.typography.labelLarge)
@@ -121,7 +114,7 @@ fun AddFirstVenueScreen(venueRepository: VenueRepository, navigator: Navigator, 
                     val result = venueRepository.create(
                         CreateVenueRequest(
                             clubId = clubId, name = name.trim(), address = address.trim(),
-                            longitude = lon!!, latitude = lat!!,
+                            longitude = coordinates!!.longitude, latitude = coordinates!!.latitude,
                             pitchSurface = surface?.name, facilities = facilities.map { it.name },
                             accessNotes = accessNotes.ifBlank { null }
                         )
@@ -141,6 +134,9 @@ fun AddFirstVenueScreen(venueRepository: VenueRepository, navigator: Navigator, 
         }
         TextButton(onClick = { proceed() }, modifier = Modifier.fillMaxWidth()) {
             Text("Skip")
+        }
+        TextButton(onClick = { navigator.pop() }, modifier = Modifier.fillMaxWidth()) {
+            Text("Back")
         }
         Text(
             "Home fixtures can't be proposed until a venue exists.",

@@ -15,33 +15,35 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
 import com.gffh.mobile.repository.ClubRepository
+import com.gffh.mobile.repository.GeoPoint
+import com.gffh.mobile.repository.GeocodeRepository
+import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
 
 /**
  * SCR-ON-02 Create club. Purpose: capture club identity so teams can be
  * nested beneath it.
  *
- * No geocoding service is configured (see gffh-mobile/README.md), so
- * latitude/longitude are entered directly rather than resolved from the
- * postcode on blur, as the spec assumes.
+ * Latitude/longitude are resolved from the postcode via postcodes.io rather
+ * than entered directly - see PostcodeLocationField.
  */
 @Composable
-fun CreateClubScreen(clubRepository: ClubRepository, authRepository: AuthRepository, navigator: Navigator) {
+fun CreateClubScreen(
+    clubRepository: ClubRepository,
+    geocodeRepository: GeocodeRepository,
+    authRepository: AuthRepository,
+    navigator: Navigator
+) {
     var name by remember { mutableStateOf("") }
     var postcode by remember { mutableStateOf("") }
-    var longitude by remember { mutableStateOf("") }
-    var latitude by remember { mutableStateOf("") }
+    var coordinates by remember { mutableStateOf<GeoPoint?>(null) }
     var website by remember { mutableStateOf("") }
     var contactEmail by remember { mutableStateOf(authRepository.session.value?.email ?: "") }
     var submitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    val lonValue = longitude.toDoubleOrNull()
-    val latValue = latitude.toDoubleOrNull()
-    val formValid = name.trim().length in 3..80 && postcode.isNotBlank() &&
-        lonValue != null && lonValue in -180.0..180.0 &&
-        latValue != null && latValue in -90.0..90.0
+    val formValid = name.trim().length in 3..80 && postcode.isNotBlank() && coordinates != null
 
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
         Text("Create your club", style = MaterialTheme.typography.headlineSmall)
@@ -54,27 +56,12 @@ fun CreateClubScreen(clubRepository: ClubRepository, authRepository: AuthReposit
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = postcode, onValueChange = { postcode = it },
-            label = { Text("Home area postcode") },
-            modifier = Modifier.fillMaxWidth()
+        PostcodeLocationField(
+            geocodeRepository = geocodeRepository,
+            postcode = postcode, onPostcodeChange = { postcode = it },
+            coordinates = coordinates, onCoordinatesChange = { coordinates = it },
+            label = "Home area postcode"
         )
-        Spacer(Modifier.height(12.dp))
-        Row {
-            OutlinedTextField(
-                value = latitude, onValueChange = { latitude = it },
-                label = { Text("Latitude") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(12.dp))
-            OutlinedTextField(
-                value = longitude, onValueChange = { longitude = it },
-                label = { Text("Longitude") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
-            )
-        }
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = website, onValueChange = { website = it },
@@ -104,7 +91,7 @@ fun CreateClubScreen(clubRepository: ClubRepository, authRepository: AuthReposit
                     val result = clubRepository.create(
                         CreateClubRequest(
                             name = name.trim(), postcode = postcode.trim(),
-                            longitude = lonValue!!, latitude = latValue!!,
+                            longitude = coordinates!!.longitude, latitude = coordinates!!.latitude,
                             website = website.ifBlank { null }, contactEmail = contactEmail.ifBlank { null }
                         )
                     )

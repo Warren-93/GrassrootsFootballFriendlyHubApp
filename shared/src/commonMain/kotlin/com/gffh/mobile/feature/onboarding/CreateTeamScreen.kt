@@ -13,7 +13,10 @@ import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.*
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.repository.GeoPoint
+import com.gffh.mobile.repository.GeocodeRepository
 import com.gffh.mobile.repository.TeamRepository
+import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
 
 private fun gendersFor(ageGroup: AgeGroup): List<Gender> =
@@ -41,9 +44,17 @@ private fun formatLabel(f: Format) = when (f) {
  * (an interrupted session restarts the form rather than resuming mid-step),
  * no live "teams in range" count on step 3 (needs a preview-count endpoint
  * that doesn't exist yet), and no badge image picker (no upload backend).
+ *
+ * Step 0 has no wizard step behind it, so its Back button pops the screen
+ * instead of decrementing step - otherwise it would be a dead end.
  */
 @Composable
-fun CreateTeamScreen(teamRepository: TeamRepository, navigator: Navigator, clubId: String?) {
+fun CreateTeamScreen(
+    teamRepository: TeamRepository,
+    geocodeRepository: GeocodeRepository,
+    navigator: Navigator,
+    clubId: String?
+) {
     var step by remember { mutableStateOf(0) }
 
     var teamName by remember { mutableStateOf("") }
@@ -56,8 +67,7 @@ fun CreateTeamScreen(teamRepository: TeamRepository, navigator: Navigator, clubI
     var league by remember { mutableStateOf("") }
 
     var postcode by remember { mutableStateOf("") }
-    var longitude by remember { mutableStateOf("") }
-    var latitude by remember { mutableStateOf("") }
+    var coordinates by remember { mutableStateOf<GeoPoint?>(null) }
     var travelRadius by remember { mutableStateOf(15) }
     var homeAway by remember { mutableStateOf(HomeAwayPreference.EITHER) }
 
@@ -70,10 +80,7 @@ fun CreateTeamScreen(teamRepository: TeamRepository, navigator: Navigator, clubI
     val scope = rememberCoroutineScope()
 
     val step1Valid = teamName.trim().length in 3..80
-    val step3LonLat = longitude.toDoubleOrNull() to latitude.toDoubleOrNull()
-    val step3Valid = postcode.isNotBlank() &&
-        step3LonLat.first != null && step3LonLat.first!! in -180.0..180.0 &&
-        step3LonLat.second != null && step3LonLat.second!! in -90.0..90.0
+    val step3Valid = postcode.isNotBlank() && coordinates != null
     val step4Valid = managerName.trim().length in 2..60
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
@@ -132,27 +139,11 @@ fun CreateTeamScreen(teamRepository: TeamRepository, navigator: Navigator, clubI
                 2 -> {
                     Text("Location and travel", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = postcode, onValueChange = { postcode = it },
-                        label = { Text("Postcode") },
-                        modifier = Modifier.fillMaxWidth()
+                    PostcodeLocationField(
+                        geocodeRepository = geocodeRepository,
+                        postcode = postcode, onPostcodeChange = { postcode = it },
+                        coordinates = coordinates, onCoordinatesChange = { coordinates = it }
                     )
-                    Spacer(Modifier.height(12.dp))
-                    Row {
-                        OutlinedTextField(
-                            value = latitude, onValueChange = { latitude = it },
-                            label = { Text("Latitude") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        OutlinedTextField(
-                            value = longitude, onValueChange = { longitude = it },
-                            label = { Text("Longitude") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
                     Spacer(Modifier.height(16.dp))
                     Text("Travel radius: $travelRadius miles", style = MaterialTheme.typography.labelLarge)
                     Slider(
@@ -201,10 +192,11 @@ fun CreateTeamScreen(teamRepository: TeamRepository, navigator: Navigator, clubI
 
         Spacer(Modifier.height(16.dp))
         Row {
-            if (step > 0) {
-                OutlinedButton(onClick = { step -= 1 }, modifier = Modifier.weight(1f)) { Text("Back") }
-                Spacer(Modifier.width(12.dp))
-            }
+            OutlinedButton(
+                onClick = { if (step > 0) step -= 1 else navigator.pop() },
+                modifier = Modifier.weight(1f)
+            ) { Text("Back") }
+            Spacer(Modifier.width(12.dp))
             val currentStepValid = when (step) { 0 -> step1Valid; 2 -> step3Valid; 3 -> step4Valid; else -> true }
             if (step < 3) {
                 Button(onClick = { step += 1 }, enabled = currentStepValid, modifier = Modifier.weight(1f)) {
@@ -222,7 +214,7 @@ fun CreateTeamScreen(teamRepository: TeamRepository, navigator: Navigator, clubI
                                     name = teamName.trim(), ageGroup = ageGroup.name, gender = gender.name,
                                     format = format.name, abilityLevel = ability.name,
                                     league = league.ifBlank { null }, postcode = postcode.trim(),
-                                    longitude = step3LonLat.first!!, latitude = step3LonLat.second!!,
+                                    longitude = coordinates!!.longitude, latitude = coordinates!!.latitude,
                                     travelRadiusMiles = travelRadius, homeAwayPreference = homeAway.name,
                                     managerName = managerName.trim(), contactPhone = contactPhone.ifBlank { null },
                                     description = description.ifBlank { null }
