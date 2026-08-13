@@ -44,6 +44,7 @@ sealed class Route {
     data class EditAvailabilitySlot(val slotId: String? = null, val date: String? = null) : Route() // SCR-AV-03
 
     // Discover (SCR-FF-*)
+    data object SuggestedMatches : Route()                                  // SCR-HM-03
     data object SearchEntry : Route()                                       // SCR-FF-01
     data object Filters : Route()                                           // SCR-FF-02
     data object Results : Route()                                           // SCR-FF-03 (also covers SCR-FF-07's empty state)

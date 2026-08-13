@@ -12,6 +12,7 @@ import com.gffh.mobile.feature.availability.DayDetailScreen
 import com.gffh.mobile.feature.availability.EditAvailabilitySlotScreen
 import com.gffh.mobile.feature.arrange.*
 import com.gffh.mobile.feature.discover.FiltersScreen
+import com.gffh.mobile.feature.discover.SuggestedMatchesScreen
 import com.gffh.mobile.feature.discover.MatchExplanationScreen
 import com.gffh.mobile.feature.discover.OpponentProfileScreen
 import com.gffh.mobile.feature.discover.ResultsListScreen
@@ -113,6 +114,7 @@ fun App() {
                 availabilityRepository, venueRepository, currentTeamStore, navigator, route.slotId, route.date
             )
 
+            is Route.SuggestedMatches -> SuggestedMatchesScreen(matchRepository, currentTeamStore, resultsCache, navigator)
             is Route.SearchEntry -> SearchEntryScreen(
                 matchRepository, teamRepository, availabilityRepository, currentTeamStore, filterState, resultsCache, navigator
             )

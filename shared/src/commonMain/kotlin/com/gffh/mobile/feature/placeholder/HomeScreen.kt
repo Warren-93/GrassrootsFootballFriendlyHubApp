@@ -27,11 +27,10 @@ import kotlinx.datetime.*
  * SCR-HM-01 Dashboard. Purpose: answer "what needs my attention?" within two
  * seconds of opening the app.
  *
- * The team switcher and suggested-opponents carousel are the two pieces still
- * not real: the switcher needs a "list every team I manage" endpoint (see
- * [CurrentTeamStore]'s doc comment), and the carousel needs a standing
- * matches/search call the user hasn't triggered yet - both card through to
- * the real screens (Fixtures, Find a friendly) instead of showing fake data.
+ * The team switcher is the one piece still not real: it needs a "list every
+ * team I manage" endpoint (see [CurrentTeamStore]'s doc comment). Suggested
+ * matches (SCR-HM-03) runs a real zero-filter search on demand rather than
+ * showing a standing carousel.
  */
 @Composable
 fun HomeScreen(
@@ -142,6 +141,19 @@ fun HomeScreen(
                 }
                 Spacer(Modifier.height(12.dp))
             }
+
+            Card(onClick = { navigator.push(Route.SuggestedMatches) }, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.padding(16.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Suggested matches", style = MaterialTheme.typography.titleSmall)
+                    Text("See all", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
 
             Card(onClick = { navigator.push(Route.SearchEntry) }, modifier = Modifier.fillMaxWidth()) {
                 Row(

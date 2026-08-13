@@ -26,6 +26,11 @@ class Navigator(start: Route) {
         return true
     }
 
+    /** Swaps the current top of the stack for [route] - used when a screen redirects on load (e.g. a search-then-results hop) so back doesn't return to the intermediate screen. */
+    fun replace(route: Route) {
+        backStack.value = backStack.value.dropLast(1) + route
+    }
+
     /** Replaces the whole stack - used for post-login/sign-out resets where back should not return to auth screens. */
     fun resetTo(route: Route) {
         backStack.value = listOf(route)
