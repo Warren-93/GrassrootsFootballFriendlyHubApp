@@ -3,6 +3,9 @@ package com.gffh.mobile.model
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class CancelFixtureRequest(val reason: String? = null)
+
+@Serializable
 data class FixtureTeamView(
     val id: String,
     val name: String,

@@ -28,9 +28,10 @@ import kotlinx.coroutines.launch
  * because a fixture only exists once its request reached CONFIRMED - the
  * server-side disclosure rule that makes this screen safe to build plainly.
  *
- * Cancel is omitted here - it belongs on the underlying friendly request
- * (SCR-IN-04's "cancel" action, already built). SCR-FX-05 fixture messages
- * are the thread at the bottom, visible only to the two teams involved.
+ * SCR-FX-06 cancel is a dedicated button here (with a confirm dialog and
+ * optional reason) rather than only reachable via the underlying friendly
+ * request's generic cancel action. SCR-FX-05 fixture messages are the thread
+ * at the bottom, visible only to the two teams involved.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +50,10 @@ fun FixtureDetailScreen(
     var newMessage by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     var messageError by remember { mutableStateOf<String?>(null) }
+    var confirmCancel by remember { mutableStateOf(false) }
+    var cancelReason by remember { mutableStateOf("") }
+    var cancelling by remember { mutableStateOf(false) }
+    var cancelError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     fun loadMessages() {
@@ -69,6 +74,21 @@ fun FixtureDetailScreen(
             loading = false
         }
         loadMessages()
+    }
+
+    fun cancelFixture() {
+        cancelling = true
+        cancelError = null
+        scope.launch {
+            when (val result = fixtureRepository.cancel(fixtureId, cancelReason.trim().ifBlank { null })) {
+                is ApiResult.Success -> {
+                    fixture = result.value
+                    confirmCancel = false
+                }
+                is ApiResult.Failure -> cancelError = result.message
+            }
+            cancelling = false
+        }
     }
 
     fun sendMessage() {
@@ -163,6 +183,21 @@ fun FixtureDetailScreen(
                 }
             }
 
+            cancelError?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
+            val weManage = activeTeam?.teamId == f.homeTeam.id || activeTeam?.teamId == f.awayTeam.id
+            if (weManage && f.status == "CONFIRMED") {
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { confirmCancel = true },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Cancel fixture") }
+            }
+
             activeTeam?.let { ours ->
                 val other = if (ours.teamId == f.homeTeam.id) f.awayTeam else f.homeTeam
                 Spacer(Modifier.height(12.dp))
@@ -172,6 +207,31 @@ fun FixtureDetailScreen(
                 ) { Text("Report or block", color = MaterialTheme.colorScheme.error) }
             }
         }
+    }
+
+    if (confirmCancel) {
+        AlertDialog(
+            onDismissRequest = { confirmCancel = false },
+            title = { Text("Cancel this fixture?") },
+            text = {
+                Column {
+                    Text("The other team will be notified. This can't be undone - you'd need to arrange a new friendly from scratch.")
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = cancelReason,
+                        onValueChange = { cancelReason = it },
+                        label = { Text("Reason (optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { cancelFixture() }, enabled = !cancelling) {
+                    Text(if (cancelling) "Cancelling…" else "Cancel fixture")
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmCancel = false }) { Text("Back") } }
+        )
     }
 }
 
