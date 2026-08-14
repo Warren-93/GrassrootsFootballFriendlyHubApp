@@ -25,7 +25,6 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock as DateTimeClock
 import kotlinx.datetime.*
 
 /**

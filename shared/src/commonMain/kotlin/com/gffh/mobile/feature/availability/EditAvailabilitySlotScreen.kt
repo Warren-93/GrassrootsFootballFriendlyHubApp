@@ -17,7 +17,6 @@ import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.VenueRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock as DateTimeClock
 import kotlinx.datetime.*
 
 /**
@@ -159,4 +158,4 @@ fun EditAvailabilitySlotScreen(
     }
 }
 
-fun todayDate(): LocalDate = DateTimeClock.System.todayIn(TimeZone.currentSystemDefault())
+fun todayDate(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())

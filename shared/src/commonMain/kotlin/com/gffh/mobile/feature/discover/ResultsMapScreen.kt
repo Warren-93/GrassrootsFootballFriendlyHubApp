@@ -27,6 +27,7 @@ import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchResultsCache
 import kotlinx.coroutines.launch
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
 
@@ -72,7 +73,7 @@ fun ResultsMapScreen(
                 loading = false
                 return@launch
             }
-            val cosLat = cos(Math.toRadians(home.latitude))
+            val cosLat = cos(home.latitude * PI / 180.0)
             val kmPerDegreeLon = KM_PER_DEGREE_LAT * cosLat
 
             plotted = results.mapNotNull { match ->

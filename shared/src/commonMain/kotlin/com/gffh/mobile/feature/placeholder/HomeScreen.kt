@@ -20,7 +20,6 @@ import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.NotificationRepository
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
-import kotlinx.datetime.Clock as DateTimeClock
 import kotlinx.datetime.*
 
 /**
@@ -61,7 +60,7 @@ fun HomeScreen(
         val teamResult = teamRepository.get(t.teamId)
         if (teamResult is ApiResult.Success) team = teamResult.value
 
-        val today = DateTimeClock.System.todayIn(TimeZone.currentSystemDefault())
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val horizon = today.plus(56, DateTimeUnit.DAY)
         val slotResult = availabilityRepository.list(t.teamId, today.toString(), horizon.toString())
         if (slotResult is ApiResult.Success) futureSlots = slotResult.value

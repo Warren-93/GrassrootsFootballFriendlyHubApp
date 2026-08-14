@@ -14,7 +14,6 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.VenueRepository
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock as DateTimeClock
 import kotlinx.datetime.*
 
 private fun nextSaturday(today: LocalDate): LocalDate {
@@ -38,7 +37,7 @@ fun AddFirstAvailabilityScreen(
     teamId: String,
     clubId: String
 ) {
-    val today = DateTimeClock.System.todayIn(TimeZone.currentSystemDefault())
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
     var date by remember { mutableStateOf(nextSaturday(today)) }
     var startTime by remember { mutableStateOf(LocalTime(10, 0)) }
     var endTime by remember { mutableStateOf(LocalTime(13, 0)) }
