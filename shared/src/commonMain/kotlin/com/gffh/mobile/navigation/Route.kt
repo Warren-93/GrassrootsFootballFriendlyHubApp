@@ -2,9 +2,10 @@ package com.gffh.mobile.navigation
 
 /**
  * Every screen the app can navigate to, named after its SCR-XX-NN identifier
- * in the Screen Build Specification. Access and Setup slices are fully
- * implemented; everything beyond renders [Route.Placeholder] until its slice
- * is built - see gffh-mobile/README.md for the build order.
+ * in the Screen Build Specification. Every slice through Govern is built -
+ * see gffh-mobile/README.md for what each covers. [Route.Placeholder] is a
+ * fallback for routes that don't correspond to any built screen, not a
+ * standing "not built yet" state.
  */
 sealed class Route {
     // Access (SCR-AU-*)

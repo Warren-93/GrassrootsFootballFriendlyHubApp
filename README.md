@@ -17,14 +17,15 @@ invisible to the client.
 ## Environment this was built in
 
 Windows, no Xcode. The Android target builds and has been verified with
-`:androidApp:assembleDebug`. The iOS targets are written (`iosMain` source
-sets exist and compile against the same `expect`/`actual` contracts as
-Android) but are **not** built here — Kotlin/Native's iOS toolchain needs
-several hundred MB to a GB of additional downloads per target, which this
-machine's disk didn't have room for on top of the Android SDK, Gradle, and
-the backend's own tooling.
+`:androidApp:assembleDebug`. The iOS targets compile from this machine too
+(`./gradlew :shared:compileKotlinIosSimulatorArm64 -Pgffh.enableIos=true` and
+the `iosArm64` equivalent both succeed on plain Windows — Kotlin/Native's
+frontend/klib compilation is host-independent) but the final Xcode-level
+framework link genuinely does need a Mac, so that step - and the actual
+`iosApp` build - is verified by the `iOS Simulator Build` GitHub Actions
+workflow (macOS runner) rather than locally on this machine.
 
-To build the iOS target on a Mac with Xcode:
+To build the full iOS app on a Mac with Xcode:
 
 ```bash
 ./gradlew build -Pgffh.enableIos=true
@@ -75,10 +76,13 @@ shared/src/commonMain/kotlin/com/gffh/mobile/
 └── feature/
     ├── auth/           SCR-AU-01 to 06
     ├── onboarding/     SCR-ON-01 to 06, SCR-PR-01/02
-    ├── availability/   SCR-AV-01 to 03 (SCR-AV-04 bulk add is P2 in the spec - not built)
-    ├── discover/       SCR-FF-01, 02, 03, 05, 06 (SCR-FF-04 map view needs a maps SDK - not built)
-    ├── arrange/         SCR-IN-01 to 06, SCR-FX-01 to 04
-    └── placeholder/    Everything else, until its slice is built
+    ├── availability/   SCR-AV-01 to 04 (bulk add included)
+    ├── discover/       SCR-FF-01 to 06 (map view included, as a relative-position plot rather than a tile-based map SDK)
+    ├── arrange/         SCR-IN-01 to 06, SCR-FX-01 to 06 (fixture messaging now opens the conversations thread - see feature/messages/ - cancellation included)
+    ├── messages/       Team-to-team chat: inbox + thread, available as soon as a team publishes availability
+    ├── home/           SCR-HM-02 notification centre
+    ├── profile/        SCR-PR-03/04/07/10/11/12 - club profile, members, verification, privacy, report/block, help
+    └── placeholder/    The dashboard (SCR-HM-01) and anything not yet built
 ```
 
 The specification's `UI → ViewModel → UseCase → Repository → API` layering
@@ -114,14 +118,14 @@ it:
 |---|---|---|
 | Access | SCR-AU-01 to 06 | **Built.** Register, sign in, forgot password, email verification, session resolve. |
 | Setup | SCR-ON-01 to 06, SCR-PR-01/02 | **Built.** Role selection, create club, 4-step create team, add venue, add availability, onboarding complete, team profile, edit team. |
-| Publish | SCR-AV-01 to 03, SCR-HM-01 | **Built.** Calendar (grid + list parity), day detail, add/edit availability slot. SCR-AV-04 (bulk add) is explicitly P2 in the spec and wasn't built. The dashboard is real for availability/profile-completeness/fixtures; the team switcher is honestly limited (see `CurrentTeamStore`). |
-| Discover | SCR-FF-01, 02, 03, 05, 06 | **Built.** Search entry, filters, results list (with score/reason chips), opponent profile, match explanation. SCR-FF-04 (map view) needs a maps SDK integration and wasn't built. |
-| Arrange | SCR-IN-01 to 06, SCR-FX-01 to 04 | **Built.** Invitation composer/review/sent, request detail (actions rendered strictly from the server's `availableActions`), suggest changes, decline, fixtures list (Pending/Confirmed/Completed), fixture detail. |
-| Communicate | SCR-FX-05/06, SCR-HM-02, SCR-PR-09 | Blocked — needs backend work (see below) |
-| Govern | SCR-PR-07/10/11/12, ADM-01 to 09 | Blocked — needs backend work; ADM-* is a separate web app |
+| Publish | SCR-AV-01 to 04, SCR-HM-01 | **Built.** Calendar (grid + list parity), day detail, add/edit availability slot, bulk add. The dashboard is real for availability/profile-completeness/fixtures/messages; the team switcher is still limited to one active team (see `CurrentTeamStore`) since the "list every team I manage" endpoint doesn't exist yet. |
+| Discover | SCR-FF-01 to 06 | **Built.** Search entry, filters, results list (with score/reason chips), a relative-position map plot, opponent profile, match explanation. |
+| Arrange | SCR-IN-01 to 06, SCR-FX-01 to 06 | **Built.** Invitation composer/review/sent, request detail (actions rendered strictly from the server's `availableActions`), suggest changes, decline, fixtures list, fixture detail, cancellation. |
+| Communicate | SCR-HM-02, messaging | **Built**, and redesigned since the spec: messaging is no longer fixture-scoped (SCR-FX-05) - team-to-team conversations are available as soon as a team publishes availability, from an inbox and a real chat thread, well before any request exists. Notification centre and preferences are built. |
+| Govern | SCR-PR-04/07/10/11/12, ADM-01 to 09 | **Built.** Team members, verification submission, privacy/data export & delete, report/block, help. ADM-* is a separate responsive web app (`gffh-admin`), not part of this mobile client. |
 
-Every route beyond the built slices renders `PlaceholderScreen` so the app is
-navigable end-to-end without crashing, even where a screen isn't built yet.
+Routes not covered by any built slice (the codebase has none right now) would
+render `PlaceholderScreen` so the app stays navigable without crashing.
 
 ### Real gaps found and fixed while building this
 
@@ -142,28 +146,18 @@ device, not from reading the code:
   plain `Row` of chips didn't fit the screen width (e.g. "COMPETITIVE",
   "INDOOR"). Every chip row in the app now uses `FlowRow`.
 
-### Backend gaps for the Communicate and Govern slices
+### Known remaining gaps
 
-These screens have no server-side support yet in `gffh-api` and need backend
-work before their client screens can be built against a real contract:
-
-- **Messaging** (SCR-FX-05) — `GET/POST /api/v1/fixtures/{id}/messages` don't exist.
-- **Fixture cancellation** (SCR-FX-06) — `POST /api/v1/fixtures/{id}/cancel` doesn't
-  exist as its own endpoint; a CONFIRMED request can still be cancelled via
-  the friendly-request `cancel` action, which is what SCR-FX-04/SCR-IN-04
-  expose today.
-- **Team member management** (SCR-PR-04) — `Membership` exists server-side
-  but has no REST surface (list/invite/change-role/remove).
-- **Verification submission** (SCR-PR-07) — evidence upload and a
-  verification-request workflow don't exist; verification is currently
-  flipped directly in the database for testing.
-- **Notifications** (SCR-HM-02, SCR-PR-09) — no notification records, no
-  preferences endpoint, no push integration.
-- **Reporting and blocking** (SCR-PR-11) — `BlockRepository` exists
-  server-side but has no controller; there's no `reports` collection at all.
-- **Privacy/data rights** (SCR-PR-10) — no export or delete endpoints.
-- **Admin dashboard** (ADM-01 to 09) — a separate responsive web app per the
-  specification, not part of this mobile client at all.
+- **No real multi-team switcher.** `CurrentTeamStore` holds only the single
+  most-recently-active team; the backend has no "list every team I manage"
+  endpoint yet for `SCR-HM-01`'s team switcher.
+- **No push notification delivery.** The notification centre and unread
+  count are real, server-backed data; there's no push transport, only
+  poll-on-open.
+- **No email delivery.** The backend logs verification and reset tokens
+  instead of emailing them (no provider configured) - see
+  `VerificationTokenService` on the backend. The client-side flows are real
+  and fully wired; only delivery is stubbed.
 
 ## What was simplified from spec, deliberately
 
@@ -176,10 +170,6 @@ work before their client screens can be built against a real contract:
   screens in Volume 2, so it isn't guessed at here.
   `AuthRepository.confirmPasswordReset` exists for whenever that surface is
   defined.
-- **No real email delivery.** The backend logs verification and reset tokens
-  instead of emailing them (no provider configured) — see
-  `VerificationTokenService` on the backend. The client-side flows are real
-  and fully wired; only delivery is stubbed.
 - **No foreground-resume polling on SCR-AU-06.** True poll-on-foreground
   needs a platform lifecycle hook not wired up in this slice; a "Check now"
   button covers the same need explicitly.
