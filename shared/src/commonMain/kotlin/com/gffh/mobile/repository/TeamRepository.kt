@@ -31,4 +31,10 @@ class TeamRepository(private val api: ApiClient) {
         method = HttpMethod.Get
         url("/api/v1/teams?clubId=$clubId")
     }
+
+    /** Every team the signed-in user manages, directly or via a club-admin role that cascades to it. */
+    suspend fun mine(): ApiResult<List<TeamView>> = api.request {
+        method = HttpMethod.Get
+        url("/api/v1/teams/mine")
+    }
 }

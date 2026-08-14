@@ -94,9 +94,9 @@ Four pieces of state don't belong to any one screen, so they live in
 `session/` instead, each `remember`-ed once in `App.kt` and threaded down:
 
 - **`CurrentTeamStore`** — which team the app is acting as. Set once
-  onboarding completes; every tab-root screen reads it. The spec assumes a
-  "list every team I manage" endpoint for its team switcher (SCR-HM-01); that
-  endpoint doesn't exist yet, so this holds only the one most-recently-active
+  onboarding completes; every tab-root screen reads it. The dashboard
+  reconciles it against `GET /api/v1/teams/mine` and offers a real switcher
+  (a dropdown next to the team name) whenever that returns more than one
   team — see the class's own doc comment.
 - **`SearchFilterState`** — SCR-FF-02's filter set, read by both the search
   entry screen's implicit-filter summary and the results screen's filter bar.
@@ -118,7 +118,7 @@ it:
 |---|---|---|
 | Access | SCR-AU-01 to 06 | **Built.** Register, sign in, forgot password, email verification, session resolve. |
 | Setup | SCR-ON-01 to 06, SCR-PR-01/02 | **Built.** Role selection, create club, 4-step create team, add venue, add availability, onboarding complete, team profile, edit team. |
-| Publish | SCR-AV-01 to 04, SCR-HM-01 | **Built.** Calendar (grid + list parity), day detail, add/edit availability slot, bulk add. The dashboard is real for availability/profile-completeness/fixtures/messages; the team switcher is still limited to one active team (see `CurrentTeamStore`) since the "list every team I manage" endpoint doesn't exist yet. |
+| Publish | SCR-AV-01 to 04, SCR-HM-01 | **Built.** Calendar (grid + list parity), day detail, add/edit availability slot, bulk add. The dashboard is real for availability/profile-completeness/fixtures/messages, with a team switcher dropdown whenever a manager runs more than one team. |
 | Discover | SCR-FF-01 to 06 | **Built.** Search entry, filters, results list (with score/reason chips), a relative-position map plot, opponent profile, match explanation. |
 | Arrange | SCR-IN-01 to 06, SCR-FX-01 to 06 | **Built.** Invitation composer/review/sent, request detail (actions rendered strictly from the server's `availableActions`), suggest changes, decline, fixtures list, fixture detail, cancellation. |
 | Communicate | SCR-HM-02, messaging | **Built**, and redesigned since the spec: messaging is no longer fixture-scoped (SCR-FX-05) - team-to-team conversations are available as soon as a team publishes availability, from an inbox and a real chat thread, well before any request exists. Notification centre and preferences are built. |
@@ -148,9 +148,6 @@ device, not from reading the code:
 
 ### Known remaining gaps
 
-- **No real multi-team switcher.** `CurrentTeamStore` holds only the single
-  most-recently-active team; the backend has no "list every team I manage"
-  endpoint yet for `SCR-HM-01`'s team switcher.
 - **No push notification delivery.** The notification centre and unread
   count are real, server-backed data; there's no push transport, only
   poll-on-open.

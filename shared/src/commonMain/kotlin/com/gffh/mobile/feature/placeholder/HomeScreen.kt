@@ -1,7 +1,9 @@
 package com.gffh.mobile.feature.placeholder
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +21,7 @@ import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.NotificationRepository
 import com.gffh.mobile.repository.TeamRepository
+import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.datetime.*
 
@@ -26,10 +29,8 @@ import kotlinx.datetime.*
  * SCR-HM-01 Dashboard. Purpose: answer "what needs my attention?" within two
  * seconds of opening the app.
  *
- * The team switcher is the one piece still not real: it needs a "list every
- * team I manage" endpoint (see [CurrentTeamStore]'s doc comment). Suggested
- * matches (SCR-HM-03) runs a real zero-filter search on demand rather than
- * showing a standing carousel.
+ * Suggested matches (SCR-HM-03) runs a real zero-filter search on demand
+ * rather than showing a standing carousel.
  */
 @OptIn(kotlin.time.ExperimentalTime::class)
 @Composable
@@ -50,10 +51,18 @@ fun HomeScreen(
     var fixtures by remember { mutableStateOf<List<FixtureView>>(emptyList()) }
     var unreadCount by remember { mutableStateOf(0L) }
     var loaded by remember { mutableStateOf(false) }
+    var myTeams by remember { mutableStateOf<List<TeamView>>(emptyList()) }
+    var teamMenuOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val result = notificationRepository.unreadCount()
         if (result is ApiResult.Success) unreadCount = result.value.count
+    }
+
+    LaunchedEffect(session?.userId) {
+        if (session == null) return@LaunchedEffect
+        val result = teamRepository.mine()
+        if (result is ApiResult.Success) myTeams = result.value
     }
 
     LaunchedEffect(activeTeam?.teamId) {
@@ -77,8 +86,31 @@ fun HomeScreen(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
             Column {
                 Text("Welcome, ${session?.displayName ?: ""}", style = MaterialTheme.typography.headlineSmall)
-                activeTeam?.let {
-                    Text(it.teamName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                activeTeam?.let { active ->
+                    if (myTeams.size > 1) {
+                        Box {
+                            Row(
+                                Modifier.padding(top = 4.dp).clickable { teamMenuOpen = true },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(active.teamName, style = MaterialTheme.typography.bodyMedium)
+                                Icon(Icons.Filled.ArrowDropDown, contentDescription = "Switch team", modifier = Modifier.size(20.dp))
+                            }
+                            DropdownMenu(expanded = teamMenuOpen, onDismissRequest = { teamMenuOpen = false }) {
+                                myTeams.forEach { t ->
+                                    DropdownMenuItem(
+                                        text = { Text(t.name) },
+                                        onClick = {
+                                            teamMenuOpen = false
+                                            currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name))
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Text(active.teamName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                    }
                 }
             }
             BadgedBox(badge = {

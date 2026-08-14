@@ -10,11 +10,10 @@ data class ActiveTeam(val teamId: String, val clubId: String, val teamName: Stri
 /**
  * The team every tab-root screen (Dashboard, Calendar) implicitly operates on.
  *
- * <p>The Screen Build Specification's team switcher (SCR-HM-01) assumes a
- * "list every team the user holds a role on" endpoint that doesn't exist yet
- * on the backend - see gffh-mobile/README.md. Until that lands, this holds
- * only the single most-recently-created-or-opened team, set at the end of
- * onboarding and whenever a team profile is opened.
+ * <p>Set at the end of onboarding and whenever a team profile is opened, and
+ * reconciled against `GET /api/v1/teams/mine` on the dashboard - see
+ * HomeScreen's team-switcher dropdown, shown whenever that call returns more
+ * than one team.
  */
 class CurrentTeamStore(private val settings: Settings) {
 
