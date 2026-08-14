@@ -21,6 +21,12 @@ kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
         }
+
+        // Runs commonTest (Navigator, ApiResult, Validators, ...) on a plain
+        // JVM against Android's real actuals - no emulator/device needed, so
+        // it runs on this Windows dev machine and in the existing Android CI
+        // job with no new infrastructure.
+        withHostTestBuilder {}.configure {}
     }
 
     // FlowRow (feature/arrange, feature/availability, feature/discover,

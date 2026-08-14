@@ -29,8 +29,18 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Run shared module unit tests
+        run: ./gradlew :shared:testAndroidHostTest --console=plain
+
       - name: Assemble debug APK
         run: ./gradlew :androidApp:assembleDebug --console=plain
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-test-results
+          path: shared/build/test-results/testAndroidHostTest/
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
