@@ -158,4 +158,5 @@ fun EditAvailabilitySlotScreen(
     }
 }
 
-fun todayDate(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
+@OptIn(kotlin.time.ExperimentalTime::class)
+fun todayDate(): LocalDate = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())

@@ -31,6 +31,7 @@ import kotlinx.datetime.*
  * matches (SCR-HM-03) runs a real zero-filter search on demand rather than
  * showing a standing carousel.
  */
+@OptIn(kotlin.time.ExperimentalTime::class)
 @Composable
 fun HomeScreen(
     authRepository: AuthRepository,
@@ -60,7 +61,7 @@ fun HomeScreen(
         val teamResult = teamRepository.get(t.teamId)
         if (teamResult is ApiResult.Success) team = teamResult.value
 
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val today = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())
         val horizon = today.plus(56, DateTimeUnit.DAY)
         val slotResult = availabilityRepository.list(t.teamId, today.toString(), horizon.toString())
         if (slotResult is ApiResult.Success) futureSlots = slotResult.value

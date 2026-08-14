@@ -29,6 +29,7 @@ private fun nextSaturday(today: LocalDate): LocalDate {
  * is built in the Discover slice, not here - this shows a plain confirmation
  * instead.
  */
+@OptIn(kotlin.time.ExperimentalTime::class)
 @Composable
 fun AddFirstAvailabilityScreen(
     availabilityRepository: AvailabilityRepository,
@@ -37,7 +38,7 @@ fun AddFirstAvailabilityScreen(
     teamId: String,
     clubId: String
 ) {
-    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val today = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())
     var date by remember { mutableStateOf(nextSaturday(today)) }
     var startTime by remember { mutableStateOf(LocalTime(10, 0)) }
     var endTime by remember { mutableStateOf(LocalTime(13, 0)) }

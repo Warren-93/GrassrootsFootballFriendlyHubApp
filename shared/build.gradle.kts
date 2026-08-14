@@ -73,7 +73,13 @@ kotlin {
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+                // Pinned to match what Compose Multiplatform's material3-uikitsimarm64
+                // already forces transitively on iOS (confirmed via
+                // `./gradlew :shared:dependencyInsight --dependency kotlinx-datetime`) -
+                // leaving this at 0.6.1 let Android and iOS silently resolve to two
+                // different actual Clock types (0.6.1's own interface vs 0.7.1's
+                // typealias to kotlin.time.Clock), which is what broke Clock.System.
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
 
                 implementation("io.ktor:ktor-client-core:2.3.12")
                 implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
