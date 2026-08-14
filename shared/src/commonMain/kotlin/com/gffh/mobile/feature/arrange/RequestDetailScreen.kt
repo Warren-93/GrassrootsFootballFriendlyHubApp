@@ -3,6 +3,7 @@ package com.gffh.mobile.feature.arrange
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,6 +13,7 @@ import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.FriendlyRequestView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
@@ -29,6 +31,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun RequestDetailScreen(
     friendlyRequestRepository: FriendlyRequestRepository,
+    conversationRepository: ConversationRepository,
     currentTeamStore: CurrentTeamStore,
     navigator: Navigator,
     requestId: String
@@ -38,7 +41,22 @@ fun RequestDetailScreen(
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var confirmAction by remember { mutableStateOf<String?>(null) }
+    var opening by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    fun openMessages(r: FriendlyRequestView) {
+        val ours = activeTeam ?: return
+        val otherTeamId = if (ours.teamId == r.senderTeamId) r.recipientTeamId else r.senderTeamId
+        opening = true
+        errorMessage = null
+        scope.launch {
+            when (val result = conversationRepository.start(ours.teamId, otherTeamId)) {
+                is ApiResult.Success -> navigator.push(Route.ConversationThread(result.value.id))
+                is ApiResult.Failure -> errorMessage = result.message
+            }
+            opening = false
+        }
+    }
 
     fun reload() {
         scope.launch {
@@ -148,6 +166,15 @@ fun RequestDetailScreen(
             }
             activeTeam?.let { ours ->
                 val otherTeamId = if (ours.teamId == r.senderTeamId) r.recipientTeamId else r.senderTeamId
+                OutlinedButton(
+                    onClick = { openMessages(r) },
+                    enabled = !opening,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                ) {
+                    Icon(Icons.Filled.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (opening) "Opening…" else "Message the other team")
+                }
                 TextButton(
                     onClick = { navigator.push(Route.ReportBlock(otherTeamId, "this team")) },
                     modifier = Modifier.fillMaxWidth()

@@ -2,23 +2,21 @@ package com.gffh.mobile.feature.arrange
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.FixtureView
-import com.gffh.mobile.model.MessageView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.repository.FixtureRepository
-import com.gffh.mobile.repository.MessageRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 
@@ -30,14 +28,15 @@ import kotlinx.coroutines.launch
  *
  * SCR-FX-06 cancel is a dedicated button here (with a confirm dialog and
  * optional reason) rather than only reachable via the underlying friendly
- * request's generic cancel action. SCR-FX-05 fixture messages are the thread
- * at the bottom, visible only to the two teams involved.
+ * request's generic cancel action. Messaging (SCR-FX-05) now opens the
+ * team-to-team conversation thread rather than embedding a fixture-scoped
+ * chat here - see ConversationThreadScreen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FixtureDetailScreen(
     fixtureRepository: FixtureRepository,
-    messageRepository: MessageRepository,
+    conversationRepository: ConversationRepository,
     currentTeamStore: CurrentTeamStore,
     navigator: Navigator,
     fixtureId: String
@@ -46,24 +45,13 @@ fun FixtureDetailScreen(
     var fixture by remember { mutableStateOf<FixtureView?>(null) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var messages by remember { mutableStateOf<List<MessageView>>(emptyList()) }
-    var newMessage by remember { mutableStateOf("") }
-    var sending by remember { mutableStateOf(false) }
+    var opening by remember { mutableStateOf(false) }
     var messageError by remember { mutableStateOf<String?>(null) }
     var confirmCancel by remember { mutableStateOf(false) }
     var cancelReason by remember { mutableStateOf("") }
     var cancelling by remember { mutableStateOf(false) }
     var cancelError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-
-    fun loadMessages() {
-        scope.launch {
-            when (val result = messageRepository.list(fixtureId)) {
-                is ApiResult.Success -> messages = result.value
-                is ApiResult.Failure -> {}
-            }
-        }
-    }
 
     LaunchedEffect(fixtureId) {
         scope.launch {
@@ -73,7 +61,20 @@ fun FixtureDetailScreen(
             }
             loading = false
         }
-        loadMessages()
+    }
+
+    fun openMessages(f: FixtureView) {
+        val ours = activeTeam ?: return
+        val otherTeamId = if (ours.teamId == f.homeTeam.id) f.awayTeam.id else f.homeTeam.id
+        opening = true
+        messageError = null
+        scope.launch {
+            when (val result = conversationRepository.start(ours.teamId, otherTeamId)) {
+                is ApiResult.Success -> navigator.push(Route.ConversationThread(result.value.id))
+                is ApiResult.Failure -> messageError = result.message
+            }
+            opening = false
+        }
     }
 
     fun cancelFixture() {
@@ -88,22 +89,6 @@ fun FixtureDetailScreen(
                 is ApiResult.Failure -> cancelError = result.message
             }
             cancelling = false
-        }
-    }
-
-    fun sendMessage() {
-        if (newMessage.isBlank()) return
-        sending = true
-        messageError = null
-        scope.launch {
-            when (val result = messageRepository.send(fixtureId, newMessage.trim())) {
-                is ApiResult.Success -> {
-                    newMessage = ""
-                    loadMessages()
-                }
-                is ApiResult.Failure -> messageError = result.message
-            }
-            sending = false
         }
     }
 
@@ -151,35 +136,19 @@ fun FixtureDetailScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-            Text("Messages", style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(4.dp))
-            if (messages.isEmpty()) {
-                Text("No messages yet.", style = MaterialTheme.typography.bodySmall)
-            } else {
-                messages.forEach { m ->
-                    val senderName = if (m.senderTeamId == f.homeTeam.id) f.homeTeam.name else f.awayTeam.name
-                    Card(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-                        Column(Modifier.padding(10.dp)) {
-                            Text("$senderName · ${m.createdAt.replace("T", " ").take(16)}", style = MaterialTheme.typography.labelSmall)
-                            Text(m.body, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-            }
             messageError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
             }
             if (activeTeam?.teamId == f.homeTeam.id || activeTeam?.teamId == f.awayTeam.id) {
-                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = newMessage,
-                        onValueChange = { newMessage = it },
-                        placeholder = { Text("Message the other team…") },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                        modifier = Modifier.weight(1f)
-                    )
+                OutlinedButton(
+                    onClick = { openMessages(f) },
+                    enabled = !opening,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Filled.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = { sendMessage() }, enabled = !sending && newMessage.isNotBlank()) { Text("Send") }
+                    Text(if (opening) "Opening…" else "Message the other team")
                 }
             }
 

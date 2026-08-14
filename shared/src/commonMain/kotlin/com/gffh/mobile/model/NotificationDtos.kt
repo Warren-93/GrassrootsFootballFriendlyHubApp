@@ -11,6 +11,7 @@ data class NotificationView(
     val relatedTeamId: String? = null,
     val relatedRequestId: String? = null,
     val relatedFixtureId: String? = null,
+    val relatedConversationId: String? = null,
     val read: Boolean,
     val createdAt: String
 )

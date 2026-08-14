@@ -181,6 +181,19 @@ fun HomeScreen(
 
             Spacer(Modifier.height(12.dp))
 
+            Card(onClick = { navigator.push(Route.Messages) }, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.padding(16.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Messages", style = MaterialTheme.typography.titleSmall)
+                    Text("Open", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
             Card(onClick = { navigator.push(Route.Calendar) }, modifier = Modifier.fillMaxWidth()) {
                 Row(
                     Modifier.padding(16.dp).fillMaxWidth(),

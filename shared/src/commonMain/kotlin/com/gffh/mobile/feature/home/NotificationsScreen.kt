@@ -44,6 +44,7 @@ fun NotificationsScreen(notificationRepository: NotificationRepository, navigato
         scope.launch {
             if (!n.read) notificationRepository.markRead(n.id)
             when {
+                n.relatedConversationId != null -> navigator.push(Route.ConversationThread(n.relatedConversationId))
                 n.relatedFixtureId != null -> navigator.push(Route.FixtureDetail(n.relatedFixtureId))
                 n.relatedRequestId != null -> navigator.push(Route.RequestDetail(n.relatedRequestId))
                 else -> load()

@@ -3,15 +3,20 @@ package com.gffh.mobile.feature.discover
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.repository.ConversationRepository
+import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchResultsCache
+import kotlinx.coroutines.launch
 
 /**
  * SCR-FF-05 Opponent profile. Purpose: give a manager everything needed to
@@ -21,12 +26,37 @@ import com.gffh.mobile.session.SearchResultsCache
  * `GET /api/v1/teams/{id}` - see the cache's doc comment for why: that
  * endpoint requires managing the team, which a searching manager never does
  * for an opponent. Contact details and exact venue are correctly never
- * shown here, matching the privacy rule.
+ * shown here, matching the privacy rule. Messaging is available here too,
+ * as soon as the other team has published availability - it does not wait
+ * for a friendly request to exist.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OpponentProfileScreen(resultsCache: SearchResultsCache, navigator: Navigator, teamId: String) {
+fun OpponentProfileScreen(
+    conversationRepository: ConversationRepository,
+    currentTeamStore: CurrentTeamStore,
+    resultsCache: SearchResultsCache,
+    navigator: Navigator,
+    teamId: String
+) {
+    val activeTeam by currentTeamStore.active.collectAsState()
     val match = resultsCache.find(teamId)
+    var opening by remember { mutableStateOf(false) }
+    var messageError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    fun openMessages() {
+        val ours = activeTeam ?: return
+        opening = true
+        messageError = null
+        scope.launch {
+            when (val result = conversationRepository.start(ours.teamId, teamId)) {
+                is ApiResult.Success -> navigator.push(Route.ConversationThread(result.value.id))
+                is ApiResult.Failure -> messageError = result.message
+            }
+            opening = false
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -86,10 +116,22 @@ fun OpponentProfileScreen(resultsCache: SearchResultsCache, navigator: Navigator
         }
 
         Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            messageError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp))
+            }
             Button(
                 onClick = { navigator.push(Route.InvitationComposer(match.team.id)) },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Invite to friendly") }
+            OutlinedButton(
+                onClick = { openMessages() },
+                enabled = !opening && activeTeam != null,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            ) {
+                Icon(Icons.Filled.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(if (opening) "Opening…" else "Message this team")
+            }
             TextButton(
                 onClick = { navigator.push(Route.ReportBlock(match.team.id, match.team.name)) },
                 modifier = Modifier.fillMaxWidth()

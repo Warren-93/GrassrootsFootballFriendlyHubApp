@@ -39,6 +39,8 @@ sealed class Route {
     // Publish (SCR-AV-*, SCR-HM-01)
     data object Home : Route()                                            // SCR-HM-01
     data object Notifications : Route()                                    // SCR-HM-02
+    data object Messages : Route()
+    data class ConversationThread(val conversationId: String) : Route()
     data object Calendar : Route()                                         // SCR-AV-01
     data class DayDetail(val date: String) : Route()                       // SCR-AV-02
     data class EditAvailabilitySlot(val slotId: String? = null, val date: String? = null) : Route() // SCR-AV-03

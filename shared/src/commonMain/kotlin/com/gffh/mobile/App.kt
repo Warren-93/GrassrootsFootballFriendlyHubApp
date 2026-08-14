@@ -21,6 +21,8 @@ import com.gffh.mobile.feature.discover.ResultsListScreen
 import com.gffh.mobile.feature.discover.SearchEntryScreen
 import com.gffh.mobile.feature.onboarding.*
 import com.gffh.mobile.feature.home.NotificationsScreen
+import com.gffh.mobile.feature.messages.ConversationsListScreen
+import com.gffh.mobile.feature.messages.ConversationThreadScreen
 import com.gffh.mobile.feature.placeholder.HomeScreen
 import com.gffh.mobile.feature.placeholder.PlaceholderScreen
 import com.gffh.mobile.feature.profile.NotificationPreferencesScreen
@@ -68,7 +70,7 @@ fun App() {
     val privacyRepository = remember { PrivacyRepository(apiClient) }
     val notificationRepository = remember { NotificationRepository(apiClient) }
     val geocodeRepository = remember { GeocodeRepository() }
-    val messageRepository = remember { MessageRepository(apiClient) }
+    val conversationRepository = remember { ConversationRepository(apiClient) }
     val navigator = remember { Navigator(Route.Splash) }
 
     GffhTheme {
@@ -111,6 +113,10 @@ fun App() {
                 notificationRepository, currentTeamStore, navigator
             )
             is Route.Notifications -> NotificationsScreen(notificationRepository, navigator)
+            is Route.Messages -> ConversationsListScreen(conversationRepository, currentTeamStore, navigator)
+            is Route.ConversationThread -> ConversationThreadScreen(
+                conversationRepository, currentTeamStore, navigator, route.conversationId
+            )
             is Route.Calendar -> CalendarScreen(availabilityRepository, currentTeamStore, navigator)
             is Route.DayDetail -> DayDetailScreen(availabilityRepository, currentTeamStore, navigator, route.date)
             is Route.EditAvailabilitySlot -> EditAvailabilitySlotScreen(
@@ -127,7 +133,9 @@ fun App() {
             is Route.Filters -> FiltersScreen(filterState, navigator)
             is Route.Results -> ResultsListScreen(matchRepository, currentTeamStore, filterState, resultsCache, navigator)
             is Route.ResultsMap -> ResultsMapScreen(teamRepository, geocodeRepository, currentTeamStore, resultsCache, navigator)
-            is Route.OpponentProfile -> OpponentProfileScreen(resultsCache, navigator, route.teamId)
+            is Route.OpponentProfile -> OpponentProfileScreen(
+                conversationRepository, currentTeamStore, resultsCache, navigator, route.teamId
+            )
             is Route.MatchExplanation -> MatchExplanationScreen(resultsCache, navigator, route.teamId)
 
             is Route.InvitationComposer -> InvitationComposerScreen(
@@ -135,12 +143,14 @@ fun App() {
             )
             is Route.InvitationReview -> InvitationReviewScreen(friendlyRequestRepository, invitationDraft, navigator)
             is Route.InvitationSent -> InvitationSentScreen(navigator, route.requestId)
-            is Route.RequestDetail -> RequestDetailScreen(friendlyRequestRepository, currentTeamStore, navigator, route.requestId)
+            is Route.RequestDetail -> RequestDetailScreen(
+                friendlyRequestRepository, conversationRepository, currentTeamStore, navigator, route.requestId
+            )
             is Route.SuggestChanges -> SuggestChangesScreen(friendlyRequestRepository, navigator, route.requestId)
             is Route.DeclineRequest -> DeclineScreen(friendlyRequestRepository, navigator, route.requestId)
             is Route.Fixtures -> FixturesScreen(friendlyRequestRepository, fixtureRepository, currentTeamStore, navigator)
             is Route.FixtureDetail -> FixtureDetailScreen(
-                fixtureRepository, messageRepository, currentTeamStore, navigator, route.fixtureId
+                fixtureRepository, conversationRepository, currentTeamStore, navigator, route.fixtureId
             )
 
             is Route.Placeholder -> PlaceholderScreen(route.label, navigator)
