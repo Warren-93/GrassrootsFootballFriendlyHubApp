@@ -15,6 +15,7 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.CrestAvatar
 
 /**
  * SCR-FX-01/02/03 Fixtures - Pending, Confirmed, Completed. Purpose: hold
@@ -120,8 +121,15 @@ private fun FixtureRow(fixture: FixtureView, navigator: Navigator) {
         onClick = { navigator.push(Route.FixtureDetail(fixture.id)) },
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     ) {
-        Row(Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
+        Row(
+            Modifier.padding(16.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            CrestAvatar(fixture.homeTeam.name, size = 30.dp)
+            Text("vs", style = MaterialTheme.typography.bodySmall)
+            CrestAvatar(fixture.awayTeam.name, size = 30.dp)
+            Column(Modifier.weight(1f)) {
                 Text("${fixture.homeTeam.name} vs ${fixture.awayTeam.name}", style = MaterialTheme.typography.bodyMedium)
                 Text("${fixture.date} ${fixture.startTime}", style = MaterialTheme.typography.bodySmall)
             }

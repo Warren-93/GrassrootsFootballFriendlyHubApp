@@ -16,6 +16,8 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchResultsCache
+import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.MatchScoreChip
 import kotlinx.coroutines.launch
 
 /**
@@ -75,16 +77,22 @@ fun OpponentProfileScreen(
 
         Column(Modifier.padding(24.dp).weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(match.team.name, style = MaterialTheme.typography.headlineSmall)
-                if (match.team.verified) {
-                    Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Filled.Verified, contentDescription = "Verified")
+                CrestAvatar(match.team.name, size = 48.dp)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(match.team.name, style = MaterialTheme.typography.headlineSmall)
+                        if (match.team.verified) {
+                            Spacer(Modifier.width(8.dp))
+                            Icon(Icons.Filled.Verified, contentDescription = "Verified")
+                        }
+                    }
+                    Text(match.team.clubName, style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            Text(match.team.clubName, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(Modifier.height(12.dp))
-            AssistChip(onClick = { navigator.push(Route.MatchExplanation(teamId)) }, label = { Text("${match.score}% match") })
+            MatchScoreChip(match.score, onClick = { navigator.push(Route.MatchExplanation(teamId)) })
 
             Spacer(Modifier.height(16.dp))
             InfoRow("Age group", match.team.ageGroup)

@@ -16,6 +16,7 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.CrestAvatar
 import kotlinx.coroutines.launch
 
 /**
@@ -85,6 +86,8 @@ fun ConversationsListScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                            CrestAvatar(c.otherTeam.name)
+                            Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(c.otherTeam.name, style = MaterialTheme.typography.titleSmall)
                                 Text(

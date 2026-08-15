@@ -12,6 +12,9 @@ import com.gffh.mobile.model.FactorView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.session.SearchResultsCache
+import com.gffh.mobile.theme.displayHeadline
+import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.MatchScoreChip
 
 /**
  * SCR-FF-06 Match explanation. Purpose: make the compatibility score
@@ -41,8 +44,16 @@ fun MatchExplanationScreen(resultsCache: SearchResultsCache, navigator: Navigato
         }
 
         Column(Modifier.padding(24.dp)) {
-            Text("${match.score}%", style = MaterialTheme.typography.displayMedium)
-            Text("match with ${match.team.name}", style = MaterialTheme.typography.bodyMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CrestAvatar(match.team.name, size = 40.dp)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("${match.score}%", style = displayHeadline)
+                    Text("match with ${match.team.name}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            MatchScoreChip(match.score)
 
             Spacer(Modifier.height(24.dp))
             match.factors.forEach { factor -> FactorRow(factor) }

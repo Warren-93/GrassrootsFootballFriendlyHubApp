@@ -18,6 +18,7 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.CrestAvatar
 import kotlinx.coroutines.launch
 
 /**
@@ -117,15 +118,27 @@ fun FixtureDetailScreen(
 
             Spacer(Modifier.height(16.dp))
             SectionCard("Home") {
-                Text(f.homeTeam.name)
-                f.homeTeam.managerName?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                f.homeTeam.contactPhone?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CrestAvatar(f.homeTeam.name, size = 32.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        Text(f.homeTeam.name)
+                        f.homeTeam.managerName?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        f.homeTeam.contactPhone?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    }
+                }
             }
             Spacer(Modifier.height(12.dp))
             SectionCard("Away") {
-                Text(f.awayTeam.name)
-                f.awayTeam.managerName?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                f.awayTeam.contactPhone?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CrestAvatar(f.awayTeam.name, size = 32.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        Text(f.awayTeam.name)
+                        f.awayTeam.managerName?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        f.awayTeam.contactPhone?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    }
+                }
             }
 
             Spacer(Modifier.height(12.dp))

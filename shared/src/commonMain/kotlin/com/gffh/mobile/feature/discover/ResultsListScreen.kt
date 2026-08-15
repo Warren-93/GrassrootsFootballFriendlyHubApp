@@ -20,6 +20,8 @@ import com.gffh.mobile.repository.MatchRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
+import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.MatchScoreChip
 import kotlinx.coroutines.launch
 
 /**
@@ -101,6 +103,8 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
     Card(onClick = onCardClick, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                CrestAvatar(match.team.name)
+                Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(match.team.name, style = MaterialTheme.typography.titleMedium)
@@ -114,7 +118,8 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                ScoreChip(match.score, match.band, onClick = onScoreClick)
+                Spacer(Modifier.width(8.dp))
+                MatchScoreChip(match.score, onClick = onScoreClick)
             }
             Spacer(Modifier.height(8.dp))
             Text("${match.milesApart} miles away", style = MaterialTheme.typography.bodySmall)
@@ -131,16 +136,6 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
             Button(onClick = onInviteClick, modifier = Modifier.fillMaxWidth()) { Text("Invite") }
         }
     }
-}
-
-@Composable
-private fun ScoreChip(score: Int, band: String, onClick: () -> Unit) {
-    val color = when (band) {
-        "HIGH" -> MaterialTheme.colorScheme.primary
-        "MID" -> MaterialTheme.colorScheme.tertiary
-        else -> MaterialTheme.colorScheme.outline
-    }
-    AssistChip(onClick = onClick, label = { Text("$score%") }, colors = AssistChipDefaults.assistChipColors(labelColor = color))
 }
 
 @Composable

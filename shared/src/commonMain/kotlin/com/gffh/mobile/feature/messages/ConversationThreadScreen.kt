@@ -20,6 +20,7 @@ import com.gffh.mobile.model.MessageView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.CrestAvatar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -89,7 +90,18 @@ fun ConversationThreadScreen(
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(conversation?.otherTeam?.name ?: "Conversation") },
+            title = {
+                val otherTeam = conversation?.otherTeam
+                if (otherTeam != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CrestAvatar(otherTeam.name, size = 28.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(otherTeam.name)
+                    }
+                } else {
+                    Text("Conversation")
+                }
+            },
             navigationIcon = {
                 IconButton(onClick = { navigator.pop() }) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
             }

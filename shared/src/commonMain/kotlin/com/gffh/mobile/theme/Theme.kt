@@ -39,7 +39,7 @@ val DarkColors = darkColorScheme(
 @Composable
 fun GffhTheme(content: @Composable () -> Unit) {
     val colors = if (isSystemInDarkTheme()) DarkColors else LightColors
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(colorScheme = colors, typography = GffhTypography, content = content)
 }
 
 /** Score-band colours, per Screen Build Specification's ScoreChip band colouring. */

@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.FixtureView
@@ -23,6 +24,10 @@ import com.gffh.mobile.repository.NotificationRepository
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.HeroBand
+import com.gffh.mobile.ui.components.StatTile
+import com.gffh.mobile.ui.components.StatTileRow
+import com.gffh.mobile.ui.components.StatTileTone
 import kotlinx.datetime.*
 
 /**
@@ -81,43 +86,48 @@ fun HomeScreen(
     }
 
     val nextFixture = fixtures.filter { it.status == "CONFIRMED" }.minByOrNull { it.date }
+    val completeness = team?.completenessPercent
+    val actionItems = buildList {
+        if (completeness != null && completeness < 80) add("Team profile is $completeness% complete - invitations need 80%.")
+        if (loaded && futureSlots.isEmpty()) add("No availability published yet.")
+        if (session?.emailVerified == false) add("Email not verified - invitations and messages are blocked.")
+    }
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-            Column {
-                Text("Welcome, ${session?.displayName ?: ""}", style = MaterialTheme.typography.headlineSmall)
-                activeTeam?.let { active ->
-                    if (myTeams.size > 1) {
-                        Box {
-                            Row(
-                                Modifier.padding(top = 4.dp).clickable { teamMenuOpen = true },
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(active.teamName, style = MaterialTheme.typography.bodyMedium)
-                                Icon(Icons.Filled.ArrowDropDown, contentDescription = "Switch team", modifier = Modifier.size(20.dp))
-                            }
-                            DropdownMenu(expanded = teamMenuOpen, onDismissRequest = { teamMenuOpen = false }) {
-                                myTeams.forEach { t ->
-                                    DropdownMenuItem(
-                                        text = { Text(t.name) },
-                                        onClick = {
-                                            teamMenuOpen = false
-                                            currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name))
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        Text(active.teamName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+        HeroBand(
+            title = "Welcome, ${session?.displayName ?: ""}",
+            eyebrow = activeTeam?.teamName,
+            subtitle = if (activeTeam != null) "Here's where things stand for your team." else "Set up a team to get started.",
+            action = {
+                BadgedBox(badge = {
+                    if (unreadCount > 0) Badge { Text(if (unreadCount > 99) "99+" else unreadCount.toString()) }
+                }) {
+                    IconButton(onClick = { navigator.push(Route.Notifications) }) {
+                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.White)
                     }
                 }
             }
-            BadgedBox(badge = {
-                if (unreadCount > 0) Badge { Text(if (unreadCount > 99) "99+" else unreadCount.toString()) }
-            }) {
-                IconButton(onClick = { navigator.push(Route.Notifications) }) {
-                    Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
+        )
+
+        if (activeTeam != null && myTeams.size > 1) {
+            Box {
+                Row(
+                    Modifier.padding(top = 8.dp).clickable { teamMenuOpen = true },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Switch team", style = MaterialTheme.typography.bodyMedium)
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = "Switch team", modifier = Modifier.size(20.dp))
+                }
+                DropdownMenu(expanded = teamMenuOpen, onDismissRequest = { teamMenuOpen = false }) {
+                    myTeams.forEach { t ->
+                        DropdownMenuItem(
+                            text = { Text(t.name) },
+                            onClick = {
+                                teamMenuOpen = false
+                                currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name))
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -127,7 +137,7 @@ fun HomeScreen(
             AssistChip(onClick = { navigator.push(Route.EmailVerification) }, label = { Text("Verify your email") })
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
 
         if (activeTeam == null) {
             Card(Modifier.fillMaxWidth()) {
@@ -143,6 +153,33 @@ fun HomeScreen(
                 }
             }
         } else {
+            StatTileRow {
+                StatTile(
+                    label = "Confirmed fixtures",
+                    value = fixtures.count { it.status == "CONFIRMED" }.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+                StatTile(
+                    label = "Availability",
+                    value = futureSlots.map { it.date }.toSet().size.toString(),
+                    sub = "dates published",
+                    modifier = Modifier.weight(1f)
+                )
+                StatTile(
+                    label = "Team profile",
+                    value = "${completeness ?: 0}%",
+                    sub = "complete",
+                    modifier = Modifier.weight(1f)
+                )
+                StatTile(
+                    label = "Needs attention",
+                    value = actionItems.size.toString(),
+                    tone = if (actionItems.isNotEmpty()) StatTileTone.Amber else StatTileTone.Default,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+
             if (nextFixture != null) {
                 Card(onClick = { navigator.push(Route.FixtureDetail(nextFixture.id)) }, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
@@ -157,13 +194,7 @@ fun HomeScreen(
                 Spacer(Modifier.height(12.dp))
             }
 
-            // Action required.
-            val completeness = team?.completenessPercent
-            val actionItems = buildList {
-                if (completeness != null && completeness < 80) add("Team profile is $completeness% complete - invitations need 80%.")
-                if (loaded && futureSlots.isEmpty()) add("No availability published yet.")
-                if (session?.emailVerified == false) add("Email not verified - invitations and messages are blocked.")
-            }
+            // Action required (computed above, alongside the stat tiles).
             if (actionItems.isNotEmpty()) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
