@@ -38,8 +38,10 @@ import com.gffh.mobile.feature.profile.VenuesListScreen
 import com.gffh.mobile.feature.profile.VerificationScreen
 import com.gffh.mobile.feature.profile.PrivacyScreen
 import com.gffh.mobile.feature.profile.HelpScreen
+import com.gffh.mobile.navigation.AppScaffold
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.navigation.tabFor
 import com.gffh.mobile.repository.*
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.InvitationDraftState
@@ -74,7 +76,10 @@ fun App() {
     val navigator = remember { Navigator(Route.Splash) }
 
     GffhTheme {
-        when (val route = navigator.current) {
+        val route = navigator.current
+        val tab = tabFor(route)
+        val screen: @Composable () -> Unit = {
+            when (route) {
             is Route.Splash -> SplashScreen(authRepository, navigator)
             is Route.Welcome -> WelcomeScreen(navigator)
             is Route.Register -> RegisterScreen(authRepository, navigator)
@@ -154,6 +159,13 @@ fun App() {
             )
 
             is Route.Placeholder -> PlaceholderScreen(route.label, navigator)
+            }
+        }
+
+        if (tab != null) {
+            AppScaffold(navigator, tab) { screen() }
+        } else {
+            screen()
         }
     }
 }

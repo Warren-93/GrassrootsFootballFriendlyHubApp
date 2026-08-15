@@ -20,6 +20,7 @@ import com.gffh.mobile.session.CurrentTeamStore
 @Composable
 fun SettingsScreen(authRepository: AuthRepository, currentTeamStore: CurrentTeamStore, navigator: Navigator) {
     val session by authRepository.session.collectAsState()
+    val activeTeam by currentTeamStore.active.collectAsState()
     var confirmSignOut by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
@@ -39,7 +40,18 @@ fun SettingsScreen(authRepository: AuthRepository, currentTeamStore: CurrentTeam
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        if (activeTeam != null) {
+            val team = activeTeam!!
+            Spacer(Modifier.height(20.dp))
+            Text("Team & club", style = MaterialTheme.typography.titleSmall)
+            SettingsRow("Team profile") { navigator.push(Route.TeamProfile(team.teamId)) }
+            SettingsRow("Members") { navigator.push(Route.Members(team.teamId)) }
+            SettingsRow("Club") { navigator.push(Route.ClubProfile(team.clubId)) }
+            SettingsRow("Venues") { navigator.push(Route.VenuesList(team.clubId)) }
+        }
+
+        Spacer(Modifier.height(20.dp))
+        Text("General", style = MaterialTheme.typography.titleSmall)
         SettingsRow("Notifications") { navigator.push(Route.NotificationPreferences) }
         SettingsRow("Privacy and data") { navigator.push(Route.Privacy) }
         SettingsRow("Help and support") { navigator.push(Route.Help) }
