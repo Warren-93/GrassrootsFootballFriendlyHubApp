@@ -1,5 +1,6 @@
 package com.gffh.mobile.feature.onboarding
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -13,6 +14,8 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.MemberRepository
 import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.theme.displayHeadlineSmall
+import com.gffh.mobile.theme.eyebrowLabel
 import kotlinx.coroutines.launch
 
 /**
@@ -28,7 +31,9 @@ fun RoleSelectionScreen(memberRepository: MemberRepository, currentTeamStore: Cu
     val scope = rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
-        Text("How are you setting up?", style = MaterialTheme.typography.headlineSmall)
+        Text("STEP 1 OF 3 · ROLE & CLUB", style = eyebrowLabel, color = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.height(6.dp))
+        Text("How are you setting up?".uppercase(), style = displayHeadlineSmall)
         Spacer(Modifier.height(24.dp))
 
         OptionCard(
@@ -101,10 +106,22 @@ fun RoleSelectionScreen(memberRepository: MemberRepository, currentTeamStore: Cu
 
 @Composable
 private fun OptionCard(title: String, subtitle: String, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall)
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .width(3.dp)
+                    .height(56.dp)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+            Column(Modifier.padding(16.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

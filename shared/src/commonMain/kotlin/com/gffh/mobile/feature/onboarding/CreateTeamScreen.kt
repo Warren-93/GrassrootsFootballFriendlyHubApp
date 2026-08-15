@@ -16,6 +16,7 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.GeoPoint
 import com.gffh.mobile.repository.GeocodeRepository
 import com.gffh.mobile.repository.TeamRepository
+import com.gffh.mobile.theme.eyebrowLabel
 import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
 
@@ -84,7 +85,13 @@ fun CreateTeamScreen(
     val step4Valid = managerName.trim().length in 2..60
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
-        LinearProgressIndicator(progress = { (step + 1) / 4f }, modifier = Modifier.fillMaxWidth())
+        Text("STEP 2 OF 3 · TEAM & VENUE", style = eyebrowLabel, color = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { (step + 1) / 4f },
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primary
+        )
         Spacer(Modifier.height(8.dp))
         Text("Step ${step + 1} of 4", style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(16.dp))
@@ -247,7 +254,15 @@ private fun <T> SingleChoiceRow(options: List<T>, selected: T, label: (T) -> Str
         modifier = Modifier.fillMaxWidth()
     ) {
         options.forEach { option ->
-            FilterChip(selected = option == selected, onClick = { onSelect(option) }, label = { Text(label(option)) })
+            FilterChip(
+                selected = option == selected,
+                onClick = { onSelect(option) },
+                label = { Text(label(option)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
         }
     }
 }
@@ -256,7 +271,15 @@ private fun <T> SingleChoiceRow(options: List<T>, selected: T, label: (T) -> Str
 private fun <T> FlowChips(options: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit) {
     androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { option ->
-            FilterChip(selected = option == selected, onClick = { onSelect(option) }, label = { Text(label(option)) })
+            FilterChip(
+                selected = option == selected,
+                onClick = { onSelect(option) },
+                label = { Text(label(option)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
         }
     }
 }

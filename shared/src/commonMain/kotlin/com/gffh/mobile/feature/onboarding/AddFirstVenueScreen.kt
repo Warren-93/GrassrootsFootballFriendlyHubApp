@@ -16,6 +16,8 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.GeoPoint
 import com.gffh.mobile.repository.GeocodeRepository
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.theme.displayHeadlineSmall
+import com.gffh.mobile.theme.eyebrowLabel
 import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
 
@@ -49,7 +51,9 @@ fun AddFirstVenueScreen(
     fun proceed() = navigator.push(Route.AddFirstAvailability(teamId, clubId))
 
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
-        Text("Add your home venue", style = MaterialTheme.typography.headlineSmall)
+        Text("STEP 2 OF 3 · TEAM & VENUE", style = eyebrowLabel, color = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.height(6.dp))
+        Text("Add your home venue".uppercase(), style = displayHeadlineSmall)
         Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(
@@ -74,8 +78,14 @@ fun AddFirstVenueScreen(
         Text("Pitch surface", style = MaterialTheme.typography.labelLarge)
         androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PitchSurface.entries.forEach { s ->
-                FilterChip(selected = surface == s, onClick = { surface = if (surface == s) null else s },
-                    label = { Text(s.name) })
+                FilterChip(
+                    selected = surface == s, onClick = { surface = if (surface == s) null else s },
+                    label = { Text(s.name) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
             }
         }
 
@@ -86,7 +96,11 @@ fun AddFirstVenueScreen(
                 FilterChip(
                     selected = f in facilities,
                     onClick = { facilities = if (f in facilities) facilities - f else facilities + f },
-                    label = { Text(f.name.replace('_', ' ')) }
+                    label = { Text(f.name.replace('_', ' ')) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
             }
         }

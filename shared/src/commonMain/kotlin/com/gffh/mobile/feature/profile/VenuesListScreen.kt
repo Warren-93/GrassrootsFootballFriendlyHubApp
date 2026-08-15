@@ -13,6 +13,7 @@ import com.gffh.mobile.model.VenueView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.ui.components.HeroBand
 import kotlinx.coroutines.launch
 
 /** SCR-PR-05 Venues list. Purpose: see and manage every pitch the club can host at. */
@@ -38,11 +39,15 @@ fun VenuesListScreen(venueRepository: VenueRepository, navigator: Navigator, clu
     LaunchedEffect(clubId) { load() }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text("Venues") },
-            navigationIcon = {
-                IconButton(onClick = { navigator.pop() }) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
-            }
+        IconButton(onClick = { navigator.pop() }, modifier = Modifier.padding(start = 8.dp, top = 4.dp)) {
+            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+        }
+        HeroBand(
+            title = "Venues",
+            eyebrow = "Club",
+            subtitle = "Every pitch this club can host at.",
+            compact = true,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
 
         Column(Modifier.padding(16.dp).weight(1f)) {

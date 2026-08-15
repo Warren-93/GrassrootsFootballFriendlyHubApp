@@ -17,6 +17,7 @@ import com.gffh.mobile.model.VerificationRequestView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.repository.VerificationRepository
+import com.gffh.mobile.ui.components.CrestAvatar
 import kotlinx.coroutines.launch
 
 /**
@@ -76,7 +77,25 @@ fun VerificationScreen(
         val underReview = request?.status == "PENDING" || request?.status == "AWAITING_SECOND_REJECTION"
 
         Column(Modifier.padding(24.dp).weight(1f).verticalScroll(rememberScrollState())) {
-            AssistChip(onClick = {}, label = { Text(current.verification) })
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CrestAvatar(current.name, size = 40.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(current.name, style = MaterialTheme.typography.titleMedium)
+                    val (chipContainer, chipLabel) = when (current.verification) {
+                        "VERIFIED" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+                        "PENDING", "AWAITING_SECOND_REJECTION" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(current.verification) },
+                        colors = AssistChipDefaults.assistChipColors(containerColor = chipContainer, labelColor = chipLabel),
+                        border = null,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
             Spacer(Modifier.height(16.dp))
 
             errorMessage?.let {

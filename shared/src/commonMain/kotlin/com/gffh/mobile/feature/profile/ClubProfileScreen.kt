@@ -17,6 +17,8 @@ import com.gffh.mobile.repository.ClubRepository
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.HeroBand
 import kotlinx.coroutines.launch
 
 /** SCR-PR-03 Club profile. Purpose: manage club identity and the squads beneath it. */
@@ -59,11 +61,16 @@ fun ClubProfileScreen(
         return
     }
 
-    Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
-        Text(c.name, style = MaterialTheme.typography.headlineSmall)
-        Text(c.postcode ?: "", style = MaterialTheme.typography.bodyMedium)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        HeroBand(
+            title = c.name,
+            eyebrow = "Club profile",
+            subtitle = c.postcode?.let { "Based in $it" } ?: "Manage your club and its squads.",
+            compact = true,
+            modifier = Modifier.padding(16.dp)
+        )
 
-        Spacer(Modifier.height(20.dp))
+        Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
         Text("Teams", style = MaterialTheme.typography.titleSmall)
         Spacer(Modifier.height(8.dp))
         teams.forEach { t ->
@@ -76,11 +83,25 @@ fun ClubProfileScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(t.name, style = MaterialTheme.typography.titleSmall)
-                        Text("${t.ageGroup} · ${t.format} · ${t.completenessPercent}% complete", style = MaterialTheme.typography.bodySmall)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CrestAvatar(t.name, size = 32.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text(t.name, style = MaterialTheme.typography.titleSmall)
+                            Text("${t.ageGroup} · ${t.format} · ${t.completenessPercent}% complete", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
-                    if (t.id == activeTeam?.teamId) AssistChip(onClick = {}, label = { Text("Active") })
+                    if (t.id == activeTeam?.teamId) {
+                        AssistChip(
+                            onClick = {},
+                            label = { Text("Active") },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            border = null
+                        )
+                    }
                 }
             }
         }
@@ -107,6 +128,8 @@ fun ClubProfileScreen(
         Spacer(Modifier.height(20.dp))
         Button(onClick = { navigator.push(Route.EditClub(c.id)) }, modifier = Modifier.fillMaxWidth()) {
             Text("Edit club")
+        }
+        Spacer(Modifier.height(16.dp))
         }
     }
 }

@@ -13,6 +13,8 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.theme.displayHeadlineSmall
+import com.gffh.mobile.theme.eyebrowLabel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 
@@ -64,13 +66,22 @@ fun AddFirstAvailabilityScreen(
     }
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
-        Text("Publish your first availability", style = MaterialTheme.typography.headlineSmall)
+        Text("STEP 3 OF 3 · AVAILABILITY", style = eyebrowLabel, color = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.height(6.dp))
+        Text("Publish your first availability".uppercase(), style = displayHeadlineSmall)
         Spacer(Modifier.height(20.dp))
 
         Text("Suggested dates", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             suggestedDates.take(3).forEach { d ->
-                FilterChip(selected = d == date, onClick = { date = d }, label = { Text("${d.dayOfMonth}/${d.monthNumber}") })
+                FilterChip(
+                    selected = d == date, onClick = { date = d },
+                    label = { Text("${d.dayOfMonth}/${d.monthNumber}") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
             }
         }
         Spacer(Modifier.height(4.dp))
@@ -85,7 +96,13 @@ fun AddFirstAvailabilityScreen(
         Text("Home / Away", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             HomeAwayPreference.entries.forEach { pref ->
-                FilterChip(selected = homeAway == pref, onClick = { homeAway = pref }, label = { Text(pref.name) })
+                FilterChip(
+                    selected = homeAway == pref, onClick = { homeAway = pref }, label = { Text(pref.name) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
             }
         }
 
@@ -94,7 +111,13 @@ fun AddFirstAvailabilityScreen(
             Text("Venue", style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 venues.forEach { v ->
-                    FilterChip(selected = selectedVenueId == v.id, onClick = { selectedVenueId = v.id }, label = { Text(v.name) })
+                    FilterChip(
+                        selected = selectedVenueId == v.id, onClick = { selectedVenueId = v.id }, label = { Text(v.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
                 }
             }
         }

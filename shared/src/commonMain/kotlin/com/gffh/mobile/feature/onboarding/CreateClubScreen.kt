@@ -17,6 +17,8 @@ import com.gffh.mobile.repository.AuthRepository
 import com.gffh.mobile.repository.ClubRepository
 import com.gffh.mobile.repository.GeoPoint
 import com.gffh.mobile.repository.GeocodeRepository
+import com.gffh.mobile.theme.displayHeadlineSmall
+import com.gffh.mobile.theme.eyebrowLabel
 import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
 
@@ -46,7 +48,9 @@ fun CreateClubScreen(
     val formValid = name.trim().length in 3..80 && postcode.isNotBlank() && coordinates != null
 
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
-        Text("Create your club", style = MaterialTheme.typography.headlineSmall)
+        Text("STEP 1 OF 3 · ROLE & CLUB", style = eyebrowLabel, color = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.height(6.dp))
+        Text("Create your club".uppercase(), style = displayHeadlineSmall)
         Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(

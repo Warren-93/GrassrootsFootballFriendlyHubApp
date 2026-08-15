@@ -1,11 +1,15 @@
 package com.gffh.mobile.feature.onboarding
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -15,6 +19,7 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.HeroBand
 
 /**
  * SCR-ON-06 Onboarding complete. Purpose: confirm setup and direct the user
@@ -37,17 +42,21 @@ fun OnboardingCompleteScreen(
         }
     }
 
+    val activeTeam by currentTeamStore.active.collectAsState()
+
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(56.dp),
-            tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(16.dp))
-        Text("You're set up", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(24.dp))
+        HeroBand(
+            title = "You're set up",
+            eyebrow = activeTeam?.teamName ?: "All done",
+            subtitle = "Your team profile is ready - here's what's next.",
+            modifier = Modifier.padding(16.dp)
+        )
+        Spacer(Modifier.height(8.dp))
 
+        Column(Modifier.padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 ChecklistRow("Team profile created")
@@ -79,6 +88,8 @@ fun OnboardingCompleteScreen(
             onClick = { navigator.resetTo(Route.Home) },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Explore the app") }
+        Spacer(Modifier.height(24.dp))
+        }
     }
 }
 

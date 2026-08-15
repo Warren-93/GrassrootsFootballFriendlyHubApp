@@ -16,6 +16,10 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.ui.components.HeroBand
+import com.gffh.mobile.ui.components.StatTile
+import com.gffh.mobile.ui.components.StatTileRow
+import com.gffh.mobile.ui.components.StatTileTone
 
 /**
  * SCR-PR-01 Team profile. Purpose: show the manager their team exactly as
@@ -50,27 +54,38 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
         return
     }
 
-    Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
-        Text(current.name, style = MaterialTheme.typography.headlineSmall)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        HeroBand(
+            title = current.name,
+            eyebrow = "Team profile",
+            subtitle = "Exactly what opponents see when they look you up.",
+            compact = true,
+            modifier = Modifier.padding(16.dp)
+        )
         Text(
             current.clubName,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.clickable { navigator.push(Route.ClubProfile(current.clubId)) }
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .clickable { navigator.push(Route.ClubProfile(current.clubId)) }
         )
 
         Spacer(Modifier.height(16.dp))
-        Text("Profile completeness", style = MaterialTheme.typography.labelLarge)
-        LinearProgressIndicator(
-            progress = { current.completenessPercent / 100f },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-        )
-        Text(
-            "${current.completenessPercent}%" +
-                if (current.completenessPercent < 80) " - must reach 80% before you can invite another team" else "",
-            style = MaterialTheme.typography.bodySmall
-        )
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            StatTileRow {
+                StatTile(
+                    label = "Profile completeness",
+                    value = "${current.completenessPercent}%",
+                    sub = if (current.completenessPercent < 80) "Must reach 80% to invite" else "Ready to invite",
+                    tone = if (current.completenessPercent < 80) StatTileTone.Amber else StatTileTone.Default,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
 
         Spacer(Modifier.height(20.dp))
+        Column(Modifier.padding(horizontal = 24.dp)) {
         SectionCard("Identity") {
             InfoRow("Age group", current.ageGroup)
             InfoRow("Gender", current.gender)
@@ -119,6 +134,8 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
         Spacer(Modifier.height(12.dp))
         Card(onClick = { navigator.push(Route.Settings) }, modifier = Modifier.fillMaxWidth()) {
             Text("Settings", modifier = Modifier.padding(16.dp))
+        }
+        Spacer(Modifier.height(16.dp))
         }
     }
 }

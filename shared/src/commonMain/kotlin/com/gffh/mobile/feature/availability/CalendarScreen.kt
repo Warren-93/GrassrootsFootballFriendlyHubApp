@@ -24,6 +24,8 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.HeroBand
+import com.gffh.mobile.ui.components.HeroNavy
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 
@@ -71,13 +73,18 @@ fun CalendarScreen(
     LaunchedEffect(team?.teamId, monthCursor) { reload() }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text(team?.teamName ?: "Calendar") },
-            actions = {
-                TextButton(onClick = { showAsList = !showAsList }) {
-                    Text(if (showAsList) "Grid" else "List")
-                }
-            }
+        HeroBand(
+            title = team?.teamName ?: "Calendar",
+            eyebrow = "Availability",
+            subtitle = "See at a glance when your team is free, booked or being asked about.",
+            compact = true,
+            action = {
+                TextButton(
+                    onClick = { showAsList = !showAsList },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+                ) { Text(if (showAsList) "Grid" else "List") }
+            },
+            modifier = Modifier.padding(16.dp)
         )
 
         if (team == null) {
@@ -110,9 +117,9 @@ fun CalendarScreen(
 
         Spacer(Modifier.height(8.dp))
         Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            LegendDot(Color(0xFF4CAF50)); Text(" Available   ", style = MaterialTheme.typography.bodySmall)
-            LegendDot(Color(0xFF1A237E)); Text(" Confirmed   ", style = MaterialTheme.typography.bodySmall)
-            LegendDot(Color(0xFFFFA000)); Text(" Pending", style = MaterialTheme.typography.bodySmall)
+            LegendDot(MaterialTheme.colorScheme.primary); Text(" Available   ", style = MaterialTheme.typography.bodySmall)
+            LegendDot(HeroNavy); Text(" Confirmed   ", style = MaterialTheme.typography.bodySmall)
+            LegendDot(MaterialTheme.colorScheme.tertiary); Text(" Pending", style = MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.height(8.dp))
 
@@ -172,7 +179,7 @@ private fun MonthGrid(monthStart: LocalDate, datesWithSlots: Set<String>, onDayC
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text((i + 1).toString(), textAlign = TextAlign.Center)
-                    if (hasSlot) LegendDot(Color(0xFF4CAF50))
+                    if (hasSlot) LegendDot(MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -200,7 +207,7 @@ private fun DayList(monthStart: LocalDate, monthEnd: LocalDate, datesWithSlots: 
                 Modifier.fillMaxWidth().clickable { onDayClick(date) }.padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LegendDot(Color(0xFF4CAF50))
+                LegendDot(MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
                 Text(date.toString())
             }
