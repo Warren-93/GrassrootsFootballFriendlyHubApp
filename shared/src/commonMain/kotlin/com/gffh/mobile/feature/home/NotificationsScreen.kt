@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 fun NotificationsScreen(notificationRepository: NotificationRepository, navigator: Navigator) {
     var notifications by remember { mutableStateOf<List<NotificationView>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var confirmClear by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     fun load() {
@@ -67,6 +68,9 @@ fun NotificationsScreen(notificationRepository: NotificationRepository, navigato
                         }
                     }) { Text("Mark all read") }
                 }
+                if (notifications.isNotEmpty()) {
+                    TextButton(onClick = { confirmClear = true }) { Text("Clear all") }
+                }
             }
         )
 
@@ -98,5 +102,23 @@ fun NotificationsScreen(notificationRepository: NotificationRepository, navigato
                 }
             }
         }
+    }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("Remove every notification?") },
+            text = { Text("This can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClear = false
+                    scope.launch {
+                        notificationRepository.clearAll()
+                        load()
+                    }
+                }) { Text("Clear") }
+            },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } }
+        )
     }
 }

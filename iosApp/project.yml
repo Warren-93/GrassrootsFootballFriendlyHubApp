@@ -23,7 +23,7 @@ targets:
     info:
       path: Generated/Info.plist
       properties:
-        CFBundleDisplayName: GFFH
+        CFBundleDisplayName: PitchMate
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
@@ -38,6 +38,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.gffh.mobile.iosApp
         PRODUCT_NAME: iosApp
         TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     prebuildScripts:
       - name: Compile Kotlin Framework
         script: |

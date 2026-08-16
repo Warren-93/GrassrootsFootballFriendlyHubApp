@@ -30,6 +30,11 @@ class NotificationRepository(private val api: ApiClient) {
         url("/api/v1/notifications/read-all")
     }
 
+    suspend fun clearAll(): ApiResult<Unit> = api.request {
+        method = HttpMethod.Delete
+        url("/api/v1/notifications")
+    }
+
     suspend fun getPreferences(): ApiResult<NotificationPreferenceView> = api.request {
         method = HttpMethod.Get
         url("/api/v1/me/notification-preferences")

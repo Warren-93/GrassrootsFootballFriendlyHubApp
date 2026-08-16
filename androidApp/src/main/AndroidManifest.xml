@@ -4,7 +4,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="Grassroots Football Friendly Hub"
+        android:label="PitchMate"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/AppTheme"
         android:allowBackup="true"
         android:supportsRtl="true">
