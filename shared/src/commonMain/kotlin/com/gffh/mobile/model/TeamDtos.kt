@@ -75,3 +75,9 @@ data class TeamView(
     val completenessPercent: Int,
     val createdAt: String
 )
+
+@Serializable
+data class PrivacyPreferences(
+    val searchVisible: Boolean,
+    val shareContactDetails: Boolean
+)

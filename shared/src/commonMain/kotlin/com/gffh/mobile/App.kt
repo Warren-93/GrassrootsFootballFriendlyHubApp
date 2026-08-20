@@ -111,7 +111,7 @@ fun App() {
             is Route.EditClub -> EditClubScreen(clubRepository, navigator, route.clubId)
             is Route.Members -> MembersScreen(memberRepository, navigator, route.teamId)
             is Route.Verification -> VerificationScreen(verificationRepository, teamRepository, navigator, route.teamId)
-            is Route.Privacy -> PrivacyScreen(privacyRepository, authRepository, currentTeamStore, navigator)
+            is Route.Privacy -> PrivacyScreen(privacyRepository, authRepository, teamRepository, currentTeamStore, navigator)
             is Route.Help -> HelpScreen(navigator)
             is Route.NotificationPreferences -> NotificationPreferencesScreen(notificationRepository, navigator)
 

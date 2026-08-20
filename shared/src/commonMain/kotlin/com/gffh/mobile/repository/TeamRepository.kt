@@ -3,6 +3,7 @@ package com.gffh.mobile.repository
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.CreateTeamRequest
+import com.gffh.mobile.model.PrivacyPreferences
 import com.gffh.mobile.model.TeamView
 import com.gffh.mobile.model.UpdateTeamRequest
 import io.ktor.client.request.*
@@ -41,5 +42,16 @@ class TeamRepository(private val api: ApiClient) {
     suspend fun archive(teamId: String): ApiResult<Unit> = api.request {
         method = HttpMethod.Post
         url("/api/v1/teams/$teamId/archive")
+    }
+
+    suspend fun getPrivacy(teamId: String): ApiResult<PrivacyPreferences> = api.request {
+        method = HttpMethod.Get
+        url("/api/v1/teams/$teamId/privacy")
+    }
+
+    suspend fun updatePrivacy(teamId: String, request: PrivacyPreferences): ApiResult<PrivacyPreferences> = api.request {
+        method = HttpMethod.Patch
+        url("/api/v1/teams/$teamId/privacy")
+        setBody(request)
     }
 }
