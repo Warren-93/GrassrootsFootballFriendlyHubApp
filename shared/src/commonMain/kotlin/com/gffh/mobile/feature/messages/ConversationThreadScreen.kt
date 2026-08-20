@@ -18,6 +18,7 @@ import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.ConversationView
 import com.gffh.mobile.model.MessageView
 import com.gffh.mobile.navigation.Navigator
+import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
@@ -116,6 +117,14 @@ fun ConversationThreadScreen(
         if (c == null) {
             Box(Modifier.fillMaxSize().padding(24.dp)) { Text(errorMessage ?: "That conversation could not be found.") }
             return
+        }
+
+        c.relatedFixtureId?.let { fixtureId ->
+            AssistChip(
+                onClick = { navigator.push(Route.FixtureDetail(fixtureId)) },
+                label = { Text("About a fixture - view it") },
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            )
         }
 
         LazyColumn(

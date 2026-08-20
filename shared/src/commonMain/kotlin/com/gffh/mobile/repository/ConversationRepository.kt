@@ -11,10 +11,10 @@ import io.ktor.http.HttpMethod
 
 class ConversationRepository(private val api: ApiClient) {
 
-    suspend fun start(teamId: String, otherTeamId: String): ApiResult<ConversationView> = api.request {
+    suspend fun start(teamId: String, otherTeamId: String, fixtureId: String? = null): ApiResult<ConversationView> = api.request {
         method = HttpMethod.Post
         url("/api/v1/conversations")
-        setBody(StartConversationRequest(teamId, otherTeamId))
+        setBody(StartConversationRequest(teamId, otherTeamId, fixtureId))
     }
 
     suspend fun list(teamId: String): ApiResult<List<ConversationView>> = api.request {

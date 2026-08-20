@@ -3,7 +3,7 @@ package com.gffh.mobile.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class StartConversationRequest(val teamId: String, val otherTeamId: String)
+data class StartConversationRequest(val teamId: String, val otherTeamId: String, val fixtureId: String? = null)
 
 @Serializable
 data class SendMessageRequest(val body: String)
@@ -15,7 +15,9 @@ data class ConversationView(
     val lastMessageBody: String? = null,
     val lastMessageSenderTeamId: String? = null,
     val lastMessageAt: String? = null,
-    val createdAt: String
+    val createdAt: String,
+    /** What this thread is currently about - set when opened from a fixture's "Message" entry point. */
+    val relatedFixtureId: String? = null
 )
 
 @Serializable

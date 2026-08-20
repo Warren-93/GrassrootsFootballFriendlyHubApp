@@ -29,9 +29,10 @@ import kotlinx.coroutines.launch
  *
  * SCR-FX-06 cancel is a dedicated button here (with a confirm dialog and
  * optional reason) rather than only reachable via the underlying friendly
- * request's generic cancel action. Messaging (SCR-FX-05) now opens the
- * team-to-team conversation thread rather than embedding a fixture-scoped
- * chat here - see ConversationThreadScreen.
+ * request's generic cancel action. Messaging (SCR-FX-05) opens the
+ * team-to-team conversation thread rather than embedding a separate chat
+ * here, but passes this fixture's id so the thread can show a context
+ * banner pointing back to it - see ConversationThreadScreen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +71,7 @@ fun FixtureDetailScreen(
         opening = true
         messageError = null
         scope.launch {
-            when (val result = conversationRepository.start(ours.teamId, otherTeamId)) {
+            when (val result = conversationRepository.start(ours.teamId, otherTeamId, f.id)) {
                 is ApiResult.Success -> navigator.push(Route.ConversationThread(result.value.id))
                 is ApiResult.Failure -> messageError = result.message
             }
