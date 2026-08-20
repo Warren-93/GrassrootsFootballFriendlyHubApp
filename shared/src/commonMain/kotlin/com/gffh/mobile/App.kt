@@ -122,8 +122,8 @@ fun App() {
             is Route.ConversationThread -> ConversationThreadScreen(
                 conversationRepository, currentTeamStore, navigator, route.conversationId
             )
-            is Route.Calendar -> CalendarScreen(availabilityRepository, currentTeamStore, navigator)
-            is Route.DayDetail -> DayDetailScreen(availabilityRepository, currentTeamStore, navigator, route.date)
+            is Route.Calendar -> CalendarScreen(availabilityRepository, fixtureRepository, friendlyRequestRepository, currentTeamStore, navigator)
+            is Route.DayDetail -> DayDetailScreen(availabilityRepository, fixtureRepository, friendlyRequestRepository, currentTeamStore, navigator, route.date)
             is Route.EditAvailabilitySlot -> EditAvailabilitySlotScreen(
                 availabilityRepository, venueRepository, currentTeamStore, navigator, route.slotId, route.date
             )

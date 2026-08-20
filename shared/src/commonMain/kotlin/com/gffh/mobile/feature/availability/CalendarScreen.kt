@@ -23,32 +23,37 @@ import com.gffh.mobile.model.SlotView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
+import com.gffh.mobile.repository.FixtureRepository
+import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.HeroBand
 import com.gffh.mobile.ui.components.HeroNavy
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 
+/** Requests still under negotiation - matches the backend's RequestStatus.isOpen(). */
+private val PENDING_STATUSES = setOf("SENT", "CHANGES_REQUESTED", "UPDATED")
+
 /**
  * SCR-AV-01 Calendar (month). Purpose: show at a glance when the team is
- * available, booked or being asked about.
- *
- * Only the availability dot is wired up in this pass - the navy (confirmed
- * fixture) and amber (pending request) indicators need the Arrange slice's
- * client-side repositories, which don't exist yet. The list-view parity
- * requirement from the spec's global conventions is met: [showAsList] is a
- * first-class alternative, not an afterthought.
+ * available, booked or being asked about. All three legend dots are wired:
+ * green (published availability), navy (a confirmed fixture that day), amber
+ * (a friendly request still awaiting a response, either direction).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     availabilityRepository: AvailabilityRepository,
+    fixtureRepository: FixtureRepository,
+    friendlyRequestRepository: FriendlyRequestRepository,
     currentTeamStore: CurrentTeamStore,
     navigator: Navigator
 ) {
     val team = currentTeamStore.active.collectAsState().value
     var monthCursor by remember { mutableStateOf(todayDate()) }
     var slots by remember { mutableStateOf<List<SlotView>>(emptyList()) }
+    var confirmedDates by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var pendingDates by remember { mutableStateOf<Set<String>>(emptySet()) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showAsList by remember { mutableStateOf(false) }
@@ -61,12 +66,27 @@ fun CalendarScreen(
         val t = team ?: return
         loading = true
         scope.launch {
-            val result = availabilityRepository.list(t.teamId, monthStart.toString(), monthEnd.toString())
-            loading = false
-            when (result) {
-                is ApiResult.Success -> { slots = result.value; errorMessage = null }
-                is ApiResult.Failure -> errorMessage = result.message
+            val slotsResult = availabilityRepository.list(t.teamId, monthStart.toString(), monthEnd.toString())
+            when (slotsResult) {
+                is ApiResult.Success -> { slots = slotsResult.value; errorMessage = null }
+                is ApiResult.Failure -> errorMessage = slotsResult.message
             }
+
+            // Fixtures/requests aren't month-scoped server-side (small per-team
+            // volumes), so filter client-side to this month same as the dates
+            // already being compared against.
+            (fixtureRepository.list(t.teamId) as? ApiResult.Success)?.let { result ->
+                confirmedDates = result.value
+                    .filter { it.status == "CONFIRMED" && it.date >= monthStart.toString() && it.date <= monthEnd.toString() }
+                    .map { it.date }.toSet()
+            }
+            (friendlyRequestRepository.list(t.teamId) as? ApiResult.Success)?.let { result ->
+                pendingDates = result.value
+                    .filter { it.status in PENDING_STATUSES && it.date >= monthStart.toString() && it.date <= monthEnd.toString() }
+                    .map { it.date }.toSet()
+            }
+
+            loading = false
         }
     }
 
@@ -132,9 +152,9 @@ fun CalendarScreen(
                 CircularProgressIndicator()
             }
         } else if (showAsList) {
-            DayList(monthStart, monthEnd, datesWithSlots) { date -> navigator.push(Route.DayDetail(date.toString())) }
+            DayList(monthStart, monthEnd, datesWithSlots, confirmedDates, pendingDates) { date -> navigator.push(Route.DayDetail(date.toString())) }
         } else {
-            MonthGrid(monthStart, datesWithSlots) { date -> navigator.push(Route.DayDetail(date.toString())) }
+            MonthGrid(monthStart, datesWithSlots, confirmedDates, pendingDates) { date -> navigator.push(Route.DayDetail(date.toString())) }
         }
 
         Spacer(Modifier.weight(1f))
@@ -159,7 +179,23 @@ private fun LegendDot(color: Color) {
 }
 
 @Composable
-private fun MonthGrid(monthStart: LocalDate, datesWithSlots: Set<String>, onDayClick: (LocalDate) -> Unit) {
+private fun DayDots(hasSlot: Boolean, hasConfirmed: Boolean, hasPending: Boolean) {
+    if (!hasSlot && !hasConfirmed && !hasPending) return
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (hasSlot) LegendDot(MaterialTheme.colorScheme.primary)
+        if (hasConfirmed) LegendDot(HeroNavy)
+        if (hasPending) LegendDot(MaterialTheme.colorScheme.tertiary)
+    }
+}
+
+@Composable
+private fun MonthGrid(
+    monthStart: LocalDate,
+    datesWithSlots: Set<String>,
+    confirmedDates: Set<String>,
+    pendingDates: Set<String>,
+    onDayClick: (LocalDate) -> Unit
+) {
     val firstDayOffset = monthStart.dayOfWeek.isoDayNumber - 1 // Monday = 0
     val daysInMonth = monthStart.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY).dayOfMonth
     val today = todayDate()
@@ -168,7 +204,7 @@ private fun MonthGrid(monthStart: LocalDate, datesWithSlots: Set<String>, onDayC
         items(firstDayOffset) { Box(Modifier.aspectRatio(1f)) }
         items(daysInMonth) { i ->
             val date = LocalDate(monthStart.year, monthStart.month, i + 1)
-            val hasSlot = datesWithSlots.contains(date.toString())
+            val dateStr = date.toString()
             val isToday = date == today
             Box(
                 Modifier.aspectRatio(1f).padding(2.dp)
@@ -179,7 +215,7 @@ private fun MonthGrid(monthStart: LocalDate, datesWithSlots: Set<String>, onDayC
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text((i + 1).toString(), textAlign = TextAlign.Center)
-                    if (hasSlot) LegendDot(MaterialTheme.colorScheme.primary)
+                    DayDots(datesWithSlots.contains(dateStr), confirmedDates.contains(dateStr), pendingDates.contains(dateStr))
                 }
             }
         }
@@ -187,9 +223,17 @@ private fun MonthGrid(monthStart: LocalDate, datesWithSlots: Set<String>, onDayC
 }
 
 @Composable
-private fun DayList(monthStart: LocalDate, monthEnd: LocalDate, datesWithSlots: Set<String>, onDayClick: (LocalDate) -> Unit) {
+private fun DayList(
+    monthStart: LocalDate,
+    monthEnd: LocalDate,
+    datesWithSlots: Set<String>,
+    confirmedDates: Set<String>,
+    pendingDates: Set<String>,
+    onDayClick: (LocalDate) -> Unit
+) {
+    val relevantDates = datesWithSlots + confirmedDates + pendingDates
     val days = generateSequence(monthStart) { d -> if (d < monthEnd) d.plus(1, DateTimeUnit.DAY) else null }
-        .filter { datesWithSlots.contains(it.toString()) }
+        .filter { relevantDates.contains(it.toString()) }
         .toList()
 
     if (days.isEmpty()) {
@@ -203,17 +247,17 @@ private fun DayList(monthStart: LocalDate, monthEnd: LocalDate, datesWithSlots: 
 
     Column(Modifier.padding(horizontal = 16.dp)) {
         days.forEach { date ->
+            val dateStr = date.toString()
             Row(
                 Modifier.fillMaxWidth().clickable { onDayClick(date) }.padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LegendDot(MaterialTheme.colorScheme.primary)
+                DayDots(datesWithSlots.contains(dateStr), confirmedDates.contains(dateStr), pendingDates.contains(dateStr))
                 Spacer(Modifier.width(12.dp))
-                Text(date.toString())
+                Text(dateStr)
             }
             HorizontalDivider()
         }
     }
 }
-
 

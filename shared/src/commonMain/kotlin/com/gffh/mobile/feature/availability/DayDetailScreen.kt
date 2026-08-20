@@ -11,30 +11,38 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.model.FixtureView
+import com.gffh.mobile.model.FriendlyRequestView
 import com.gffh.mobile.model.SlotView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
+import com.gffh.mobile.repository.FixtureRepository
+import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 
+private val PENDING_STATUSES = setOf("SENT", "CHANGES_REQUESTED", "UPDATED")
+
 /**
- * SCR-AV-02 Day detail. Purpose: manage everything happening on a single date.
- *
- * The fixtures and pending-requests lists the spec calls for need the Arrange
- * slice's client repositories, which don't exist yet - this shows availability
- * only for now, with a note where those sections belong.
+ * SCR-AV-02 Day detail. Purpose: manage everything happening on a single date -
+ * published availability, any confirmed fixture, and any friendly request still
+ * awaiting a response.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DayDetailScreen(
     availabilityRepository: AvailabilityRepository,
+    fixtureRepository: FixtureRepository,
+    friendlyRequestRepository: FriendlyRequestRepository,
     currentTeamStore: CurrentTeamStore,
     navigator: Navigator,
     date: String
 ) {
     val team = currentTeamStore.active.collectAsState().value
     var slots by remember { mutableStateOf<List<SlotView>>(emptyList()) }
+    var fixtures by remember { mutableStateOf<List<FixtureView>>(emptyList()) }
+    var pendingRequests by remember { mutableStateOf<List<FriendlyRequestView>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<SlotView?>(null) }
@@ -45,15 +53,25 @@ fun DayDetailScreen(
         loading = true
         scope.launch {
             val result = availabilityRepository.list(t.teamId, date, date)
-            loading = false
             when (result) {
-                is ApiResult.Success -> slots = result.value
+                is ApiResult.Success -> { slots = result.value; errorMessage = null }
                 is ApiResult.Failure -> errorMessage = result.message
             }
+
+            (fixtureRepository.list(t.teamId) as? ApiResult.Success)?.let { r ->
+                fixtures = r.value.filter { it.date == date && it.status == "CONFIRMED" }
+            }
+            (friendlyRequestRepository.list(t.teamId) as? ApiResult.Success)?.let { r ->
+                pendingRequests = r.value.filter { it.date == date && it.status in PENDING_STATUSES }
+            }
+
+            loading = false
         }
     }
 
     LaunchedEffect(team?.teamId, date) { reload() }
+
+    val isEmpty = slots.isEmpty() && fixtures.isEmpty() && pendingRequests.isEmpty()
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -67,31 +85,65 @@ fun DayDetailScreen(
 
         if (loading) {
             Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        } else if (slots.isEmpty()) {
+        } else if (isEmpty) {
             Column(Modifier.padding(24.dp)) {
                 Text("Nothing on this date.", style = MaterialTheme.typography.bodyMedium)
             }
         } else {
             Column(Modifier.padding(16.dp).weight(1f, fill = false)) {
-                Text("Availability", style = MaterialTheme.typography.titleSmall)
-                slots.forEach { slot ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                        Row(
-                            Modifier.padding(16.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                if (fixtures.isNotEmpty()) {
+                    Text("Confirmed fixtures", style = MaterialTheme.typography.titleSmall)
+                    fixtures.forEach { fixture ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                            onClick = { navigator.push(Route.FixtureDetail(fixture.id)) }
                         ) {
-                            Column {
-                                Text("${slot.startTime} - ${slot.endTime}", style = MaterialTheme.typography.bodyMedium)
-                                Text(slot.homeAwayPreference, style = MaterialTheme.typography.bodySmall)
-                                slot.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                            Column(Modifier.padding(16.dp)) {
+                                Text("${fixture.homeTeam.name} vs ${fixture.awayTeam.name}", style = MaterialTheme.typography.bodyMedium)
+                                Text("${fixture.startTime} - ${fixture.endTime}", style = MaterialTheme.typography.bodySmall)
                             }
-                            Row {
-                                IconButton(onClick = {
-                                    navigator.push(Route.EditAvailabilitySlot(slotId = slot.id, date = slot.date))
-                                }) { Icon(Icons.Filled.Edit, contentDescription = "Edit") }
-                                IconButton(onClick = { pendingDelete = slot }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Withdraw")
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                if (pendingRequests.isNotEmpty()) {
+                    Text("Pending requests", style = MaterialTheme.typography.titleSmall)
+                    pendingRequests.forEach { request ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                            onClick = { navigator.push(Route.RequestDetail(request.id)) }
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text("${request.startTime} - ${request.endTime}", style = MaterialTheme.typography.bodyMedium)
+                                Text(request.status, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                if (slots.isNotEmpty()) {
+                    Text("Availability", style = MaterialTheme.typography.titleSmall)
+                    slots.forEach { slot ->
+                        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            Row(
+                                Modifier.padding(16.dp).fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("${slot.startTime} - ${slot.endTime}", style = MaterialTheme.typography.bodyMedium)
+                                    Text(slot.homeAwayPreference, style = MaterialTheme.typography.bodySmall)
+                                    slot.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                                }
+                                Row {
+                                    IconButton(onClick = {
+                                        navigator.push(Route.EditAvailabilitySlot(slotId = slot.id, date = slot.date))
+                                    }) { Icon(Icons.Filled.Edit, contentDescription = "Edit") }
+                                    IconButton(onClick = { pendingDelete = slot }) {
+                                        Icon(Icons.Filled.Delete, contentDescription = "Withdraw")
+                                    }
                                 }
                             }
                         }
@@ -100,12 +152,7 @@ fun DayDetailScreen(
             }
         }
 
-        Spacer(Modifier.weight(1f, fill = slots.isEmpty()))
-        Text(
-            "Fixtures and pending requests for this date will appear here once the Arrange slice is built.",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(16.dp)
-        )
+        Spacer(Modifier.weight(1f, fill = isEmpty))
         Button(
             onClick = { navigator.push(Route.EditAvailabilitySlot(date = date)) },
             modifier = Modifier.fillMaxWidth().padding(16.dp)
