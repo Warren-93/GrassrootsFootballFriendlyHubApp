@@ -14,7 +14,9 @@ import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.TeamView
 import com.gffh.mobile.model.UpdateTeamRequest
 import com.gffh.mobile.navigation.Navigator
+import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
+import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 
 /**
@@ -25,11 +27,14 @@ import kotlinx.coroutines.launch
  * (`TeamView` doesn't expose `firstFixtureConfirmedAt`) - editing is always
  * offered, and a lock is surfaced as the server's own rejection
  * (`MATCHING_FIELDS_LOCKED`) rather than pre-emptively disabled here.
- * "Archive team" is shown per spec but disabled - there is no archive
- * endpoint on the backend yet.
  */
 @Composable
-fun EditTeamScreen(teamRepository: TeamRepository, navigator: Navigator, teamId: String) {
+fun EditTeamScreen(
+    teamRepository: TeamRepository,
+    currentTeamStore: CurrentTeamStore,
+    navigator: Navigator,
+    teamId: String
+) {
     var original by remember { mutableStateOf<TeamView?>(null) }
     var name by remember { mutableStateOf("") }
     var league by remember { mutableStateOf("") }
@@ -40,6 +45,8 @@ fun EditTeamScreen(teamRepository: TeamRepository, navigator: Navigator, teamId:
     var submitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var saved by remember { mutableStateOf(false) }
+    var confirmArchive by remember { mutableStateOf(false) }
+    var archiving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(teamId) {
@@ -146,9 +153,51 @@ fun EditTeamScreen(teamRepository: TeamRepository, navigator: Navigator, teamId:
             else Text("Save")
         }
 
-        TextButton(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
-            Text("Archive team (not available yet)")
-        }
+        TextButton(
+            onClick = { confirmArchive = true },
+            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Archive team") }
         TextButton(onClick = { navigator.pop() }, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+    }
+
+    if (confirmArchive) {
+        AlertDialog(
+            onDismissRequest = { if (!archiving) confirmArchive = false },
+            title = { Text("Archive this team?") },
+            text = {
+                Text(
+                    "Archived teams stop appearing in search and can't publish availability. This can't be done " +
+                        "while there's an upcoming confirmed fixture or an open friendly request."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !archiving,
+                    onClick = {
+                        archiving = true
+                        errorMessage = null
+                        scope.launch {
+                            val result = teamRepository.archive(teamId)
+                            archiving = false
+                            when (result) {
+                                is ApiResult.Success -> {
+                                    confirmArchive = false
+                                    if (currentTeamStore.active.value?.teamId == teamId) currentTeamStore.clear()
+                                    navigator.resetTo(Route.Home)
+                                }
+                                is ApiResult.Failure -> {
+                                    confirmArchive = false
+                                    errorMessage = result.message
+                                }
+                            }
+                        }
+                    }
+                ) { Text("Archive") }
+            },
+            dismissButton = {
+                TextButton(enabled = !archiving, onClick = { confirmArchive = false }) { Text("Cancel") }
+            }
+        )
     }
 }

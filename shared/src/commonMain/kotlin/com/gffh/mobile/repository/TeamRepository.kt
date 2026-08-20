@@ -37,4 +37,9 @@ class TeamRepository(private val api: ApiClient) {
         method = HttpMethod.Get
         url("/api/v1/teams/mine")
     }
+
+    suspend fun archive(teamId: String): ApiResult<Unit> = api.request {
+        method = HttpMethod.Post
+        url("/api/v1/teams/$teamId/archive")
+    }
 }

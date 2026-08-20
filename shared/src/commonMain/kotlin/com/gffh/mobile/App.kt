@@ -97,7 +97,7 @@ fun App() {
             )
             is Route.OnboardingComplete -> OnboardingCompleteScreen(teamRepository, currentTeamStore, navigator, route.teamId)
             is Route.TeamProfile -> TeamProfileScreen(teamRepository, venueRepository, navigator, route.teamId)
-            is Route.EditTeam -> EditTeamScreen(teamRepository, navigator, route.teamId)
+            is Route.EditTeam -> EditTeamScreen(teamRepository, currentTeamStore, navigator, route.teamId)
             is Route.Settings -> SettingsScreen(authRepository, currentTeamStore, navigator)
             is Route.ReportBlock -> ReportBlockScreen(
                 reportRepository, currentTeamStore, navigator, route.teamId, route.teamName, route.fixtureId
