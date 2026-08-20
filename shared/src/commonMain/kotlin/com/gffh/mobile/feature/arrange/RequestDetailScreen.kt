@@ -117,6 +117,27 @@ fun RequestDetailScreen(
                 Text(it)
             }
 
+            if (r.proposedStartTime != null || r.proposedEndTime != null || r.proposedVenueId != null) {
+                Spacer(Modifier.height(16.dp))
+                Card(
+                    Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Proposed changes", style = MaterialTheme.typography.titleSmall)
+                        if (r.proposedStartTime != null || r.proposedEndTime != null) {
+                            Text(
+                                "New time: ${(r.proposedStartTime ?: r.startTime).take(5)} - ${(r.proposedEndTime ?: r.endTime).take(5)}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        if (r.proposedVenueId != null) {
+                            Text("A different venue has been proposed", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+
             val contact = r.senderContact ?: r.recipientContact
             if (contact != null) {
                 Spacer(Modifier.height(16.dp))

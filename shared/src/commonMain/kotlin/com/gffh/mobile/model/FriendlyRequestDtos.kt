@@ -18,9 +18,17 @@ data class SendFriendlyRequest(
     val message: String? = null
 )
 
+/**
+ * proposedStartTime/proposedEndTime/proposedVenueId are only meaningful on
+ * suggestChanges - date isn't proposable (see the backend's FriendlyRequest
+ * javadoc), only time/venue.
+ */
 @Serializable
 data class FriendlyRequestActionRequest(
-    val reason: String? = null
+    val reason: String? = null,
+    val proposedStartTime: String? = null,
+    val proposedEndTime: String? = null,
+    val proposedVenueId: String? = null
 )
 
 @Serializable
@@ -49,5 +57,8 @@ data class FriendlyRequestView(
     val actionReason: String? = null,
     val availableActions: List<String>,
     val senderContact: TeamContact? = null,
-    val recipientContact: TeamContact? = null
+    val recipientContact: TeamContact? = null,
+    val proposedStartTime: String? = null,
+    val proposedEndTime: String? = null,
+    val proposedVenueId: String? = null
 )

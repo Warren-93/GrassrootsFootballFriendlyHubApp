@@ -153,7 +153,9 @@ fun App() {
             is Route.RequestDetail -> RequestDetailScreen(
                 friendlyRequestRepository, conversationRepository, currentTeamStore, navigator, route.requestId
             )
-            is Route.SuggestChanges -> SuggestChangesScreen(friendlyRequestRepository, navigator, route.requestId)
+            is Route.SuggestChanges -> SuggestChangesScreen(
+                friendlyRequestRepository, venueRepository, currentTeamStore, navigator, route.requestId
+            )
             is Route.DeclineRequest -> DeclineScreen(friendlyRequestRepository, navigator, route.requestId)
             is Route.Fixtures -> FixturesScreen(friendlyRequestRepository, fixtureRepository, currentTeamStore, navigator)
             is Route.FixtureDetail -> FixtureDetailScreen(

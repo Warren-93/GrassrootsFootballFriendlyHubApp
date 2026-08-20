@@ -17,10 +17,19 @@ class FriendlyRequestRepository(private val api: ApiClient) {
         idempotencyKey?.let { header("Idempotency-Key", it) }
     }
 
-    suspend fun act(requestId: String, action: String, reason: String? = null): ApiResult<FriendlyRequestView> = api.request {
+    suspend fun act(
+        requestId: String,
+        action: String,
+        reason: String? = null,
+        proposedStartTime: String? = null,
+        proposedEndTime: String? = null,
+        proposedVenueId: String? = null
+    ): ApiResult<FriendlyRequestView> = api.request {
         method = HttpMethod.Post
         url("/api/v1/friendly-requests/$requestId/actions/$action")
-        if (reason != null) setBody(FriendlyRequestActionRequest(reason))
+        if (reason != null || proposedStartTime != null || proposedEndTime != null || proposedVenueId != null) {
+            setBody(FriendlyRequestActionRequest(reason, proposedStartTime, proposedEndTime, proposedVenueId))
+        }
     }
 
     suspend fun list(teamId: String): ApiResult<List<FriendlyRequestView>> = api.request {
