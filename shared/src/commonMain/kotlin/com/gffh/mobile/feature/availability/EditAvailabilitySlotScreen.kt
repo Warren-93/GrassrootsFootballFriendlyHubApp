@@ -16,6 +16,9 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.VenueRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.TimeField
+import com.gffh.mobile.ui.components.formatHourMinute
+import com.gffh.mobile.ui.components.parseHourMinute
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 
@@ -23,10 +26,8 @@ import kotlinx.datetime.*
  * SCR-AV-03 Add / edit availability slot. Purpose: publish or amend a window
  * in which the team can play.
  *
- * Simplifications from spec: no platform time-picker dialog is wired up yet
- * (times are fixed at the spec's own defaults, 10:00-13:00). Repeating a slot
- * across several dates is its own screen (SCR-AV-04, reachable from Calendar)
- * rather than an option here.
+ * Simplification from spec: repeating a slot across several dates is its own
+ * screen (SCR-AV-04, reachable from Calendar) rather than an option here.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -93,7 +94,13 @@ fun EditAvailabilitySlotScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(12.dp))
-        Text("Time window: $startTime - $endTime", style = MaterialTheme.typography.labelLarge)
+        Text("Time window", style = MaterialTheme.typography.labelLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val (startHour, startMinute) = parseHourMinute(startTime)
+            val (endHour, endMinute) = parseHourMinute(endTime)
+            TimeField("Start", startHour, startMinute, { h, m -> startTime = formatHourMinute(h, m) })
+            TimeField("End", endHour, endMinute, { h, m -> endTime = formatHourMinute(h, m) })
+        }
 
         Spacer(Modifier.height(16.dp))
         Text("Home / Away", style = MaterialTheme.typography.labelLarge)

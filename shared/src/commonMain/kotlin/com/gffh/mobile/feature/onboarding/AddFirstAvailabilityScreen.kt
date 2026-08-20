@@ -15,6 +15,7 @@ import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.VenueRepository
 import com.gffh.mobile.theme.displayHeadlineSmall
 import com.gffh.mobile.theme.eyebrowLabel
+import com.gffh.mobile.ui.components.TimeField
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 
@@ -88,9 +89,11 @@ fun AddFirstAvailabilityScreen(
         Text("Selected: $date", style = MaterialTheme.typography.bodyMedium)
 
         Spacer(Modifier.height(16.dp))
-        Text("Time window: ${startTime} - ${endTime}", style = MaterialTheme.typography.labelLarge)
-        Text("Default 10:00-13:00 - edit in a future release; time pickers need a platform dialog not wired up yet.",
-            style = MaterialTheme.typography.bodySmall)
+        Text("Time window", style = MaterialTheme.typography.labelLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TimeField("Start", startTime.hour, startTime.minute, { h, m -> startTime = LocalTime(h, m) })
+            TimeField("End", endTime.hour, endTime.minute, { h, m -> endTime = LocalTime(h, m) })
+        }
 
         Spacer(Modifier.height(16.dp))
         Text("Home / Away", style = MaterialTheme.typography.labelLarge)
