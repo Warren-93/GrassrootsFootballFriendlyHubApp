@@ -95,6 +95,11 @@ kotlin {
 
                 implementation("com.russhwolf:multiplatform-settings:1.2.0")
                 implementation("com.russhwolf:multiplatform-settings-coroutines:1.2.0")
+
+                // Results map (SCR-FF-04): renders a small self-contained Leaflet/OSM
+                // HTML page in a WebView, same tile source gffh-web already uses, so
+                // no native map SDK/API key is needed on either platform.
+                implementation("io.github.kevinnzou:compose-webview-multiplatform:1.9.40")
             }
         }
         val commonTest by getting {
