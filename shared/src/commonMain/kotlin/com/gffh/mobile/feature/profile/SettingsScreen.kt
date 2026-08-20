@@ -80,6 +80,7 @@ fun SettingsScreen(authRepository: AuthRepository, currentTeamStore: CurrentTeam
         SectionLabel("General")
         SettingsRow("Notifications") { navigator.push(Route.NotificationPreferences) }
         SettingsRow("Privacy and data") { navigator.push(Route.Privacy) }
+        SettingsRow("Blocked teams") { navigator.push(Route.BlockedTeams) }
         SettingsRow("Help and support") { navigator.push(Route.Help) }
 
         Spacer(Modifier.height(28.dp))

@@ -27,6 +27,7 @@ sealed class Route {
     data class EditTeam(val teamId: String) : Route()                       // SCR-PR-02
     data object Settings : Route()                                          // SCR-PR-08
     data class ReportBlock(val teamId: String, val teamName: String, val fixtureId: String? = null) : Route() // SCR-PR-11
+    data object BlockedTeams : Route()                                      // SCR-PR-11
     data class VenuesList(val clubId: String) : Route()                     // SCR-PR-05
     data class EditVenue(val venueId: String?, val clubId: String) : Route() // SCR-PR-06
     data class ClubProfile(val clubId: String) : Route()                    // SCR-PR-03

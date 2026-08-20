@@ -31,6 +31,7 @@ import com.gffh.mobile.feature.profile.EditClubScreen
 import com.gffh.mobile.feature.profile.EditTeamScreen
 import com.gffh.mobile.feature.profile.EditVenueScreen
 import com.gffh.mobile.feature.profile.MembersScreen
+import com.gffh.mobile.feature.profile.BlockedTeamsScreen
 import com.gffh.mobile.feature.profile.ReportBlockScreen
 import com.gffh.mobile.feature.profile.SettingsScreen
 import com.gffh.mobile.feature.profile.TeamProfileScreen
@@ -101,6 +102,7 @@ fun App() {
             is Route.ReportBlock -> ReportBlockScreen(
                 reportRepository, currentTeamStore, navigator, route.teamId, route.teamName, route.fixtureId
             )
+            is Route.BlockedTeams -> BlockedTeamsScreen(reportRepository, currentTeamStore, navigator)
             is Route.VenuesList -> VenuesListScreen(venueRepository, navigator, route.clubId)
             is Route.EditVenue -> EditVenueScreen(venueRepository, geocodeRepository, navigator, route.venueId, route.clubId)
             is Route.ClubProfile -> ClubProfileScreen(

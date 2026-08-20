@@ -68,6 +68,7 @@ fun tabFor(route: Route): AppTab? = when (route) {
     is Route.EditTeam,
     is Route.Settings,
     is Route.ReportBlock,
+    is Route.BlockedTeams,
     is Route.VenuesList,
     is Route.EditVenue,
     is Route.ClubProfile,
