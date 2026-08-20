@@ -1,8 +1,20 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+    }
+}
+
+// Stubs to satisfy IDE sync for AGP 9.0+ built-in Kotlin
+tasks.register("prepareKotlinBuildScriptModel") {}
+tasks.register("prepareKotlinIdeaImport") {}
 
 android {
     namespace = "com.gffh.mobile.android"
