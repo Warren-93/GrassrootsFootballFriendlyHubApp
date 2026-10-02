@@ -39,7 +39,11 @@ data class TokenResponse(
 )
 
 @Serializable
-data class VerificationResendResponse(val verificationToken: String? = null)
+data class VerificationResendResponse(
+    val verificationToken: String? = null,
+    /** True when the API emailed a new link (it only returns the token itself while no email provider is set up). */
+    val emailSent: Boolean = false
+)
 
 @Serializable
 data class UserView(
