@@ -8,6 +8,11 @@ on:
       - 'shared/**'
       - 'androidApp/**'
       - '.github/workflows/android-build.yml'
+  pull_request:
+    paths:
+      - 'shared/**'
+      - 'androidApp/**'
+      - '.github/workflows/android-build.yml'
 
 jobs:
   build:
@@ -25,6 +30,11 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default also installs the legacy 'tools' package,
+          # which current sdkmanager no longer offers ("Failed to find
+          # package 'tools'"); Gradle installs the platforms it needs itself.
+          packages: platform-tools
 
       - name: Make gradlew executable
         run: chmod +x gradlew

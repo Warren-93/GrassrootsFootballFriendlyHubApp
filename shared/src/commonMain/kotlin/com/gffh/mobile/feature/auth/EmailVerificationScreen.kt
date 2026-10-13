@@ -84,7 +84,10 @@ fun EmailVerificationScreen(authRepository: AuthRepository, navigator: Navigator
             onClick = {
                 scope.launch {
                     when (val result = authRepository.resendVerification()) {
-                        is ApiResult.Success -> verifyToken = result.value.verificationToken
+                        is ApiResult.Success -> {
+                            verifyToken = result.value.verificationToken
+                            if (result.value.emailSent) statusMessage = "We've sent you a new link."
+                        }
                         is ApiResult.Failure -> statusMessage = result.message
                     }
                     resendSecondsLeft = 60
