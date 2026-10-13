@@ -26,13 +26,29 @@ android {
         applicationId = "com.gffh.mobile.android"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI passes -Pgffh.versionCode / -Pgffh.versionName for Play uploads,
+        // since every bundle uploaded to Play needs a higher versionCode.
+        versionCode = (providers.gradleProperty("gffh.versionCode").orNull ?: "1").toInt()
+        versionName = providers.gradleProperty("gffh.versionName").orNull ?: "0.1.0"
     }
+
+    // The upload keystore never lives in the repo: the release workflow
+    // decodes it from a GitHub secret and points these variables at it.
+    // Without them, release builds come out unsigned.
+    val keystorePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH").orNull
+    val releaseSigning = if (keystorePath != null) {
+        signingConfigs.create("release") {
+            storeFile = file(keystorePath)
+            storePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull
+            keyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS").orNull
+            keyPassword = providers.environmentVariable("ANDROID_KEY_PASSWORD").orNull
+        }
+    } else null
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = releaseSigning
         }
     }
 

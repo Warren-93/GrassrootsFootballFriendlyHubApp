@@ -15,6 +15,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // compose-webview-multiplatform's desktop artifact depends on JOGL,
+        // which is only published here. Release lint resolves it, so
+        // bundleRelease fails without this repository.
+        maven("https://jogamp.org/deployment/maven") {
+            content { includeGroupByRegex("org\\.jogamp.*") }
+        }
     }
 }
 
