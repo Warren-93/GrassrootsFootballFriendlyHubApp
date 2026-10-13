@@ -8,6 +8,11 @@ on:
       - 'shared/**'
       - 'androidApp/**'
       - '.github/workflows/android-build.yml'
+  pull_request:
+    paths:
+      - 'shared/**'
+      - 'androidApp/**'
+      - '.github/workflows/android-build.yml'
 
 jobs:
   build:
@@ -25,6 +30,10 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The default also installs the legacy 'tools' package, which the
+          # current runner image's sdkmanager no longer has, failing the job.
+          packages: platform-tools
         with:
           # The action's default also installs the legacy 'tools' package,
           # which current sdkmanager no longer offers ("Failed to find

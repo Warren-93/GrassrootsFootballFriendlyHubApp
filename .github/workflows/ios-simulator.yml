@@ -8,6 +8,11 @@ on:
       - 'shared/**'
       - 'iosApp/**'
       - '.github/workflows/ios-simulator.yml'
+  pull_request:
+    paths:
+      - 'shared/**'
+      - 'iosApp/**'
+      - '.github/workflows/ios-simulator.yml'
 
 jobs:
   build:
