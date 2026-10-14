@@ -20,6 +20,9 @@ import com.gffh.mobile.session.InvitationDraftState
 import com.gffh.mobile.session.SearchResultsCache
 import kotlinx.datetime.LocalTime
 
+/** The API refuses to send a request until the sender's profile is at least this complete. */
+private const val MIN_PROFILE_COMPLETENESS = 80
+
 /** Mirrors the backend's AgeGroup.defaultMatchMinutes() table (SCR-IN-01's "Match duration" default). */
 private fun defaultMatchMinutes(ageGroup: String?): Int = when (ageGroup) {
     "U7", "U8", "U9" -> 40
@@ -86,9 +89,26 @@ fun InvitationComposerScreen(
         return
     }
 
+    val completeness = ourTeam?.completenessPercent
+    val profileTooThin = completeness != null && completeness < MIN_PROFILE_COMPLETENESS
+
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
         Text("Invite ${match.team.name}", style = MaterialTheme.typography.headlineSmall)
         Text(match.team.clubName, style = MaterialTheme.typography.bodyMedium)
+
+        if (profileTooThin) {
+            Spacer(Modifier.height(16.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        "Your team profile is $completeness% complete. It needs to be at least " +
+                            "$MIN_PROFILE_COMPLETENESS% before you can send requests, so opponents know who they're playing.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    TextButton(onClick = { navigator.push(Route.EditTeam(activeTeam.teamId)) }) { Text("Complete profile") }
+                }
+            }
+        }
 
         Spacer(Modifier.height(20.dp))
         Text("Date: ${overlap.date}", style = MaterialTheme.typography.bodyMedium)
@@ -159,6 +179,7 @@ fun InvitationComposerScreen(
                 draft.notes = notes
                 navigator.push(Route.InvitationReview)
             },
+            enabled = !profileTooThin,
             modifier = Modifier.fillMaxWidth()
         ) { Text("Review proposal") }
     }

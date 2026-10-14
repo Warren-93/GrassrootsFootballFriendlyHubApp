@@ -73,7 +73,9 @@ data class TeamView(
     val verification: String,
     val defaultVenueId: String? = null,
     val completenessPercent: Int,
-    val createdAt: String
+    val createdAt: String,
+    /** Only set on GET /teams/mine: false for a member who can't manage the team. */
+    val canManage: Boolean? = null
 )
 
 @Serializable

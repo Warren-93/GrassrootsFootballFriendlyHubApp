@@ -40,13 +40,15 @@ and verify the Android target without Kotlin/Native ever being provisioned.
 
 The API needs to be reachable from wherever the app runs:
 
-- **Android emulator**: `10.0.2.2` reaches the host machine's `localhost` —
-  this is the default in `HttpClientEngine.android.kt`.
-- **iOS simulator**: shares the host's network namespace, so `localhost`
-  works directly — the default in `HttpClientEngine.ios.kt`.
-- **A physical device**: neither applies. Override `defaultApiBaseUrl()` with
-  the host machine's real LAN address, or add a build-time config mechanism
-  before shipping past local development.
+- **Android**: debug builds default to `http://10.0.2.2:8090` (the emulator's
+  alias for the host's `localhost`); release builds default to
+  `https://gffh-api.onrender.com`. Override either with
+  `./gradlew ... -Pgffh.apiBaseUrl=http://192.168.x.y:8090` (a physical device
+  needs the host's LAN address) or the `GFFH_API_BASE_URL` environment variable.
+  The release workflow reads the repository variable `GFFH_API_BASE_URL`.
+- **iOS**: the `GFFH_API_BASE_URL` build setting (Debug: `http://localhost:8090`,
+  Release: the Render URL) lands in Info.plist as `GFFHApiBaseUrl`; pass
+  `GFFH_API_BASE_URL=...` to `xcodebuild` to change it.
 
 Start the backend first (from `gffh-api/`):
 

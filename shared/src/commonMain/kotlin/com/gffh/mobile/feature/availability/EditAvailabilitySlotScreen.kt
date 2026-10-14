@@ -70,7 +70,8 @@ fun EditAvailabilitySlotScreen(
                     val s = result.value
                     date = s.date; startTime = s.startTime.take(5); endTime = s.endTime.take(5)
                     homeAway = HomeAwayPreference.valueOf(s.homeAwayPreference)
-                    selectedVenueId = s.venueId
+                    // A date saved without a venue keeps the default venue offered.
+                    selectedVenueId = s.venueId ?: selectedVenueId
                     notes = s.notes ?: ""
                     loading = false
                 }

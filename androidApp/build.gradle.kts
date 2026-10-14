@@ -25,11 +25,15 @@ android {
     defaultConfig {
         applicationId = "com.gffh.mobile.android"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 36
         // CI passes -Pgffh.versionCode / -Pgffh.versionName for Play uploads,
         // since every bundle uploaded to Play needs a higher versionCode.
         versionCode = (providers.gradleProperty("gffh.versionCode").orNull ?: "1").toInt()
         versionName = providers.gradleProperty("gffh.versionName").orNull ?: "0.1.0"
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     // The upload keystore never lives in the repo: the release workflow
@@ -45,10 +49,25 @@ android {
         }
     } else null
 
+    // Where the app finds the API. Override with -Pgffh.apiBaseUrl=... or the
+    // GFFH_API_BASE_URL environment variable (the release workflow passes the
+    // repository variable of the same name). Debug builds default to the
+    // emulator's alias for the host machine's localhost.
+    val apiBaseUrlOverride = providers.gradleProperty("gffh.apiBaseUrl").orNull?.takeIf { it.isNotBlank() }
+        ?: providers.environmentVariable("GFFH_API_BASE_URL").orNull?.takeIf { it.isNotBlank() }
+    fun quoted(value: String) = "\"" + value.trimEnd('/') + "\""
+
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", quoted(apiBaseUrlOverride ?: "http://10.0.2.2:8090"))
+            // Plain http is only for talking to a backend on your own machine.
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
         release {
             isMinifyEnabled = false
             signingConfig = releaseSigning
+            buildConfigField("String", "API_BASE_URL", quoted(apiBaseUrlOverride ?: "https://gffh-api.onrender.com"))
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
     }
 

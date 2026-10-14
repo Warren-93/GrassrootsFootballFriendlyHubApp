@@ -12,6 +12,10 @@ name: Android Release Bundle
 #   ANDROID_KEYSTORE_PASSWORD  the keystore's password
 #   ANDROID_KEY_ALIAS          the upload key's alias
 #   ANDROID_KEY_PASSWORD       the upload key's password
+#
+# The API address comes from the repository variable GFFH_API_BASE_URL
+# (Settings > Secrets and variables > Actions > Variables), e.g. the Render
+# service's https URL. Unset, the build uses https://gffh-api.onrender.com.
 
 on:
   workflow_dispatch:
@@ -90,6 +94,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           VERSION_CODE: ${{ steps.version.outputs.code }}
           VERSION_NAME: ${{ steps.version.outputs.name }}
+          GFFH_API_BASE_URL: ${{ vars.GFFH_API_BASE_URL }}
         run: >-
           ./gradlew :androidApp:bundleRelease --console=plain
           "-Pgffh.versionCode=$VERSION_CODE"

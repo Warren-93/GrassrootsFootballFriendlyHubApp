@@ -54,6 +54,10 @@ jobs:
           echo "device_name=$DEVICE_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Build for iOS Simulator
+        # The simulator runs on Appetize, far from any local backend, so it talks
+        # to the hosted API (repository variable GFFH_API_BASE_URL, else Render).
+        env:
+          API_BASE_URL: ${{ vars.GFFH_API_BASE_URL || 'https://gffh-api.onrender.com' }}
         run: |
           xcodebuild \
             -project iosApp/iosApp.xcodeproj \
@@ -63,6 +67,7 @@ jobs:
             -derivedDataPath iosApp/build \
             -destination "platform=iOS Simulator,name=${{ steps.simulator.outputs.device_name }},OS=latest" \
             CODE_SIGNING_ALLOWED=NO \
+            "GFFH_API_BASE_URL=$API_BASE_URL" \
             build
 
       - name: Zip .app for Appetize.io

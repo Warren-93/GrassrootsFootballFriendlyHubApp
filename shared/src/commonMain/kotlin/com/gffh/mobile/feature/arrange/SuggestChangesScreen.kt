@@ -72,7 +72,14 @@ fun SuggestChangesScreen(
             val (startHour, startMinute) = parseHourMinute(startTime)
             val (endHour, endMinute) = parseHourMinute(endTime)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TimeField("Start", startHour, startMinute, { h, m -> startTime = formatHourMinute(h, m) })
+                TimeField("Start", startHour, startMinute, { h, m ->
+                    // Keep the match length: moving kick-off moves the end time with it.
+                    val oldStart = startHour * 60 + startMinute
+                    val newStart = h * 60 + m
+                    val newEnd = (endHour * 60 + endMinute + newStart - oldStart).coerceIn(0, 23 * 60 + 59)
+                    startTime = formatHourMinute(h, m)
+                    endTime = formatHourMinute(newEnd / 60, newEnd % 60)
+                })
                 TimeField("End", endHour, endMinute, { h, m -> endTime = formatHourMinute(h, m) })
             }
 
@@ -94,6 +101,15 @@ fun SuggestChangesScreen(
             supportingText = { Text("${reason.length}/500") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        val endBeforeStart = startTime.isNotEmpty() && endTime.isNotEmpty() &&
+            parseHourMinute(endTime).let { it.first * 60 + it.second } <=
+            parseHourMinute(startTime).let { it.first * 60 + it.second }
+        if (endBeforeStart) {
+            Spacer(Modifier.height(12.dp))
+            Text("The end time must be after the start time.", color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall)
+        }
 
         errorMessage?.let {
             Spacer(Modifier.height(12.dp))
@@ -120,7 +136,7 @@ fun SuggestChangesScreen(
                     }
                 }
             },
-            enabled = !sending && request != null,
+            enabled = !sending && request != null && !endBeforeStart,
             modifier = Modifier.fillMaxWidth()
         ) { Text("Send changes") }
         TextButton(onClick = { navigator.pop() }, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }

@@ -2,12 +2,15 @@ package com.gffh.mobile.core.network
 
 import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.engine.darwin.Darwin
+import platform.Foundation.NSBundle
 
 actual fun httpClientEngineFactory(): HttpClientEngineFactory<*> = Darwin
 
-// This build runs in a cloud iOS Simulator (GitHub Actions -> Appetize.io),
-// not on the same machine or network as the backend, so neither "localhost"
-// nor a LAN IP is reachable here. Point this at a public tunnel to your local
-// backend (e.g. `ngrok http 8090`) before triggering the iOS Simulator Build
-// workflow, and keep the backend + tunnel running for the demo session.
-actual fun defaultApiBaseUrl(): String = "https://primp-resent-staging.ngrok-free.dev"
+// The URL comes from the app's Info.plist key GFFHApiBaseUrl, set from the
+// GFFH_API_BASE_URL build setting in iosApp/project.yml (override it on the
+// xcodebuild command line). A simulator shares the Mac's network, so localhost
+// works when nothing is set.
+actual fun defaultApiBaseUrl(): String =
+    (NSBundle.mainBundle.objectForInfoDictionaryKey("GFFHApiBaseUrl") as? String)
+        ?.trim()?.trimEnd('/')?.takeIf { it.isNotEmpty() && !it.startsWith("$") }
+        ?: "http://localhost:8090"
