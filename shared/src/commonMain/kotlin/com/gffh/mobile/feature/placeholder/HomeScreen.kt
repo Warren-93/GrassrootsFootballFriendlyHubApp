@@ -67,7 +67,19 @@ fun HomeScreen(
     LaunchedEffect(session?.userId) {
         if (session == null) return@LaunchedEffect
         val result = teamRepository.mine()
-        if (result is ApiResult.Success) myTeams = result.value
+        if (result is ApiResult.Success) {
+            myTeams = result.value
+            // Keep the cached team in step with the server: pick one if none is
+            // cached, and refresh whether this user can manage it.
+            val current = currentTeamStore.active.value
+            val t = result.value.firstOrNull { it.id == current?.teamId } ?: result.value.firstOrNull()
+            if (t != null) {
+                val canManage = t.canManage ?: true
+                if (current?.teamId != t.id || current.canManage != canManage) {
+                    currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name, canManage))
+                }
+            }
+        }
     }
 
     LaunchedEffect(activeTeam?.teamId) {
@@ -124,7 +136,7 @@ fun HomeScreen(
                             text = { Text(t.name) },
                             onClick = {
                                 teamMenuOpen = false
-                                currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name))
+                                currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name, t.canManage ?: true))
                             }
                         )
                     }

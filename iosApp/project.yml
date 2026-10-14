@@ -23,8 +23,14 @@ targets:
     info:
       path: Generated/Info.plist
       properties:
-        CFBundleDisplayName: PitchMate
-        UILaunchScreen: {}
+        CFBundleDisplayName: Kickabout
+        GFFHApiBaseUrl: $(GFFH_API_BASE_URL)
+        # Lets a Debug build talk to a backend on the Mac over plain http.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
@@ -39,6 +45,11 @@ targets:
         PRODUCT_NAME: iosApp
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        Debug:
+          GFFH_API_BASE_URL: "http://localhost:8090"
+        Release:
+          GFFH_API_BASE_URL: "https://grassrootsfootballfriendlyhubapi.onrender.com"
     prebuildScripts:
       - name: Compile Kotlin Framework
         script: |

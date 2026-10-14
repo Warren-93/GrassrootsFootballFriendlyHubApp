@@ -4,11 +4,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="PitchMate"
+        android:label="Kickabout"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/AppTheme"
         android:allowBackup="true"
+        android:usesCleartextTraffic="${usesCleartextTraffic}"
         android:supportsRtl="true">
 
         <activity

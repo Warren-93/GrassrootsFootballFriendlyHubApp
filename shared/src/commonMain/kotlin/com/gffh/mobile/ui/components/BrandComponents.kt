@@ -32,7 +32,7 @@ import com.gffh.mobile.theme.displayHeadlineSmall
 import com.gffh.mobile.theme.eyebrowLabel
 
 /**
- * Reusable brand-styled composables approximating the PitchMate concept's
+ * Reusable brand-styled composables approximating the Kickabout (formerly PitchMate) concept's
  * .a-hero/.a-stat/.crest/ScoreChip patterns - see gffh-web's brand component
  * files under src/components/brand for the visual language these mirror
  * (React, not shared code, but the source of truth for colours/thresholds). Follows

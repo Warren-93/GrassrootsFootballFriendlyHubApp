@@ -5,7 +5,12 @@ import com.russhwolf.settings.get
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-data class ActiveTeam(val teamId: String, val clubId: String, val teamName: String)
+/**
+ * [canManage] is false for a member who joined with a code (role USER): the API
+ * won't let them publish availability, search, arrange or message, so the app
+ * shows them a read-only view instead of manager screens that come back empty.
+ */
+data class ActiveTeam(val teamId: String, val clubId: String, val teamName: String, val canManage: Boolean = true)
 
 /**
  * The team every tab-root screen (Dashboard, Calendar) implicitly operates on.
@@ -24,13 +29,14 @@ class CurrentTeamStore(private val settings: Settings) {
         val teamId = settings.get<String>(KEY_TEAM_ID) ?: return null
         val clubId = settings.get<String>(KEY_CLUB_ID) ?: return null
         val name = settings.get<String>(KEY_TEAM_NAME) ?: return null
-        return ActiveTeam(teamId, clubId, name)
+        return ActiveTeam(teamId, clubId, name, settings.getBoolean(KEY_CAN_MANAGE, true))
     }
 
     fun set(team: ActiveTeam) {
         settings.putString(KEY_TEAM_ID, team.teamId)
         settings.putString(KEY_CLUB_ID, team.clubId)
         settings.putString(KEY_TEAM_NAME, team.teamName)
+        settings.putBoolean(KEY_CAN_MANAGE, team.canManage)
         _active.value = team
     }
 
@@ -38,6 +44,7 @@ class CurrentTeamStore(private val settings: Settings) {
         settings.remove(KEY_TEAM_ID)
         settings.remove(KEY_CLUB_ID)
         settings.remove(KEY_TEAM_NAME)
+        settings.remove(KEY_CAN_MANAGE)
         _active.value = null
     }
 
@@ -45,5 +52,6 @@ class CurrentTeamStore(private val settings: Settings) {
         const val KEY_TEAM_ID = "active_team_id"
         const val KEY_CLUB_ID = "active_club_id"
         const val KEY_TEAM_NAME = "active_team_name"
+        const val KEY_CAN_MANAGE = "active_team_can_manage"
     }
 }

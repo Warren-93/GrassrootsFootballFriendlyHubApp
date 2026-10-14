@@ -50,7 +50,7 @@ fun SplashScreen(authRepository: AuthRepository, navigator: Navigator) {
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Grassroots Football Friendly Hub", style = MaterialTheme.typography.titleMedium)
+            Text("Kickabout", style = MaterialTheme.typography.titleMedium)
             Box(Modifier.padding(top = 24.dp)) { CircularProgressIndicator() }
         }
     }

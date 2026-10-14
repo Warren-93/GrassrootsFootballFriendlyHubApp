@@ -74,7 +74,7 @@ fun RoleSelectionScreen(memberRepository: MemberRepository, currentTeamStore: Cu
                         when (val result = memberRepository.join(joinCode)) {
                             is ApiResult.Success -> {
                                 val team = result.value
-                                currentTeamStore.set(ActiveTeam(team.teamId, team.clubId, team.teamName))
+                                currentTeamStore.set(ActiveTeam(team.teamId, team.clubId, team.teamName, team.membership.role != "USER"))
                                 navigator.resetTo(Route.Home)
                             }
                             is ApiResult.Failure -> {

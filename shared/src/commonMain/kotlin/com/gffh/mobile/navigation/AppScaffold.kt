@@ -1,6 +1,8 @@
 package com.gffh.mobile.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -123,7 +125,8 @@ fun AppScaffold(navigator: Navigator, selectedTab: AppTab?, content: @Composable
             }
         }
     ) { innerPadding ->
-        Box(Modifier.padding(innerPadding)) {
+        // The nav bar covers the bottom inset, but not the keyboard: pad for it here.
+        Box(Modifier.padding(innerPadding).consumeWindowInsets(innerPadding).imePadding()) {
             content()
         }
     }

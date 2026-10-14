@@ -1,10 +1,19 @@
 package com.gffh.mobile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import com.gffh.mobile.core.auth.TokenStore
 import com.gffh.mobile.core.auth.createSettings
 import com.gffh.mobile.core.network.ApiClient
+import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.core.network.defaultApiBaseUrl
 import com.gffh.mobile.feature.auth.*
 import com.gffh.mobile.feature.availability.BulkAddAvailabilityScreen
@@ -39,6 +48,7 @@ import com.gffh.mobile.feature.profile.VenuesListScreen
 import com.gffh.mobile.feature.profile.VerificationScreen
 import com.gffh.mobile.feature.profile.PrivacyScreen
 import com.gffh.mobile.feature.profile.HelpScreen
+import com.gffh.mobile.feature.placeholder.MemberNoticeScreen
 import com.gffh.mobile.navigation.AppScaffold
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
@@ -50,15 +60,33 @@ import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.theme.GffhTheme
 
+/**
+ * What a member who can't manage their team (joined with a code) may still open:
+ * sign-in and onboarding (to create their own team), their team's profile, and
+ * their own account settings.
+ */
+private fun memberCanOpen(route: Route, teamId: String): Boolean = when (route) {
+    is Route.TeamProfile -> route.teamId == teamId
+    is Route.Home, is Route.Calendar, is Route.DayDetail, is Route.EditAvailabilitySlot,
+    is Route.BulkAddAvailability, is Route.SuggestedMatches, is Route.SearchEntry, is Route.Filters,
+    is Route.Results, is Route.ResultsMap, is Route.OpponentProfile, is Route.MatchExplanation,
+    is Route.InvitationComposer, is Route.InvitationReview, is Route.InvitationSent, is Route.RequestDetail,
+    is Route.SuggestChanges, is Route.DeclineRequest, is Route.Fixtures, is Route.FixtureDetail,
+    is Route.Messages, is Route.ConversationThread, is Route.EditTeam, is Route.VenuesList, is Route.EditVenue,
+    is Route.ClubProfile, is Route.EditClub, is Route.Members, is Route.Verification, is Route.ReportBlock,
+    is Route.BlockedTeams -> false
+    else -> true
+}
+
 @Composable
-fun App() {
+fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
     val settings = remember { createSettings() }
     val tokenStore = remember { TokenStore(settings) }
     val currentTeamStore = remember { CurrentTeamStore(settings) }
     val filterState = remember { SearchFilterState() }
     val resultsCache = remember { SearchResultsCache() }
     val invitationDraft = remember { InvitationDraftState() }
-    val apiClient = remember { ApiClient(defaultApiBaseUrl(), tokenStore) }
+    val apiClient = remember { ApiClient(apiBaseUrl, tokenStore) }
     val authRepository = remember { AuthRepository(apiClient, tokenStore) }
     val teamRepository = remember { TeamRepository(apiClient) }
     val clubRepository = remember { ClubRepository(apiClient) }
@@ -79,8 +107,20 @@ fun App() {
     GffhTheme {
         val route = navigator.current
         val tab = tabFor(route)
+        val activeTeam = currentTeamStore.active.collectAsState().value
+        val memberBlocked = activeTeam != null && !activeTeam.canManage && !memberCanOpen(route, activeTeam.teamId)
+        // A member may since have been made a manager: check again whenever the app opens on them.
+        LaunchedEffect(activeTeam?.teamId, activeTeam?.canManage) {
+            val current = activeTeam ?: return@LaunchedEffect
+            if (current.canManage) return@LaunchedEffect
+            val mine = teamRepository.mine()
+            if (mine is ApiResult.Success) {
+                val t = mine.value.firstOrNull { it.id == current.teamId } ?: return@LaunchedEffect
+                if (t.canManage == true) currentTeamStore.set(current.copy(canManage = true))
+            }
+        }
         val screen: @Composable () -> Unit = {
-            when (route) {
+            if (memberBlocked) MemberNoticeScreen(activeTeam!!, navigator) else when (route) {
             is Route.Splash -> SplashScreen(authRepository, navigator)
             is Route.Welcome -> WelcomeScreen(navigator)
             is Route.Register -> RegisterScreen(authRepository, navigator)
@@ -169,7 +209,11 @@ fun App() {
         if (tab != null) {
             AppScaffold(navigator, tab) { screen() }
         } else {
-            screen()
+            // Android draws edge to edge (and iOS always has), so screens without the
+            // tab scaffold keep clear of the status bar, notch and keyboard here.
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
+                screen()
+            }
         }
     }
 }
