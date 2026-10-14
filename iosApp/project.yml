@@ -23,8 +23,10 @@ targets:
     info:
       path: Generated/Info.plist
       properties:
-        CFBundleDisplayName: PitchMate
-        UILaunchScreen: {}
+        CFBundleDisplayName: Kickabout
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
