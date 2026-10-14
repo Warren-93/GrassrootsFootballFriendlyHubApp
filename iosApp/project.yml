@@ -49,7 +49,7 @@ targets:
         Debug:
           GFFH_API_BASE_URL: "http://localhost:8090"
         Release:
-          GFFH_API_BASE_URL: "https://gffh-api.onrender.com"
+          GFFH_API_BASE_URL: "https://grassrootsfootballfriendlyhubapi.onrender.com"
     prebuildScripts:
       - name: Compile Kotlin Framework
         script: |

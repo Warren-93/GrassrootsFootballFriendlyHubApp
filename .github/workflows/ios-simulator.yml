@@ -57,7 +57,7 @@ jobs:
         # The simulator runs on Appetize, far from any local backend, so it talks
         # to the hosted API (repository variable GFFH_API_BASE_URL, else Render).
         env:
-          API_BASE_URL: ${{ vars.GFFH_API_BASE_URL || 'https://gffh-api.onrender.com' }}
+          API_BASE_URL: ${{ vars.GFFH_API_BASE_URL || 'https://grassrootsfootballfriendlyhubapi.onrender.com' }}
         run: |
           xcodebuild \
             -project iosApp/iosApp.xcodeproj \

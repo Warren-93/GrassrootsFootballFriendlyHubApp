@@ -15,7 +15,7 @@ name: Android Release Bundle
 #
 # The API address comes from the repository variable GFFH_API_BASE_URL
 # (Settings > Secrets and variables > Actions > Variables), e.g. the Render
-# service's https URL. Unset, the build uses https://gffh-api.onrender.com.
+# service's https URL. Unset, the build uses https://grassrootsfootballfriendlyhubapi.onrender.com.
 
 on:
   workflow_dispatch:

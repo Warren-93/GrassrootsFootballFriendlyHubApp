@@ -42,7 +42,7 @@ The API needs to be reachable from wherever the app runs:
 
 - **Android**: debug builds default to `http://10.0.2.2:8090` (the emulator's
   alias for the host's `localhost`); release builds default to
-  `https://gffh-api.onrender.com`. Override either with
+  `https://grassrootsfootballfriendlyhubapi.onrender.com`. Override either with
   `./gradlew ... -Pgffh.apiBaseUrl=http://192.168.x.y:8090` (a physical device
   needs the host's LAN address) or the `GFFH_API_BASE_URL` environment variable.
   The release workflow reads the repository variable `GFFH_API_BASE_URL`.

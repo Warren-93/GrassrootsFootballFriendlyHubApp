@@ -66,7 +66,7 @@ android {
         release {
             isMinifyEnabled = false
             signingConfig = releaseSigning
-            buildConfigField("String", "API_BASE_URL", quoted(apiBaseUrlOverride ?: "https://gffh-api.onrender.com"))
+            buildConfigField("String", "API_BASE_URL", quoted(apiBaseUrlOverride ?: "https://grassrootsfootballfriendlyhubapi.onrender.com"))
             manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
     }
