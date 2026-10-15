@@ -37,6 +37,7 @@ fun SettingsScreen(authRepository: AuthRepository, currentTeamStore: CurrentTeam
     var confirmSignOut by remember { mutableStateOf(false) }
     var changingEmail by remember { mutableStateOf(false) }
     var changingPassword by remember { mutableStateOf(false) }
+    val signOutScope = rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         HeroBand(
@@ -136,9 +137,12 @@ fun SettingsScreen(authRepository: AuthRepository, currentTeamStore: CurrentTeam
             text = { Text("You'll need to sign in again to publish availability or respond to requests.") },
             confirmButton = {
                 TextButton(onClick = {
-                    authRepository.signOut()
-                    currentTeamStore.clear()
-                    navigator.resetTo(Route.Welcome)
+                    // Suspends only to withdraw this device's push token first.
+                    signOutScope.launch {
+                        authRepository.signOut()
+                        currentTeamStore.clear()
+                        navigator.resetTo(Route.Welcome)
+                    }
                 }) { Text("Sign out") }
             },
             dismissButton = { TextButton(onClick = { confirmSignOut = false }) { Text("Cancel") } }

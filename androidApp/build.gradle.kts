@@ -57,9 +57,27 @@ android {
         ?: providers.environmentVariable("GFFH_API_BASE_URL").orNull?.takeIf { it.isNotBlank() }
     fun quoted(value: String) = "\"" + value.trimEnd('/') + "\""
 
+    // Firebase Cloud Messaging, for push notifications. There is no
+    // google-services.json and no google-services plugin: these four values
+    // are all FirebaseOptions needs, and KickaboutApplication builds them
+    // itself. Blank (the default) means this build has no push at all - see
+    // the README's "Push notifications" section.
+    fun firebaseSetting(property: String, environmentVariable: String) =
+        providers.gradleProperty(property).orNull?.takeIf { it.isNotBlank() }
+            ?: providers.environmentVariable(environmentVariable).orNull?.takeIf { it.isNotBlank() }
+            ?: ""
+
+    val firebaseFields = mapOf(
+        "FIREBASE_PROJECT_ID" to firebaseSetting("gffh.firebaseProjectId", "FIREBASE_PROJECT_ID"),
+        "FIREBASE_APPLICATION_ID" to firebaseSetting("gffh.firebaseApplicationId", "FIREBASE_APPLICATION_ID"),
+        "FIREBASE_API_KEY" to firebaseSetting("gffh.firebaseApiKey", "FIREBASE_API_KEY"),
+        "FIREBASE_SENDER_ID" to firebaseSetting("gffh.firebaseSenderId", "FIREBASE_SENDER_ID")
+    )
+
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", quoted(apiBaseUrlOverride ?: "http://10.0.2.2:8090"))
+            firebaseFields.forEach { (name, value) -> buildConfigField("String", name, "\"" + value + "\"") }
             // Plain http is only for talking to a backend on your own machine.
             manifestPlaceholders["usesCleartextTraffic"] = "true"
         }
@@ -67,6 +85,7 @@ android {
             isMinifyEnabled = false
             signingConfig = releaseSigning
             buildConfigField("String", "API_BASE_URL", quoted(apiBaseUrlOverride ?: "https://grassrootsfootballfriendlyhubapi.onrender.com"))
+            firebaseFields.forEach { (name, value) -> buildConfigField("String", name, "\"" + value + "\"") }
             manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
     }
@@ -81,4 +100,9 @@ dependencies {
     implementation(project(":shared"))
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.core:core-ktx:1.13.1")
+
+    // Push notifications. The BoM keeps firebase-messaging and its
+    // transitive Firebase libraries on one consistent set of versions.
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation("com.google.firebase:firebase-messaging")
 }

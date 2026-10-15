@@ -29,6 +29,7 @@ import com.gffh.mobile.ui.components.ProfileChecklistCard
 import com.gffh.mobile.ui.components.StatTile
 import com.gffh.mobile.ui.components.StatTileRow
 import com.gffh.mobile.ui.components.StatTileTone
+import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 
 /**
@@ -59,6 +60,7 @@ fun HomeScreen(
     var loaded by remember { mutableStateOf(false) }
     var myTeams by remember { mutableStateOf<List<TeamView>>(emptyList()) }
     var teamMenuOpen by remember { mutableStateOf(false) }
+    val signOutScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         val result = notificationRepository.unreadCount()
@@ -313,9 +315,12 @@ fun HomeScreen(
         Spacer(Modifier.weight(1f))
         TextButton(
             onClick = {
-                authRepository.signOut()
-                currentTeamStore.clear()
-                navigator.resetTo(Route.Welcome)
+                // Suspends only to withdraw this device's push token first.
+                signOutScope.launch {
+                    authRepository.signOut()
+                    currentTeamStore.clear()
+                    navigator.resetTo(Route.Welcome)
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Sign out") }

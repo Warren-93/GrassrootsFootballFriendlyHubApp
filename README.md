@@ -57,6 +57,68 @@ docker compose up -d
 mvn spring-boot:run
 ```
 
+## Push notifications
+
+Both platforms send their device token to `POST /api/v1/me/push-tokens` once
+there's a token and a signed-in session, and call
+`DELETE /api/v1/me/push-tokens` on sign-out before dropping the access token -
+see `core/push/PushRegistration.kt`. The API decides what to send, and to
+whom, from each manager's notification preferences; it needs its own FCM and
+APNs credentials for that (`FCM_SERVICE_ACCOUNT_JSON`, `APNS_KEY_ID`,
+`APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_BUNDLE_ID`, `APNS_PRODUCTION` - see
+`gffh-api/README.md`). Both ends are optional: with nothing configured the app
+simply never asks for notification permission, and the API sends no push.
+
+### Android (Firebase Cloud Messaging)
+
+There is no `google-services.json` in the repository and no google-services
+Gradle plugin. `KickaboutApplication` builds `FirebaseOptions` itself from four
+build properties, each of which can come from a Gradle property or an
+environment variable of its own (the same pattern as `GFFH_API_BASE_URL`), and
+all of which default to blank:
+
+| Gradle property | Environment variable | Where it comes from in the Firebase console |
+|---|---|---|
+| `gffh.firebaseProjectId` | `FIREBASE_PROJECT_ID` | Project settings > Project ID |
+| `gffh.firebaseApplicationId` | `FIREBASE_APPLICATION_ID` | The Android app's App ID, `1:<sender>:android:<hash>` (`mobilesdk_app_id`) |
+| `gffh.firebaseApiKey` | `FIREBASE_API_KEY` | The Android app's Web API key (`current_key`) |
+| `gffh.firebaseSenderId` | `FIREBASE_SENDER_ID` | Cloud Messaging > Sender ID (`project_number`) |
+
+```bash
+./gradlew :androidApp:assembleDebug \
+  -Pgffh.firebaseProjectId=kickabout-123 \
+  -Pgffh.firebaseApplicationId=1:1234567890:android:abcdef \
+  -Pgffh.firebaseApiKey=AIza... \
+  -Pgffh.firebaseSenderId=1234567890
+```
+
+If any of the four is blank, Firebase is never initialised, no token is ever
+requested and nothing asks for the POST_NOTIFICATIONS permission - the app
+behaves exactly as it did before push existed. That's also why the manifest
+removes `FirebaseInitProvider`: left in, the library would try to configure
+itself from resources a `google-services.json` would have generated.
+
+The app asks for POST_NOTIFICATIONS (Android 13+) after sign-in rather than at
+launch, so the prompt arrives when notifications are about to start mattering.
+Pushes arrive in `KickaboutMessagingService` and show on a "Kickabout"
+notification channel; tapping one opens the app.
+
+### iOS (APNs)
+
+`iosApp/iosApp/iOSApp.swift`'s `AppDelegate` asks
+`UNUserNotificationCenter` for alert/badge/sound permission at launch,
+registers with APNs, and hands the device token (lowercase hex, which is what
+the API stores) to the shared code via `PushBridge.kt`. Notifications arriving
+while the app is open are shown as banners.
+
+`iosApp/project.yml` adds the `aps-environment: development` entitlement (what
+a debug build and TestFlight use - an App Store build needs `production`) and
+the `remote-notification` background mode. Simulator builds don't sign
+anything, so the entitlement is inert there and CI keeps building.
+
+A real device also needs an APNs key for the bundle ID in the Apple developer
+account, the same key the API is given as `APNS_PRIVATE_KEY`.
+
 ## Architecture
 
 Follows Technical Specification section 4/5, simplified where the full
@@ -68,6 +130,8 @@ shared/src/commonMain/kotlin/com/gffh/mobile/
 │   ├── network/       Ktor HttpClient wrapper, ApiResult (success/failure, never throws)
 │   ├── auth/           TokenStore (session persistence via multiplatform-settings)
 │   ├── validation/     Field-level rules mirrored from the Screen Build Specification
+│   ├── image/          Team badges: data-URL decode, expect/actual photo picker
+│   ├── push/           Device token store, API registration, permission prompt
 │   └── platform/       expect/actual platform intents (e.g. open mail app)
 ├── model/              Wire DTOs - one file per backend controller, field-for-field
 ├── repository/         API access, one per backend resource
@@ -119,11 +183,11 @@ it:
 | Slice | Screens | Status |
 |---|---|---|
 | Access | SCR-AU-01 to 06 | **Built.** Register, sign in, forgot password, email verification, session resolve. |
-| Setup | SCR-ON-01 to 06, SCR-PR-01/02 | **Built.** Role selection, create club, 4-step create team, add venue, add availability, onboarding complete, team profile, edit team. |
+| Setup | SCR-ON-01 to 06, SCR-PR-01/02 | **Built.** Role selection, create club, 4-step create team, add venue, add availability, onboarding complete, team profile, edit team - including uploading the team badge from the phone's photos, shown anywhere the app shows a team. |
 | Publish | SCR-AV-01 to 04, SCR-HM-01 | **Built.** Calendar (grid + list parity), day detail, add/edit availability slot, bulk add. The dashboard is real for availability/profile-completeness/fixtures/messages, with a team switcher dropdown whenever a manager runs more than one team. |
 | Discover | SCR-FF-01 to 06 | **Built.** Search entry, filters, results list (with score/reason chips), a relative-position map plot, opponent profile, match explanation. |
 | Arrange | SCR-IN-01 to 06, SCR-FX-01 to 06 | **Built.** Invitation composer/review/sent, request detail (actions rendered strictly from the server's `availableActions`; names the other team and shows the agreed and any proposed venue), suggest changes, decline, fixtures list, fixture detail with a venue card and Google Maps directions, cancellation. |
-| Communicate | SCR-HM-02, messaging | **Built**, and redesigned since the spec: messaging is no longer fixture-scoped (SCR-FX-05) - team-to-team conversations are available as soon as a team publishes availability, from an inbox and a real chat thread, well before any request exists. Notification centre and preferences are built, including whether notifications also arrive by email and as phone notifications. |
+| Communicate | SCR-HM-02, messaging | **Built**, and redesigned since the spec: messaging is no longer fixture-scoped (SCR-FX-05) - team-to-team conversations are available as soon as a team publishes availability, from an inbox and a real chat thread, well before any request exists. Notification centre and preferences are built, including whether notifications also arrive by email and as phone notifications - and phone notifications are real now, by FCM on Android and APNs on iOS (see "Push notifications" above). |
 | Govern | SCR-PR-04/07/10/11/12, ADM-01 to 09 | **Built.** Team members (an email with no account yet gets an emailed invitation, listed as pending until it's used or cancelled), verification submission, privacy/data export & delete, report/block, help (with an Email support button when the API has a support address), change email and password in Settings. ADM-* is a separate responsive web app (`gffh-admin`), not part of this mobile client. |
 
 Routes not covered by any built slice (the codebase has none right now) would
@@ -150,9 +214,12 @@ device, not from reading the code:
 
 ### Known remaining gaps
 
-- **No push notification delivery.** The notification centre and unread
-  count are real, server-backed data; there's no push transport, only
-  poll-on-open.
+- **Tapping a notification only opens the app.** It doesn't deep-link to the
+  request, fixture or conversation the push is about, even though the payload
+  carries those ids - the app's `Navigator` has no route parser yet.
+- **Badges aren't fetched from https links.** A badge the app uploaded is an
+  inlined image and shows everywhere; an `https://` badge set elsewhere falls
+  back to the team's initials, since there's no image-loading library here.
 - **No email delivery.** The backend logs verification and reset tokens
   instead of emailing them (no provider configured) - see
   `VerificationTokenService` on the backend. The client-side flows are real

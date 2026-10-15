@@ -1,0 +1,86 @@
+package com.gffh.mobile.android
+
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+import com.gffh.mobile.core.push.PushPlatform
+import com.gffh.mobile.core.push.PushTokens
+
+/**
+ * Receives Firebase Cloud Messaging pushes (the API's FcmSender sends
+ * `notification` + `data`, see the shared API contract section 6).
+ *
+ * Android only draws a notification itself while the app is in the
+ * background; in the foreground the payload comes here instead, so this
+ * builds the same notification either way, on one "Kickabout" channel, and
+ * opens MainActivity when it's tapped.
+ */
+class KickaboutMessagingService : FirebaseMessagingService() {
+
+    /** The token rotates occasionally; PushRegistration sends the new one to the API. */
+    override fun onNewToken(token: String) {
+        PushTokens.update(PushPlatform.ANDROID, token)
+    }
+
+    override fun onMessageReceived(message: RemoteMessage) {
+        val notification = message.notification
+        val title = notification?.title ?: message.data["title"] ?: "Kickabout"
+        val body = notification?.body ?: message.data["body"] ?: return
+        show(title, body)
+    }
+
+    private fun show(title: String, body: String) {
+        if (!canShowNotifications()) return
+        val manager = getSystemService(NotificationManager::class.java) ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = "Friendly requests, fixtures, messages and verification updates."
+                }
+            )
+        }
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        // FLAG_IMMUTABLE: nothing is added to the intent later, and Android 12+ requires one of the two.
+        val contentIntent = PendingIntent.getActivity(
+            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(this, CHANNEL_ID)
+        } else {
+            @Suppress("DEPRECATION")
+            android.app.Notification.Builder(this)
+        }
+        val built = builder
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(android.app.Notification.BigTextStyle().bigText(body))
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent)
+            .build()
+
+        // Keyed on the text so the same notification arriving twice replaces
+        // itself instead of stacking, while different ones sit side by side.
+        manager.notify(body.hashCode(), built)
+    }
+
+    /** Android 13+ shows nothing without POST_NOTIFICATIONS, which the app asks for after sign-in. */
+    private fun canShowNotifications(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+    private companion object {
+        const val CHANNEL_ID = "kickabout"
+        const val CHANNEL_NAME = "Kickabout"
+    }
+}

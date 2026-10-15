@@ -15,6 +15,8 @@ import com.gffh.mobile.core.auth.createSettings
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.core.network.defaultApiBaseUrl
+import com.gffh.mobile.core.push.PushNotificationSetup
+import com.gffh.mobile.core.push.PushRegistration
 import com.gffh.mobile.feature.auth.*
 import com.gffh.mobile.feature.availability.BulkAddAvailabilityScreen
 import com.gffh.mobile.feature.availability.CalendarScreen
@@ -87,7 +89,9 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
     val resultsCache = remember { SearchResultsCache() }
     val invitationDraft = remember { InvitationDraftState() }
     val apiClient = remember { ApiClient(apiBaseUrl, tokenStore) }
-    val authRepository = remember { AuthRepository(apiClient, tokenStore) }
+    val pushTokenRepository = remember { PushTokenRepository(apiClient) }
+    val pushRegistration = remember { PushRegistration(pushTokenRepository, tokenStore, settings) }
+    val authRepository = remember { AuthRepository(apiClient, tokenStore, pushRegistration) }
     val teamRepository = remember { TeamRepository(apiClient) }
     val clubRepository = remember { ClubRepository(apiClient) }
     val venueRepository = remember { VenueRepository(apiClient) }
@@ -105,10 +109,16 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
     val configRepository = remember { ConfigRepository(apiClient) }
     val navigator = remember { Navigator(Route.Splash) }
 
+    // Sends this device's push token to the API whenever there's both a token
+    // and a signed-in session, for the life of the app - see PushRegistration.
+    LaunchedEffect(Unit) { pushRegistration.keepRegistered() }
+
     GffhTheme {
         val route = navigator.current
         val tab = tabFor(route)
         val activeTeam = currentTeamStore.active.collectAsState().value
+        val signedIn = tokenStore.session.collectAsState().value != null
+        PushNotificationSetup(signedIn)
         val memberBlocked = activeTeam != null && !activeTeam.canManage && !memberCanOpen(route, activeTeam.teamId)
         // A member may since have been made a manager: check again whenever the app opens on them.
         LaunchedEffect(activeTeam?.teamId, activeTeam?.canManage) {

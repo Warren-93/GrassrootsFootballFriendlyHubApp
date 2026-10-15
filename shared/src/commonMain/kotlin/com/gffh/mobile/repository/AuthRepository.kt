@@ -5,11 +5,21 @@ import com.gffh.mobile.core.auth.TokenStore
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.core.network.map
+import com.gffh.mobile.core.push.PushRegistration
 import com.gffh.mobile.model.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.flow.StateFlow
 
-class AuthRepository(private val api: ApiClient, private val tokenStore: TokenStore) {
+/**
+ * [pushRegistration] is only there for sign-out: this device's push token has
+ * to be withdrawn from the API while the access token still works. Null in
+ * tests and previews, where there's no push transport to withdraw from.
+ */
+class AuthRepository(
+    private val api: ApiClient,
+    private val tokenStore: TokenStore,
+    private val pushRegistration: PushRegistration? = null
+) {
 
     val session: StateFlow<StoredSession?> = tokenStore.session
 
@@ -101,7 +111,23 @@ class AuthRepository(private val api: ApiClient, private val tokenStore: TokenSt
             if (result is ApiResult.Success) tokenStore.updateEmail(result.value.user.email, result.value.user.emailVerified)
         }
 
-    fun signOut() = tokenStore.clear()
+    /**
+     * Signs out on purpose: tells the API to stop pushing to this device
+     * first (`DELETE /api/v1/me/push-tokens`, which needs the access token),
+     * then drops the session.
+     */
+    suspend fun signOut() {
+        pushRegistration?.unregister()
+        tokenStore.clear()
+    }
+
+    /**
+     * Drops the stored session without telling the API anything - for when
+     * there's nothing to tell it: a session that can no longer be refreshed,
+     * or an account that has just been deleted (the API drops its push tokens
+     * with it).
+     */
+    fun clearSession() = tokenStore.clear()
 
     private fun persist(response: TokenResponse) {
         tokenStore.save(

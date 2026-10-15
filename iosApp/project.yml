@@ -20,11 +20,22 @@ targets:
     deploymentTarget: "15.0"
     sources:
       - path: iosApp
+    # Push notifications: the development APNs environment, which is what a
+    # debug build and TestFlight use. A release build for the App Store needs
+    # "production" here (or the automatic entitlement from a distribution
+    # profile). Simulator builds sign nothing, so this is inert there.
+    entitlements:
+      path: Generated/iosApp.entitlements
+      properties:
+        aps-environment: development
     info:
       path: Generated/Info.plist
       properties:
         CFBundleDisplayName: Kickabout
         GFFHApiBaseUrl: $(GFFH_API_BASE_URL)
+        # Lets a push wake the app to refresh in the background.
+        UIBackgroundModes:
+          - remote-notification
         # Lets a Debug build talk to a backend on the Mac over plain http.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
