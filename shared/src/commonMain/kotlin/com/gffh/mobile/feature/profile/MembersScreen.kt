@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.model.AddMemberOutcome
 import com.gffh.mobile.model.AddMemberRequest
+import com.gffh.mobile.model.InviteView
 import com.gffh.mobile.model.MemberRole
 import com.gffh.mobile.model.MemberView
 import com.gffh.mobile.model.UpdateMemberRoleRequest
@@ -33,16 +36,23 @@ private fun roleLabel(role: MemberRole): String = when (role) {
  * behalf of a team - a safeguarding control as much as an admin one. Club
  * admins cascade to every squad the club runs, so promoting someone here
  * converts their membership to club-wide.
+ *
+ * Adding an email with no account yet emails them an invitation instead; it
+ * shows under Pending invitations (cancellable) until they sign up and verify
+ * that address, when it becomes a real membership.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, teamId: String) {
     var members by remember { mutableStateOf<List<MemberView>>(emptyList()) }
+    var invites by remember { mutableStateOf<List<InviteView>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var addNotice by remember { mutableStateOf<String?>(null) }
     var email by remember { mutableStateOf("") }
     var addRole by remember { mutableStateOf(MemberRole.TEAM_MANAGER) }
     var adding by remember { mutableStateOf(false) }
+    // A membership or invitation id while its change is in flight.
     var busyId by remember { mutableStateOf<String?>(null) }
     var removeTarget by remember { mutableStateOf<MemberView?>(null) }
     val scope = rememberCoroutineScope()
@@ -57,7 +67,59 @@ fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, team
         }
     }
 
-    LaunchedEffect(teamId) { load() }
+    fun loadInvites() {
+        scope.launch {
+            // Pending invitations are secondary - if they won't load, the members list still stands.
+            invites = when (val result = memberRepository.listInvites(teamId)) {
+                is ApiResult.Success -> result.value
+                is ApiResult.Failure -> emptyList()
+            }
+        }
+    }
+
+    LaunchedEffect(teamId) {
+        load()
+        loadInvites()
+    }
+
+    fun add() {
+        adding = true
+        errorMessage = null
+        addNotice = null
+        scope.launch {
+            when (val result = memberRepository.add(teamId, AddMemberRequest(email.trim(), addRole.name))) {
+                is ApiResult.Success -> {
+                    email = ""
+                    addRole = MemberRole.TEAM_MANAGER
+                    when (val outcome = result.value) {
+                        is AddMemberOutcome.Added -> {
+                            addNotice = "${outcome.member.displayName} has been added to the team"
+                            load()
+                        }
+                        // No account with that email yet: the API emailed them an invitation instead.
+                        is AddMemberOutcome.Invited -> {
+                            addNotice = "Invitation sent to ${outcome.invite.email}"
+                            loadInvites()
+                        }
+                    }
+                }
+                is ApiResult.Failure -> errorMessage = result.message
+            }
+            adding = false
+        }
+    }
+
+    fun cancelInvite(invite: InviteView) {
+        busyId = invite.id
+        errorMessage = null
+        scope.launch {
+            when (val result = memberRepository.cancelInvite(teamId, invite.id)) {
+                is ApiResult.Success -> invites = invites.filter { it.id != invite.id }
+                is ApiResult.Failure -> errorMessage = result.message
+            }
+            busyId = null
+        }
+    }
 
     fun changeRole(member: MemberView, role: MemberRole) {
         if (role.name == member.role) return
@@ -135,6 +197,48 @@ fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, team
                     }
                 }
             }
+
+            if (invites.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                Text("Pending invitations", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "They'll join the team once they've signed up and verified their email.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(Modifier.height(8.dp))
+                invites.forEach { invite ->
+                    val inviteRole = MemberRole.entries.find { it.name == invite.role }
+                    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                        Row(
+                            Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.MailOutline,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(invite.email, style = MaterialTheme.typography.titleSmall)
+                                Text(
+                                    listOfNotNull(
+                                        inviteRole?.let { roleLabel(it) },
+                                        invite.expiresAt?.let { "expires ${it.take(10)}" }
+                                    ).joinToString(" - "),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            TextButton(
+                                onClick = { cancelInvite(invite) },
+                                enabled = busyId != invite.id,
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            ) { Text(if (busyId == invite.id) "Cancelling…" else "Cancel") }
+                        }
+                    }
+                }
+            }
         }
 
         Column(Modifier.padding(16.dp)) {
@@ -155,27 +259,17 @@ fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, team
             }
             Spacer(Modifier.height(8.dp))
             Button(
-                onClick = {
-                    adding = true
-                    errorMessage = null
-                    scope.launch {
-                        when (val result = memberRepository.add(teamId, AddMemberRequest(email.trim(), addRole.name))) {
-                            is ApiResult.Success -> {
-                                email = ""
-                                addRole = MemberRole.TEAM_MANAGER
-                                load()
-                            }
-                            is ApiResult.Failure -> errorMessage = result.message
-                        }
-                        adding = false
-                    }
-                },
+                onClick = { add() },
                 enabled = !adding && email.trim().length >= 3,
                 modifier = Modifier.fillMaxWidth()
             ) { Text(if (adding) "Adding…" else "Add official") }
             Spacer(Modifier.height(4.dp))
+            addNotice?.let {
+                Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(4.dp))
+            }
             Text(
-                "They'll need to already have an account with this email - there's no invitation email yet.",
+                "If they don't have an account yet, we'll email them an invitation to join.",
                 style = MaterialTheme.typography.bodySmall
             )
         }
