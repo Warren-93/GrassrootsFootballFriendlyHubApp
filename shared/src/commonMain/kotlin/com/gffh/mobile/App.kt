@@ -102,6 +102,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
     val notificationRepository = remember { NotificationRepository(apiClient) }
     val geocodeRepository = remember { GeocodeRepository() }
     val conversationRepository = remember { ConversationRepository(apiClient) }
+    val configRepository = remember { ConfigRepository(apiClient) }
     val navigator = remember { Navigator(Route.Splash) }
 
     GffhTheme {
@@ -152,7 +153,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
             is Route.Members -> MembersScreen(memberRepository, navigator, route.teamId)
             is Route.Verification -> VerificationScreen(verificationRepository, teamRepository, navigator, route.teamId)
             is Route.Privacy -> PrivacyScreen(privacyRepository, authRepository, teamRepository, currentTeamStore, navigator)
-            is Route.Help -> HelpScreen(navigator)
+            is Route.Help -> HelpScreen(configRepository, navigator)
             is Route.NotificationPreferences -> NotificationPreferencesScreen(notificationRepository, navigator)
 
             is Route.Home -> HomeScreen(
