@@ -27,7 +27,8 @@ private val FAQS = listOf(
         "How does matching work?",
         "Discover shows every team with the same age group and gender as yours, at every ability level. They are " +
             "ranked by how well your published availability, format, ability level and travel distance line up " +
-            "with theirs. Tap a result to see the exact factors behind its score."
+            "with theirs. Use Filters on the results to narrow by ability level, format, distance or verified " +
+            "teams. Tap a result to see the exact factors behind its score."
     ),
     Faq(
         "What happens after I send a friendly request?",

@@ -51,6 +51,7 @@ sealed class Route {
     // Discover (SCR-FF-*)
     data object SuggestedMatches : Route()                                  // SCR-HM-03
     data object SearchEntry : Route()                                       // SCR-FF-01
+    data object Filters : Route()                                           // SCR-FF-02
     data object Results : Route()                                           // SCR-FF-03 (also covers SCR-FF-07's empty state)
     data object ResultsMap : Route()                                        // SCR-FF-04
     data class OpponentProfile(val teamId: String) : Route()                // SCR-FF-05

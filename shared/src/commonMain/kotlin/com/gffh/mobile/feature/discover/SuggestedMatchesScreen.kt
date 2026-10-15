@@ -7,11 +7,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
-import com.gffh.mobile.model.SearchRequest
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.MatchRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import kotlinx.coroutines.launch
 
@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 fun SuggestedMatchesScreen(
     matchRepository: MatchRepository,
     currentTeamStore: CurrentTeamStore,
+    filterState: SearchFilterState,
     resultsCache: SearchResultsCache,
     navigator: Navigator
 ) {
@@ -33,8 +34,10 @@ fun SuggestedMatchesScreen(
 
     LaunchedEffect(activeTeam?.teamId) {
         val teamId = activeTeam?.teamId ?: return@LaunchedEffect
+        // Always open on the full list; filters are set from the results.
+        filterState.reset()
         scope.launch {
-            when (val result = matchRepository.search(SearchRequest(teamId = teamId, limit = SEARCH_LIMIT))) {
+            when (val result = matchRepository.search(filterState.toRequest(teamId, SEARCH_LIMIT))) {
                 is ApiResult.Success -> {
                     resultsCache.store(result.value)
                     navigator.replace(Route.Results)
