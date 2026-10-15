@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.gffh.mobile.model.MatchSummary
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.MatchScoreChip
@@ -30,6 +31,7 @@ import com.gffh.mobile.ui.components.MatchScoreChip
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultsListScreen(
+    filterState: SearchFilterState,
     resultsCache: SearchResultsCache,
     navigator: Navigator
 ) {
@@ -42,13 +44,15 @@ fun ResultsListScreen(
                 IconButton(onClick = { navigator.pop() }) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
             },
             actions = {
+                val active = filterState.activeCount()
+                TextButton(onClick = { navigator.push(Route.Filters) }) { Text(if (active > 0) "Filters ($active)" else "Filters") }
                 TextButton(onClick = { navigator.push(Route.ResultsMap) }) { Text("Map") }
             }
         )
 
         val results = response?.results.orEmpty()
         if (results.isEmpty()) {
-            NoResultsContent()
+            NoResultsContent(filtered = filterState.activeCount() > 0, onOpenFilters = { navigator.push(Route.Filters) })
         } else {
             LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                 items(results) { match ->
@@ -105,13 +109,17 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
 }
 
 @Composable
-private fun NoResultsContent() {
+private fun NoResultsContent(filtered: Boolean, onOpenFilters: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         Text("No teams to show yet", style = MaterialTheme.typography.titleMedium)
         Text(
-            "No other teams in your age group and gender have joined yet. Check back soon.",
+            if (filtered) "No teams match these filters. Clear them to see every team in your age group and gender."
+            else "No other teams in your age group and gender have joined yet. Check back soon.",
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(top = 4.dp)
         )
+        if (filtered) {
+            TextButton(onClick = onOpenFilters, modifier = Modifier.padding(top = 8.dp)) { Text("Change filters") }
+        }
     }
 }

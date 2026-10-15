@@ -6,13 +6,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
-import com.gffh.mobile.model.SearchRequest
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.MatchRepository
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import kotlinx.coroutines.launch
 
@@ -23,8 +23,9 @@ internal const val SEARCH_LIMIT = 50
  * SCR-FF-01 Search entry. Purpose: get the user to a ranked result set with
  * one tap.
  *
- * There are no filters: the API returns every team with the same age group
- * and gender, all ability levels and formats, ranked by fit. Availability is
+ * The search opens with no filters: the API returns every team with the same
+ * age group and gender, all ability levels and formats, ranked by fit, and
+ * optional filters are set from the results (SCR-FF-02). Availability is
  * not required either - a new team sees who is out there before publishing
  * any dates, so the add-availability prompt is a tip, not a gate.
  */
@@ -34,6 +35,7 @@ fun SearchEntryScreen(
     teamRepository: TeamRepository,
     availabilityRepository: AvailabilityRepository,
     currentTeamStore: CurrentTeamStore,
+    filterState: SearchFilterState,
     resultsCache: SearchResultsCache,
     navigator: Navigator
 ) {
@@ -58,8 +60,9 @@ fun SearchEntryScreen(
         val t = team ?: return
         searching = true
         errorMessage = null
+        filterState.reset()
         scope.launch {
-            when (val result = matchRepository.search(SearchRequest(teamId = t.teamId, limit = SEARCH_LIMIT))) {
+            when (val result = matchRepository.search(filterState.toRequest(t.teamId, SEARCH_LIMIT))) {
                 is ApiResult.Success -> { resultsCache.store(result.value); navigator.push(Route.Results) }
                 is ApiResult.Failure -> errorMessage = result.message
             }
