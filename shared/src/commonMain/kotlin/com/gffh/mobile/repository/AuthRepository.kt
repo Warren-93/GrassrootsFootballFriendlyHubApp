@@ -132,12 +132,29 @@ class AuthRepository(
 
     /**
      * Signs out on purpose: tells the API to stop pushing to this device
-     * first (`DELETE /api/v1/me/push-tokens`, which needs the access token),
-     * then drops the session.
+     * first (`DELETE /api/v1/me/push-tokens`, which needs an access token that
+     * still works - see [refreshedAccessToken]), then drops the session.
      */
     suspend fun signOut() {
-        pushRegistration?.unregister()
+        pushRegistration?.unregister(freshAccessToken = { refreshedAccessToken() })
         tokenStore.clear()
+    }
+
+    /**
+     * A new access token for sign-out's last call, when the stored one has
+     * lapsed. Deliberately not saved: the session is dropped straight after.
+     */
+    private suspend fun refreshedAccessToken(): String? {
+        val refreshToken = tokenStore.currentRefreshToken() ?: return null
+        val result = api.request<TokenResponse>(authenticated = false) {
+            method = io.ktor.http.HttpMethod.Post
+            url("/api/v1/auth/refresh")
+            setBody(RefreshRequest(refreshToken))
+        }
+        return when (result) {
+            is ApiResult.Success -> result.value.accessToken
+            is ApiResult.Failure -> null
+        }
     }
 
     /**

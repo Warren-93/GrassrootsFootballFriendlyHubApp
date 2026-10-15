@@ -54,15 +54,29 @@ class PushRegistration(
     /**
      * Called by AuthRepository.signOut before it clears the session. Gives up
      * after a few seconds, so signing out never hangs on a bad connection.
+     *
+     * The access token only lasts an hour and nothing renews it while the app
+     * stays open, so a 401 is tried once more with [freshAccessToken] - left
+     * there, this phone would go on getting the signed-out account's
+     * notifications. That token is used for the DELETE alone, not stored: the
+     * session is about to be dropped, and storing it would hand
+     * [keepRegistered] a "new" session to register the device for again.
      */
-    suspend fun unregister() {
+    suspend fun unregister(freshAccessToken: suspend () -> String? = { null }) {
         val tokens = listOfNotNull(PushTokens.token.value?.token, settings.getStringOrNull(KEY_REGISTERED_TOKEN)).distinct()
         registered = null
         settings.remove(KEY_REGISTERED_TOKEN)
         // Nothing to authenticate with (the session already lapsed): the API can't be told.
         if (tokenStore.currentAccessToken() == null) return
+        var renewed: String? = null
         for (token in tokens) {
-            withTimeoutOrNull(UNREGISTER_TIMEOUT_MS) { pushTokenRepository.unregister(token) }
+            withTimeoutOrNull(UNREGISTER_TIMEOUT_MS) {
+                val result = pushTokenRepository.unregister(token, renewed)
+                if (result is ApiResult.Failure && result.httpStatus == 401 && renewed == null) {
+                    renewed = freshAccessToken()
+                    renewed?.let { pushTokenRepository.unregister(token, it) }
+                }
+            }
         }
     }
 
