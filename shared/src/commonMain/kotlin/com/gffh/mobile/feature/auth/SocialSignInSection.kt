@@ -17,6 +17,7 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
 import com.gffh.mobile.repository.ConfigRepository
+import com.gffh.mobile.repository.TeamRepository
 import kotlinx.coroutines.launch
 
 /**
@@ -29,10 +30,12 @@ import kotlinx.coroutines.launch
  * The provider's ID token is traded for a session by
  * [AuthRepository.signInWith], the same path as a password sign-in (which
  * also registers the phone for push). A brand-new account then starts
- * onboarding, as after registering; anyone else goes to the dashboard, as
- * after signing in. Backing out of the provider's sheet shows nothing; any
- * other failure goes to [onError], the screen's own error text, which is
- * cleared (null) as each attempt starts.
+ * onboarding, as after registering - unless a pending invitation, which the
+ * API applies at this sign-in, already made it a team member (gffh-web checks
+ * the same). Anyone else goes to the dashboard, as after signing in. Backing
+ * out of the provider's sheet shows nothing; any other failure goes to
+ * [onError], the screen's own error text, which is cleared (null) as each
+ * attempt starts.
  *
  * [enabled] is false while the screen's own form is submitting, and
  * [onWorkingChange] lets the screen disable that form while this runs.
@@ -43,6 +46,7 @@ import kotlinx.coroutines.launch
 fun SocialSignInSection(
     configRepository: ConfigRepository,
     authRepository: AuthRepository,
+    teamRepository: TeamRepository,
     navigator: Navigator,
     enabled: Boolean,
     onWorkingChange: (Boolean) -> Unit,
@@ -56,7 +60,8 @@ fun SocialSignInSection(
     val socialSignIn = rememberSocialSignIn(config)
     if (socialSignIn != null) {
         SocialSignInButton(
-            socialSignIn, authRepository, navigator, enabled, onWorkingChange, onError, lightBackground, modifier
+            socialSignIn, authRepository, teamRepository, navigator, enabled, onWorkingChange, onError,
+            lightBackground, modifier
         )
     }
 }
@@ -65,6 +70,7 @@ fun SocialSignInSection(
 private fun SocialSignInButton(
     socialSignIn: SocialSignIn,
     authRepository: AuthRepository,
+    teamRepository: TeamRepository,
     navigator: Navigator,
     enabled: Boolean,
     onWorkingChange: (Boolean) -> Unit,
@@ -92,8 +98,11 @@ private fun SocialSignInButton(
                 is SocialSignInResult.Failed -> stop(token.message ?: "${provider.label} sign-in didn't work - please try again.")
                 is SocialSignInResult.Token -> {
                     when (val result = authRepository.signInWith(provider, token.idToken, token.displayName)) {
-                        // A new account has no team yet, so it starts where registering does (SCR-ON-01).
-                        is ApiResult.Success -> navigator.resetTo(if (result.value.newUser) Route.RoleSelection else Route.Home)
+                        // A new account usually has no team yet, so it starts where registering
+                        // does (SCR-ON-01). Home picks up a team an invitation added it to.
+                        is ApiResult.Success -> navigator.resetTo(
+                            if (result.value.newUser && !isOnATeam(teamRepository)) Route.RoleSelection else Route.Home
+                        )
                         is ApiResult.Failure -> stop(result.message)
                     }
                 }
@@ -144,3 +153,10 @@ private fun SocialSignInButton(
         )
     }
 }
+
+/** Whether the person just signed in already belongs to a team. If that can't be checked, assume not. */
+private suspend fun isOnATeam(teamRepository: TeamRepository): Boolean =
+    when (val result = teamRepository.mine()) {
+        is ApiResult.Success -> result.value.isNotEmpty()
+        is ApiResult.Failure -> false
+    }

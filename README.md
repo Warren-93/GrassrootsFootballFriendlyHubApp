@@ -140,7 +140,8 @@ token (`core/auth/SocialSignIn.kt`, with an actual for each platform), the app
 sends it to `POST /api/v1/auth/oauth/google` or `/apple`, and stores the
 session exactly as a password sign-in does - which is also what registers the
 phone for push. A brand-new account (`newUser: true`) goes on to role
-selection, as after registering; anyone else goes to the dashboard. Backing out
+selection, as after registering, unless an invitation the API applied at that
+sign-in already put it on a team; anyone else goes to the dashboard. Backing out
 of the Google or Apple sheet shows nothing; any other failure shows on the
 screen's usual error line. Google on iOS and Apple on Android aren't offered.
 

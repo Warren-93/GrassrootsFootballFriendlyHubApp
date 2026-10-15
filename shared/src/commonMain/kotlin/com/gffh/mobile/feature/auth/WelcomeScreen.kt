@@ -16,6 +16,7 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
 import com.gffh.mobile.repository.ConfigRepository
+import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.theme.displayHeadlineMedium
 import com.gffh.mobile.ui.components.heroGradientBrush
 
@@ -29,7 +30,12 @@ import com.gffh.mobile.ui.components.heroGradientBrush
  * SignInPage marketing feel (see [heroGradientBrush]).
  */
 @Composable
-fun WelcomeScreen(authRepository: AuthRepository, configRepository: ConfigRepository, navigator: Navigator) {
+fun WelcomeScreen(
+    authRepository: AuthRepository,
+    configRepository: ConfigRepository,
+    teamRepository: TeamRepository,
+    navigator: Navigator
+) {
     var socialWorking by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -75,6 +81,7 @@ fun WelcomeScreen(authRepository: AuthRepository, configRepository: ConfigReposi
                 SocialSignInSection(
                     configRepository = configRepository,
                     authRepository = authRepository,
+                    teamRepository = teamRepository,
                     navigator = navigator,
                     enabled = true,
                     onWorkingChange = { socialWorking = it },

@@ -20,6 +20,7 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
 import com.gffh.mobile.repository.ConfigRepository
+import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.theme.displayHeadlineSmall
 import com.gffh.mobile.ui.components.heroGradientBrush
 import kotlinx.coroutines.launch
@@ -33,7 +34,12 @@ import kotlinx.coroutines.launch
  * marketing feel - the form itself sits in a white card over the gradient.
  */
 @Composable
-fun SignInScreen(authRepository: AuthRepository, configRepository: ConfigRepository, navigator: Navigator) {
+fun SignInScreen(
+    authRepository: AuthRepository,
+    configRepository: ConfigRepository,
+    teamRepository: TeamRepository,
+    navigator: Navigator
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
@@ -130,6 +136,7 @@ fun SignInScreen(authRepository: AuthRepository, configRepository: ConfigReposit
                 SocialSignInSection(
                     configRepository = configRepository,
                     authRepository = authRepository,
+                    teamRepository = teamRepository,
                     navigator = navigator,
                     enabled = !submitting,
                     onWorkingChange = { socialWorking = it },

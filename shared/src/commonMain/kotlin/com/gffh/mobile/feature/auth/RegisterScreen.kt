@@ -18,6 +18,7 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
 import com.gffh.mobile.repository.ConfigRepository
+import com.gffh.mobile.repository.TeamRepository
 import kotlinx.coroutines.launch
 
 /**
@@ -26,7 +27,12 @@ import kotlinx.coroutines.launch
  * Apple (iOS) when the API has it switched on (see [SocialSignInSection]).
  */
 @Composable
-fun RegisterScreen(authRepository: AuthRepository, configRepository: ConfigRepository, navigator: Navigator) {
+fun RegisterScreen(
+    authRepository: AuthRepository,
+    configRepository: ConfigRepository,
+    teamRepository: TeamRepository,
+    navigator: Navigator
+) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -132,6 +138,7 @@ fun RegisterScreen(authRepository: AuthRepository, configRepository: ConfigRepos
         SocialSignInSection(
             configRepository = configRepository,
             authRepository = authRepository,
+            teamRepository = teamRepository,
             navigator = navigator,
             enabled = !submitting,
             onWorkingChange = { socialWorking = it },
