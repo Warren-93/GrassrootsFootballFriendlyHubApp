@@ -27,7 +27,7 @@ import platform.darwin.NSObject
 import kotlin.coroutines.resume
 
 /**
- * Sign in with Apple, whenever the API has Apple sign-in on. Needs the
+ * Sign in with Apple, whenever the API accepts the iOS app's tokens. Needs the
  * `com.apple.developer.applesignin` entitlement (iosApp/project.yml) and the
  * Sign in with Apple capability on the bundle ID - see the README's "Google
  * and Apple sign-in" section. The token's audience is the bundle ID, which
@@ -35,7 +35,7 @@ import kotlin.coroutines.resume
  */
 @Composable
 actual fun rememberSocialSignIn(config: ClientConfigView?): SocialSignIn? {
-    val enabled = config?.apple?.enabled == true
+    val enabled = config?.apple?.availableOnIos == true
     return remember(enabled) { if (enabled) AppleSignIn else null }
 }
 

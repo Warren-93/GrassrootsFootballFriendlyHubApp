@@ -21,9 +21,16 @@ data class GoogleSignInConfig(
     val clientId: String? = null
 )
 
-/** [servicesId] is only for web sign-in with Apple; the iOS app can use Apple sign-in whenever [enabled]. */
+/**
+ * [servicesId] is only for web sign-in with Apple. [iosEnabled] says whether
+ * the API accepts the iOS app's own tokens (APPLE_BUNDLE_ID set); an older
+ * API leaves it out, and then [enabled] is the best guess.
+ */
 @Serializable
 data class AppleSignInConfig(
     val enabled: Boolean = false,
-    val servicesId: String? = null
-)
+    val servicesId: String? = null,
+    val iosEnabled: Boolean? = null
+) {
+    val availableOnIos: Boolean get() = iosEnabled ?: enabled
+}

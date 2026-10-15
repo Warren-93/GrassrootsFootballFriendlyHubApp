@@ -116,6 +116,18 @@ class DtoDecodingTest {
         assertEquals("123-abc.apps.googleusercontent.com", config.google.clientId)
         assertTrue(config.apple.enabled)
         assertNull(config.apple.servicesId)
+        assertTrue(config.apple.availableOnIos)
+    }
+
+    @Test
+    fun appleOnlyForTheWebIsntOfferedOnIos() {
+        val config = json.decodeFromString(
+            ClientConfigView.serializer(),
+            """{"apple":{"enabled":true,"servicesId":"com.kickabout.web","iosEnabled":false}}"""
+        )
+
+        assertTrue(config.apple.enabled)
+        assertFalse(config.apple.availableOnIos)
     }
 
     @Test
