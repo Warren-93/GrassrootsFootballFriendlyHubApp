@@ -26,7 +26,7 @@ class MemberRepository(private val api: ApiClient) {
     }
 
     /**
-     * 201 with the new member when the email already has an account; 202 with
+     * 200 with the new member when the email already has an account; 202 with
      * `{status: "INVITED", invite}` when it doesn't, and the API has emailed
      * them an invitation instead. Read as a raw object first since the two
      * bodies have different shapes.

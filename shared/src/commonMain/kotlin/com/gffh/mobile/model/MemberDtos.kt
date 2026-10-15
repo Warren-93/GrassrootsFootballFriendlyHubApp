@@ -44,7 +44,7 @@ data class MemberInvitedResponse(
     val invite: InviteView
 )
 
-/** What adding an official by email did: added an existing account (201), or emailed an invitation (202). */
+/** What adding an official by email did: added an existing account (200), or emailed an invitation (202). */
 sealed class AddMemberOutcome {
     data class Added(val member: MemberView) : AddMemberOutcome()
     data class Invited(val invite: InviteView) : AddMemberOutcome()

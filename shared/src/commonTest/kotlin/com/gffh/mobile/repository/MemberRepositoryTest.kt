@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 
-/** Adding an official answers 201 with the member, or 202 with an invitation when there's no account yet. */
+/** Adding an official answers 200 with the member, or 202 with an invitation when there's no account yet. */
 class MemberRepositoryTest {
 
     // Same settings as ApiClient's.
@@ -21,7 +21,7 @@ class MemberRepositoryTest {
     private fun obj(text: String): JsonObject = json.parseToJsonElement(text).jsonObject
 
     @Test
-    fun a201BodyIsTheAddedMember() {
+    fun a200BodyIsTheAddedMember() {
         val outcome = parseAddMemberResponse(
             obj(
                 """{"membershipId":"m1","userId":"u1","email":"sam@example.com","displayName":"Sam",
