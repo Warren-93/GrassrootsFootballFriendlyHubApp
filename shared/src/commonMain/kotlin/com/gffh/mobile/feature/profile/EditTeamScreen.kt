@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.gffh.mobile.core.image.BadgePickResult
+import com.gffh.mobile.core.image.rememberBadgeImagePicker
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.TeamView
 import com.gffh.mobile.model.UpdateTeamRequest
@@ -17,6 +19,7 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.CrestAvatar
 import kotlinx.coroutines.launch
 
 /**
@@ -37,6 +40,8 @@ fun EditTeamScreen(
 ) {
     var original by remember { mutableStateOf<TeamView?>(null) }
     var name by remember { mutableStateOf("") }
+    var badge by remember { mutableStateOf("") }
+    var badgeError by remember { mutableStateOf<String?>(null) }
     var league by remember { mutableStateOf("") }
     var managerName by remember { mutableStateOf("") }
     var contactPhone by remember { mutableStateOf("") }
@@ -48,6 +53,16 @@ fun EditTeamScreen(
     var confirmArchive by remember { mutableStateOf(false) }
     var archiving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val pickBadge = rememberBadgeImagePicker { result ->
+        when (result) {
+            is BadgePickResult.Picked -> {
+                badge = result.dataUrl
+                badgeError = null
+            }
+            BadgePickResult.Failed -> badgeError = "That file couldn't be read as an image."
+            BadgePickResult.Cancelled -> {}
+        }
+    }
 
     LaunchedEffect(teamId) {
         when (val result = teamRepository.get(teamId)) {
@@ -55,6 +70,7 @@ fun EditTeamScreen(
                 val t = result.value
                 original = t
                 name = t.name
+                badge = t.badgeUrl ?: ""
                 league = t.league ?: ""
                 managerName = t.managerName ?: ""
                 contactPhone = t.contactPhone ?: ""
@@ -73,13 +89,35 @@ fun EditTeamScreen(
         return
     }
 
-    val dirty = name != current.name || league != (current.league ?: "") ||
+    val badgeChanged = badge != (current.badgeUrl ?: "")
+    val dirty = name != current.name || badgeChanged || league != (current.league ?: "") ||
         managerName != (current.managerName ?: "") || contactPhone != (current.contactPhone ?: "") ||
         description != (current.description ?: "") || travelRadius != current.travelRadiusMiles.toString()
 
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
         Text("Edit team", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(24.dp))
+
+        Text("Badge", style = MaterialTheme.typography.titleSmall)
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CrestAvatar(name.ifBlank { current.name }, size = 56.dp, badgeUrl = badge)
+            Spacer(Modifier.width(16.dp))
+            OutlinedButton(onClick = pickBadge) { Text(if (badge.isBlank()) "Upload" else "Change") }
+            if (badge.isNotBlank()) {
+                Spacer(Modifier.width(8.dp))
+                TextButton(onClick = { badge = ""; badgeError = null }) { Text("Remove") }
+            }
+        }
+        Text(
+            "A square image works best - we'll crop it to a square and shrink it to 256px.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        badgeError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        }
+        Spacer(Modifier.height(16.dp))
 
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Team name") },
             modifier = Modifier.fillMaxWidth())
@@ -133,7 +171,11 @@ fun EditTeamScreen(
                     val result = teamRepository.update(
                         teamId,
                         UpdateTeamRequest(
-                            name = name.trim(), league = league.ifBlank { null },
+                            name = name.trim(),
+                            // Only when it changed: the API keeps the current badge for null,
+                            // and clears it for "" - and an unchanged badge is a wasted 30KB.
+                            badgeUrl = if (badgeChanged) badge else null,
+                            league = league.ifBlank { null },
                             managerName = managerName.ifBlank { null }, contactPhone = contactPhone.ifBlank { null },
                             description = description.ifBlank { null },
                             travelRadiusMiles = travelRadius.toIntOrNull()

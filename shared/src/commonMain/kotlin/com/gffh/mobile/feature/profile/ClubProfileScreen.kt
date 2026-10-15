@@ -84,7 +84,7 @@ fun ClubProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        CrestAvatar(t.name, size = 32.dp)
+                        CrestAvatar(t.name, size = 32.dp, badgeUrl = t.badgeUrl)
                         Spacer(Modifier.width(10.dp))
                         Column {
                             Text(t.name, style = MaterialTheme.typography.titleSmall)

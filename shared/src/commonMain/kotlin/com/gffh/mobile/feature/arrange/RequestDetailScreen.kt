@@ -114,7 +114,7 @@ fun RequestDetailScreen(
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp)) {
             if (otherTeam != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CrestAvatar(otherTeam.name, size = 48.dp)
+                    CrestAvatar(otherTeam.name, size = 48.dp, badgeUrl = otherTeam.badgeUrl)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(

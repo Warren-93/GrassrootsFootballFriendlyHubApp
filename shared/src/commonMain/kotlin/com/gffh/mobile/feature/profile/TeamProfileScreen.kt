@@ -16,6 +16,7 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.HeroBand
 import com.gffh.mobile.ui.components.ProfileChecklistCard
 import com.gffh.mobile.ui.components.StatTile
@@ -63,14 +64,19 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
             compact = true,
             modifier = Modifier.padding(16.dp)
         )
-        Text(
-            current.clubName,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .clickable { navigator.push(Route.ClubProfile(current.clubId)) }
-        )
+        Row(
+            Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CrestAvatar(current.name, size = 48.dp, badgeUrl = current.badgeUrl)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                current.clubName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { navigator.push(Route.ClubProfile(current.clubId)) }
+            )
+        }
 
         Spacer(Modifier.height(16.dp))
         Column(Modifier.padding(horizontal = 16.dp)) {

@@ -78,7 +78,7 @@ fun VerificationScreen(
 
         Column(Modifier.padding(24.dp).weight(1f).verticalScroll(rememberScrollState())) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CrestAvatar(current.name, size = 40.dp)
+                CrestAvatar(current.name, size = 40.dp, badgeUrl = current.badgeUrl)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(current.name, style = MaterialTheme.typography.titleMedium)

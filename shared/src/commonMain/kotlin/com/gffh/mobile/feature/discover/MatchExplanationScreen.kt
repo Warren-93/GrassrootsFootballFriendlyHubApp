@@ -45,7 +45,7 @@ fun MatchExplanationScreen(resultsCache: SearchResultsCache, navigator: Navigato
 
         Column(Modifier.padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CrestAvatar(match.team.name, size = 40.dp)
+                CrestAvatar(match.team.name, size = 40.dp, badgeUrl = match.team.badgeUrl)
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text("${match.score}%", style = displayHeadline)

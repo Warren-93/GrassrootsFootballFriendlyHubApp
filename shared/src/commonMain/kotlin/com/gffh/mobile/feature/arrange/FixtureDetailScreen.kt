@@ -127,7 +127,7 @@ fun FixtureDetailScreen(
             Spacer(Modifier.height(16.dp))
             SectionCard("Home") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CrestAvatar(f.homeTeam.name, size = 32.dp)
+                    CrestAvatar(f.homeTeam.name, size = 32.dp, badgeUrl = f.homeTeam.badgeUrl)
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text(f.homeTeam.name)
@@ -139,7 +139,7 @@ fun FixtureDetailScreen(
             Spacer(Modifier.height(12.dp))
             SectionCard("Away") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CrestAvatar(f.awayTeam.name, size = 32.dp)
+                    CrestAvatar(f.awayTeam.name, size = 32.dp, badgeUrl = f.awayTeam.badgeUrl)
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text(f.awayTeam.name)

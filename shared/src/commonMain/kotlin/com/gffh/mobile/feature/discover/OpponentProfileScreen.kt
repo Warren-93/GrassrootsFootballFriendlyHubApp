@@ -77,7 +77,7 @@ fun OpponentProfileScreen(
 
         Column(Modifier.padding(24.dp).weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CrestAvatar(match.team.name, size = 48.dp)
+                CrestAvatar(match.team.name, size = 48.dp, badgeUrl = match.team.badgeUrl)
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {

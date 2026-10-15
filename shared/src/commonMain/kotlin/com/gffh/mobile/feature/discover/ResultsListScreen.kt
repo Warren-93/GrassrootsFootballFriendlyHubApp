@@ -73,7 +73,7 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
     Card(onClick = onCardClick, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CrestAvatar(match.team.name)
+                CrestAvatar(match.team.name, badgeUrl = match.team.badgeUrl)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

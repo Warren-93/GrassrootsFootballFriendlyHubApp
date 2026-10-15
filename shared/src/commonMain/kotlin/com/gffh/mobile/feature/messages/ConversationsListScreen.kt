@@ -86,7 +86,7 @@ fun ConversationsListScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            CrestAvatar(c.otherTeam.name)
+                            CrestAvatar(c.otherTeam.name, badgeUrl = c.otherTeam.badgeUrl)
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(c.otherTeam.name, style = MaterialTheme.typography.titleSmall)

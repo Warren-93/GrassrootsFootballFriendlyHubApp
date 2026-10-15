@@ -129,9 +129,9 @@ private fun FixtureRow(fixture: FixtureView, navigator: Navigator) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CrestAvatar(fixture.homeTeam.name, size = 30.dp)
+            CrestAvatar(fixture.homeTeam.name, size = 30.dp, badgeUrl = fixture.homeTeam.badgeUrl)
             Text("vs", style = MaterialTheme.typography.bodySmall)
-            CrestAvatar(fixture.awayTeam.name, size = 30.dp)
+            CrestAvatar(fixture.awayTeam.name, size = 30.dp, badgeUrl = fixture.awayTeam.badgeUrl)
             Column(Modifier.weight(1f)) {
                 Text("${fixture.homeTeam.name} vs ${fixture.awayTeam.name}", style = MaterialTheme.typography.bodyMedium)
                 Text("${fixture.date} ${fixture.startTime}", style = MaterialTheme.typography.bodySmall)
