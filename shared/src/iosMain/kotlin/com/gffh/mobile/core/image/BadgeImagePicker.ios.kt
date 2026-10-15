@@ -13,11 +13,13 @@ import platform.PhotosUI.PHPickerResult
 import platform.PhotosUI.PHPickerViewController
 import platform.PhotosUI.PHPickerViewControllerDelegateProtocol
 import platform.UIKit.UIApplication
+import platform.UIKit.UIColor
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
 import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
+import platform.UIKit.UIRectFill
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
@@ -91,6 +93,10 @@ private fun badgeDataUrl(data: NSData): String? {
     // Scale 1.0: the square is in pixels, not points, so a Retina device
     // doesn't produce a 512px badge.
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(target, target), true, 1.0)
+    // JPEG has no transparency: a see-through PNG gets a white background,
+    // as it does on the web, rather than a black one.
+    UIColor.whiteColor.setFill()
+    UIRectFill(CGRectMake(0.0, 0.0, target, target))
     val scale = target / shortestSide
     val drawWidth = width * scale
     val drawHeight = height * scale

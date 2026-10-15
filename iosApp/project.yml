@@ -20,6 +20,11 @@ targets:
     deploymentTarget: "15.0"
     sources:
       - path: iosApp
+    # The shared framework is static, so the app links the system frameworks
+    # its Kotlin code uses. PhotosUI is the team badge picker's
+    # (PHPickerViewController); nothing in the Swift code imports it.
+    dependencies:
+      - sdk: PhotosUI.framework
     # Push notifications: the development APNs environment, which is what a
     # debug build and TestFlight use. A release build for the App Store needs
     # "production" here (or the automatic entitlement from a distribution
