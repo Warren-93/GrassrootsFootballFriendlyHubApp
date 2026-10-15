@@ -28,6 +28,19 @@ data class PasswordResetConfirmRequest(val token: String, val newPassword: Strin
 data class VerifyConfirmRequest(val token: String)
 
 @Serializable
+data class ChangePasswordRequest(val currentPassword: String, val newPassword: String)
+
+@Serializable
+data class ChangeEmailRequest(val newEmail: String, val currentPassword: String)
+
+@Serializable
+data class ChangeEmailResponse(
+    val user: UserView,
+    /** Only present while no real email provider is connected - see EmailVerificationScreen. */
+    val verificationToken: String? = null
+)
+
+@Serializable
 data class TokenResponse(
     val accessToken: String,
     val refreshToken: String,

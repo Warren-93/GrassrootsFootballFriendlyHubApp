@@ -48,3 +48,22 @@ data class VenueView(
     val isDefault: Boolean,
     val createdAt: String
 )
+
+/**
+ * Where a friendly request or fixture is being played, as the API attaches it
+ * to FriendlyRequestView and FixtureView: enough to show the venue and link
+ * directions, without the club-management fields. Only [id] and [name] are
+ * always set.
+ */
+@Serializable
+data class VenueSummary(
+    val id: String,
+    val name: String,
+    val address: String? = null,
+    val postcode: String? = null,
+    val pitchSurface: String? = null,
+    val accessNotes: String? = null,
+    val parkingNotes: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
+)
