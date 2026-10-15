@@ -45,7 +45,6 @@ fun tabFor(route: Route): AppTab? = when (route) {
 
     // Discover (SCR-FF-*, plus the Home-surfaced SCR-HM-03 suggestions feed)
     is Route.SearchEntry,
-    is Route.Filters,
     is Route.Results,
     is Route.ResultsMap,
     is Route.OpponentProfile,

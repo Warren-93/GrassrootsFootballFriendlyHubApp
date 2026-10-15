@@ -21,7 +21,6 @@ import com.gffh.mobile.feature.availability.CalendarScreen
 import com.gffh.mobile.feature.availability.DayDetailScreen
 import com.gffh.mobile.feature.availability.EditAvailabilitySlotScreen
 import com.gffh.mobile.feature.arrange.*
-import com.gffh.mobile.feature.discover.FiltersScreen
 import com.gffh.mobile.feature.discover.SuggestedMatchesScreen
 import com.gffh.mobile.feature.discover.ResultsMapScreen
 import com.gffh.mobile.feature.discover.MatchExplanationScreen
@@ -56,7 +55,6 @@ import com.gffh.mobile.navigation.tabFor
 import com.gffh.mobile.repository.*
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.InvitationDraftState
-import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.theme.GffhTheme
 
@@ -68,7 +66,7 @@ import com.gffh.mobile.theme.GffhTheme
 private fun memberCanOpen(route: Route, teamId: String): Boolean = when (route) {
     is Route.TeamProfile -> route.teamId == teamId
     is Route.Home, is Route.Calendar, is Route.DayDetail, is Route.EditAvailabilitySlot,
-    is Route.BulkAddAvailability, is Route.SuggestedMatches, is Route.SearchEntry, is Route.Filters,
+    is Route.BulkAddAvailability, is Route.SuggestedMatches, is Route.SearchEntry,
     is Route.Results, is Route.ResultsMap, is Route.OpponentProfile, is Route.MatchExplanation,
     is Route.InvitationComposer, is Route.InvitationReview, is Route.InvitationSent, is Route.RequestDetail,
     is Route.SuggestChanges, is Route.DeclineRequest, is Route.Fixtures, is Route.FixtureDetail,
@@ -83,7 +81,6 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
     val settings = remember { createSettings() }
     val tokenStore = remember { TokenStore(settings) }
     val currentTeamStore = remember { CurrentTeamStore(settings) }
-    val filterState = remember { SearchFilterState() }
     val resultsCache = remember { SearchResultsCache() }
     val invitationDraft = remember { InvitationDraftState() }
     val apiClient = remember { ApiClient(apiBaseUrl, tokenStore) }
@@ -175,10 +172,9 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
 
             is Route.SuggestedMatches -> SuggestedMatchesScreen(matchRepository, currentTeamStore, resultsCache, navigator)
             is Route.SearchEntry -> SearchEntryScreen(
-                matchRepository, teamRepository, availabilityRepository, currentTeamStore, filterState, resultsCache, navigator
+                matchRepository, teamRepository, availabilityRepository, currentTeamStore, resultsCache, navigator
             )
-            is Route.Filters -> FiltersScreen(filterState, navigator)
-            is Route.Results -> ResultsListScreen(matchRepository, currentTeamStore, filterState, resultsCache, navigator)
+            is Route.Results -> ResultsListScreen(resultsCache, navigator)
             is Route.ResultsMap -> ResultsMapScreen(teamRepository, geocodeRepository, currentTeamStore, resultsCache, navigator)
             is Route.OpponentProfile -> OpponentProfileScreen(
                 conversationRepository, currentTeamStore, resultsCache, navigator, route.teamId

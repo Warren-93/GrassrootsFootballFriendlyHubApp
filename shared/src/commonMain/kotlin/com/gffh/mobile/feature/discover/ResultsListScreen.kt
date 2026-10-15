@@ -11,18 +11,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.MatchSummary
-import com.gffh.mobile.model.SearchRequest
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
-import com.gffh.mobile.repository.MatchRepository
-import com.gffh.mobile.session.CurrentTeamStore
-import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.MatchScoreChip
-import kotlinx.coroutines.launch
 
 /**
  * SCR-FF-03 Results list. Purpose: present ranked opponents so fit can be
@@ -36,32 +30,10 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultsListScreen(
-    matchRepository: MatchRepository,
-    currentTeamStore: CurrentTeamStore,
-    filterState: SearchFilterState,
     resultsCache: SearchResultsCache,
     navigator: Navigator
 ) {
     val response by resultsCache.lastResponse.collectAsState()
-    var relaxing by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
-    fun relaxAndResearch(mutate: SearchFilterState.() -> Unit) {
-        val team = currentTeamStore.active.value ?: return
-        filterState.mutate()
-        relaxing = true
-        scope.launch {
-            val request = SearchRequest(
-                teamId = team.teamId,
-                maxDistanceMiles = filterState.maxDistanceMiles,
-                formats = filterState.formats.toList().ifEmpty { null },
-                abilityLevels = filterState.abilityLevels.toList().ifEmpty { null },
-                verifiedOnly = filterState.verifiedOnly.takeIf { it }
-            )
-            (matchRepository.search(request) as? ApiResult.Success)?.let { resultsCache.store(it.value) }
-            relaxing = false
-        }
-    }
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -75,14 +47,8 @@ fun ResultsListScreen(
         )
 
         val results = response?.results.orEmpty()
-        if (relaxing) {
-            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        } else if (results.isEmpty()) {
-            NoResultsContent(
-                onRelaxDistance = { relaxAndResearch { maxDistanceMiles = (maxDistanceMiles ?: 15) + 25 } },
-                onRelaxAbility = { relaxAndResearch { abilityLevels = emptySet() } },
-                onOpenFilters = { navigator.push(Route.Filters) }
-            )
+        if (results.isEmpty()) {
+            NoResultsContent()
         } else {
             LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                 items(results) { match ->
@@ -139,23 +105,13 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
 }
 
 @Composable
-private fun NoResultsContent(onRelaxDistance: () -> Unit, onRelaxAbility: () -> Unit, onOpenFilters: () -> Unit) {
+private fun NoResultsContent() {
     Column(Modifier.fillMaxSize().padding(24.dp)) {
-        Text("No teams match right now", style = MaterialTheme.typography.titleMedium)
+        Text("No teams to show yet", style = MaterialTheme.typography.titleMedium)
         Text(
-            "Try widening your search.",
+            "No other teams in your age group and gender have joined yet. Check back soon.",
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            modifier = Modifier.padding(top = 4.dp)
         )
-        ActionRow("Search further away", onRelaxDistance)
-        ActionRow("Include other ability levels", onRelaxAbility)
-        ActionRow("Adjust filters", onOpenFilters)
-    }
-}
-
-@Composable
-private fun ActionRow(label: String, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(label, modifier = Modifier.padding(16.dp))
     }
 }

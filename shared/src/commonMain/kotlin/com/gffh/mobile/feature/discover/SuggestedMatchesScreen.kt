@@ -17,8 +17,8 @@ import kotlinx.coroutines.launch
 
 /**
  * SCR-HM-03 Suggested matches. Purpose: show every opponent worth considering
- * right now, without the manual filter step SCR-FF-01/02 require - runs a
- * zero-filter search and lands on the existing results screen.
+ * right now - runs the search (every team with the same age group and
+ * gender, all ability levels) and lands on the existing results screen.
  */
 @Composable
 fun SuggestedMatchesScreen(
@@ -34,7 +34,7 @@ fun SuggestedMatchesScreen(
     LaunchedEffect(activeTeam?.teamId) {
         val teamId = activeTeam?.teamId ?: return@LaunchedEffect
         scope.launch {
-            when (val result = matchRepository.search(SearchRequest(teamId = teamId, limit = 20))) {
+            when (val result = matchRepository.search(SearchRequest(teamId = teamId, limit = SEARCH_LIMIT))) {
                 is ApiResult.Success -> {
                     resultsCache.store(result.value)
                     navigator.replace(Route.Results)
@@ -52,7 +52,7 @@ fun SuggestedMatchesScreen(
                 ?: Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(12.dp))
-                    Text("Finding suggested matches…")
+                    Text("Finding teams to play…")
                 }
         }
     }
