@@ -25,6 +25,7 @@ import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.HeroBand
+import com.gffh.mobile.ui.components.ProfileChecklistCard
 import com.gffh.mobile.ui.components.StatTile
 import com.gffh.mobile.ui.components.StatTileRow
 import com.gffh.mobile.ui.components.StatTileTone
@@ -100,10 +101,11 @@ fun HomeScreen(
     val nextFixture = fixtures.filter { it.status == "CONFIRMED" }.minByOrNull { it.date }
     val completeness = team?.completenessPercent
     val actionItems = buildList {
-        if (completeness != null && completeness < 80) add("Team profile is $completeness% complete - invitations need 80%.")
         if (loaded && futureSlots.isEmpty()) add("No availability published yet.")
         if (session?.emailVerified == false) add("Email not verified - invitations and messages are blocked.")
     }
+    val needsAttention = actionItems.size +
+        (team?.profileChecklist?.count { it.requiredForRequests && !it.done } ?: 0)
 
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         HeroBand(
@@ -181,12 +183,13 @@ fun HomeScreen(
                     label = "Team profile",
                     value = "${completeness ?: 0}%",
                     sub = "complete",
+                    tone = if (team?.readyForRequests == false) StatTileTone.Amber else StatTileTone.Default,
                     modifier = Modifier.weight(1f)
                 )
                 StatTile(
                     label = "Needs attention",
-                    value = actionItems.size.toString(),
-                    tone = if (actionItems.isNotEmpty()) StatTileTone.Amber else StatTileTone.Default,
+                    value = needsAttention.toString(),
+                    tone = if (needsAttention > 0) StatTileTone.Amber else StatTileTone.Default,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -204,6 +207,11 @@ fun HomeScreen(
                     }
                 }
                 Spacer(Modifier.height(12.dp))
+            }
+
+            team?.let {
+                ProfileChecklistCard(it, navigator, showOptional = false)
+                if (it.readyForRequests == false) Spacer(Modifier.height(12.dp))
             }
 
             // Action required (computed above, alongside the stat tiles).

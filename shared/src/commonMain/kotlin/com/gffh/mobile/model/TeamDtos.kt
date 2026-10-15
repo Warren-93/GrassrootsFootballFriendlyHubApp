@@ -75,7 +75,20 @@ data class TeamView(
     val completenessPercent: Int,
     val createdAt: String,
     /** Only set on GET /teams/mine: false for a member who can't manage the team. */
-    val canManage: Boolean? = null
+    val canManage: Boolean? = null,
+    /** Verified and has a venue: the only gate on sending and receiving friendly requests. */
+    val readyForRequests: Boolean? = null,
+    /** What's still to do. Empty for teams the caller doesn't manage. */
+    val profileChecklist: List<ProfileChecklistItem> = emptyList()
+)
+
+@Serializable
+data class ProfileChecklistItem(
+    val key: String,
+    val label: String,
+    val done: Boolean,
+    /** True for the items that gate friendly requests (verification, venue). */
+    val requiredForRequests: Boolean
 )
 
 @Serializable

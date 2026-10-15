@@ -99,7 +99,11 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
                 }
             }
             Spacer(Modifier.height(8.dp))
-            Button(onClick = onInviteClick, modifier = Modifier.fillMaxWidth()) { Text("Invite") }
+            Button(
+                onClick = onInviteClick,
+                enabled = match.canReceiveRequests != false,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(if (match.canReceiveRequests == false) "Can't receive requests yet" else "Invite") }
         }
     }
 }

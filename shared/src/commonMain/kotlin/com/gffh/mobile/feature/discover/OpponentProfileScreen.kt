@@ -127,8 +127,16 @@ fun OpponentProfileScreen(
             messageError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp))
             }
+            if (match.canReceiveRequests == false) {
+                Text(
+                    "${match.team.name} can't receive friendly requests yet. They need to be verified and add a venue first. You can still message them.",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
             Button(
                 onClick = { navigator.push(Route.InvitationComposer(match.team.id)) },
+                enabled = match.canReceiveRequests != false,
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Invite to friendly") }
             OutlinedButton(
