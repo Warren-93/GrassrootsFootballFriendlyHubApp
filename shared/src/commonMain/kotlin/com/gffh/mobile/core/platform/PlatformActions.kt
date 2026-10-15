@@ -4,6 +4,19 @@ package com.gffh.mobile.core.platform
 expect fun openMailApp()
 
 /**
+ * Opens [url] in whichever app handles it - a Google Maps directions link in
+ * Maps or the browser, any other https link in the browser. Returns false
+ * when it plainly couldn't (no app installed for it), so the caller can say so.
+ */
+expect fun openUrl(url: String): Boolean
+
+/**
+ * Starts a new email to [address] in the device's mail app, with [subject]
+ * filled in. Returns false when there's no mail app to hand it to.
+ */
+expect fun composeEmail(address: String, subject: String): Boolean
+
+/**
  * Hands [content] to the user as a real file named [filename] - the Android
  * Downloads folder directly, or the iOS share sheet (save to Files, AirDrop,
  * etc.) since iOS has no equivalent "just drop it in Downloads" API. Returns
