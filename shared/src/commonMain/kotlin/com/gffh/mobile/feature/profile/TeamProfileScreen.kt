@@ -17,6 +17,7 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.repository.VenueRepository
 import com.gffh.mobile.ui.components.HeroBand
+import com.gffh.mobile.ui.components.ProfileChecklistCard
 import com.gffh.mobile.ui.components.StatTile
 import com.gffh.mobile.ui.components.StatTileRow
 import com.gffh.mobile.ui.components.StatTileTone
@@ -77,11 +78,17 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
                 StatTile(
                     label = "Profile completeness",
                     value = "${current.completenessPercent}%",
-                    sub = if (current.completenessPercent < 80) "Must reach 80% to invite" else "Ready to invite",
-                    tone = if (current.completenessPercent < 80) StatTileTone.Amber else StatTileTone.Default,
+                    sub = when (current.readyForRequests) {
+                        false -> "Needs verification and a venue to invite"
+                        true -> "Ready to invite"
+                        null -> null
+                    },
+                    tone = if (current.readyForRequests == false) StatTileTone.Amber else StatTileTone.Default,
                     modifier = Modifier.weight(1f)
                 )
             }
+            Spacer(Modifier.height(12.dp))
+            ProfileChecklistCard(current, navigator)
         }
 
         Spacer(Modifier.height(20.dp))

@@ -33,7 +33,9 @@ data class MatchSummary(
     val milesApart: Double,
     val reasons: List<String>,
     val factors: List<FactorView>,
-    val earliestOverlap: OverlapView? = null
+    val earliestOverlap: OverlapView? = null,
+    /** False until the opponent is verified and has a venue. Null from older servers. */
+    val canReceiveRequests: Boolean? = null
 )
 
 @Serializable

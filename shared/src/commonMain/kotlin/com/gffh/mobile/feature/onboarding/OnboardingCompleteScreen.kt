@@ -6,20 +6,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.model.TeamView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.HeroBand
+import com.gffh.mobile.ui.components.ProfileChecklistCard
 
 /**
  * SCR-ON-06 Onboarding complete. Purpose: confirm setup and direct the user
@@ -34,10 +33,13 @@ fun OnboardingCompleteScreen(
     navigator: Navigator,
     teamId: String
 ) {
+    var team by remember { mutableStateOf<TeamView?>(null) }
+
     // The team just created becomes the app's active team - see CurrentTeamStore.
     LaunchedEffect(teamId) {
         val result = teamRepository.get(teamId)
         if (result is ApiResult.Success) {
+            team = result.value
             currentTeamStore.set(ActiveTeam(result.value.id, result.value.clubId, result.value.name))
         }
     }
@@ -49,29 +51,26 @@ fun OnboardingCompleteScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         HeroBand(
-            title = "You're set up",
+            title = if (team?.readyForRequests == false) "Your team is created" else "You're set up",
             eyebrow = activeTeam?.teamName ?: "All done",
-            subtitle = "Your team profile is ready - here's what's next.",
+            subtitle = if (team?.readyForRequests == false) {
+                "Get verified and add a venue to start sending and receiving friendly requests."
+            } else {
+                "Your team profile is ready - here's what's next."
+            },
             modifier = Modifier.padding(16.dp)
         )
         Spacer(Modifier.height(8.dp))
 
         Column(Modifier.padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp)) {
-                ChecklistRow("Team profile created")
-                ChecklistRow("Venue and availability - see your team profile for what's outstanding")
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Get verified", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    "Verification unlocks the verified badge and helps other clubs trust your invitations.",
-                    style = MaterialTheme.typography.bodySmall
-                )
+        val current = team
+        if (current != null && current.profileChecklist.isNotEmpty()) {
+            ProfileChecklistCard(current, navigator)
+        } else {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    ChecklistRow("Team profile created")
+                }
             }
         }
 

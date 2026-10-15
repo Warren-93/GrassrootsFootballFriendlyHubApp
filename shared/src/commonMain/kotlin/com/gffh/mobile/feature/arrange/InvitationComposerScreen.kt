@@ -18,10 +18,8 @@ import com.gffh.mobile.repository.VenueRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.InvitationDraftState
 import com.gffh.mobile.session.SearchResultsCache
+import com.gffh.mobile.ui.components.ProfileChecklistCard
 import kotlinx.datetime.LocalTime
-
-/** The API refuses to send a request until the sender's profile is at least this complete. */
-private const val MIN_PROFILE_COMPLETENESS = 80
 
 /** Mirrors the backend's AgeGroup.defaultMatchMinutes() table (SCR-IN-01's "Match duration" default). */
 private fun defaultMatchMinutes(ageGroup: String?): Int = when (ageGroup) {
@@ -89,24 +87,28 @@ fun InvitationComposerScreen(
         return
     }
 
-    val completeness = ourTeam?.completenessPercent
-    val profileTooThin = completeness != null && completeness < MIN_PROFILE_COMPLETENESS
+    // The API only lets verified teams with a venue send or receive requests.
+    val weAreNotReady = ourTeam?.readyForRequests == false
+    val theyAreNotReady = match.canReceiveRequests == false
 
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
         Text("Invite ${match.team.name}", style = MaterialTheme.typography.headlineSmall)
         Text(match.team.clubName, style = MaterialTheme.typography.bodyMedium)
 
-        if (profileTooThin) {
+        ourTeam?.let { team ->
+            if (weAreNotReady) {
+                Spacer(Modifier.height(16.dp))
+                ProfileChecklistCard(team, navigator, showOptional = false)
+            }
+        }
+        if (theyAreNotReady) {
             Spacer(Modifier.height(16.dp))
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        "Your team profile is $completeness% complete. It needs to be at least " +
-                            "$MIN_PROFILE_COMPLETENESS% before you can send requests, so opponents know who they're playing.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    TextButton(onClick = { navigator.push(Route.EditTeam(activeTeam.teamId)) }) { Text("Complete profile") }
-                }
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                Text(
+                    "${match.team.name} can't receive friendly requests yet. They need to be verified and add a venue first.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
 
@@ -179,7 +181,7 @@ fun InvitationComposerScreen(
                 draft.notes = notes
                 navigator.push(Route.InvitationReview)
             },
-            enabled = !profileTooThin,
+            enabled = !weAreNotReady && !theyAreNotReady,
             modifier = Modifier.fillMaxWidth()
         ) { Text("Review proposal") }
     }
