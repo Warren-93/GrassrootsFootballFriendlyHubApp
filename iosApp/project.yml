@@ -25,10 +25,11 @@ targets:
     # (PHPickerViewController); nothing in the Swift code imports it.
     dependencies:
       - sdk: PhotosUI.framework
-    # Push notifications: the development APNs environment, which is what a
-    # debug build and TestFlight use. A release build for the App Store needs
-    # "production" here (or the automatic entitlement from a distribution
-    # profile). Simulator builds sign nothing, so this is inert there.
+    # Push notifications: the development (sandbox) APNs environment, which
+    # is what a build run from Xcode uses. When an archive is exported for
+    # TestFlight or the App Store, Xcode switches this to "production" from
+    # the distribution profile. Simulator builds sign nothing, so this is
+    # inert there.
     entitlements:
       path: Generated/iosApp.entitlements
       properties:

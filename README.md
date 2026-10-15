@@ -100,8 +100,15 @@ itself from resources a `google-services.json` would have generated.
 
 The app asks for POST_NOTIFICATIONS (Android 13+) after sign-in rather than at
 launch, so the prompt arrives when notifications are about to start mattering.
-Pushes arrive in `KickaboutMessagingService` and show on a "Kickabout"
-notification channel; tapping one opens the app.
+While the app is open, pushes arrive in `KickaboutMessagingService`, which
+shows them; in the background Android draws them itself. The manifest points
+both at the same "Kickabout" notification channel and status-bar icon, and
+tapping one opens the app.
+
+The Play release workflow (`android-release.yml`) doesn't pass these
+variables yet, so a bundle it builds has no push. To change that, add the four
+as repository variables and pass them in the "Build release bundle" step's
+`env`, the way `GFFH_API_BASE_URL` is.
 
 ### iOS (APNs)
 
@@ -111,10 +118,13 @@ registers with APNs, and hands the device token (lowercase hex, which is what
 the API stores) to the shared code via `PushBridge.kt`. Notifications arriving
 while the app is open are shown as banners.
 
-`iosApp/project.yml` adds the `aps-environment: development` entitlement (what
-a debug build and TestFlight use - an App Store build needs `production`) and
-the `remote-notification` background mode. Simulator builds don't sign
-anything, so the entitlement is inert there and CI keeps building.
+`iosApp/project.yml` adds the `aps-environment: development` entitlement (the
+APNs sandbox, which is what a build run from Xcode uses - exporting an archive
+for TestFlight or the App Store switches it to `production`) and the
+`remote-notification` background mode. Simulator builds don't sign anything,
+so the entitlement is inert there and CI keeps building. The API has to match:
+`APNS_PRODUCTION=false` for builds run from Xcode, `true` for TestFlight and
+App Store builds.
 
 A real device also needs an APNs key for the bundle ID in the Apple developer
 account, the same key the API is given as `APNS_PRIVATE_KEY`.

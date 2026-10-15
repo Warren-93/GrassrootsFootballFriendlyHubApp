@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -16,10 +17,11 @@ import com.gffh.mobile.core.push.PushTokens
  * Receives Firebase Cloud Messaging pushes (the API's FcmSender sends
  * `notification` + `data`, see the shared API contract section 6).
  *
- * Android only draws a notification itself while the app is in the
- * background; in the foreground the payload comes here instead, so this
- * builds the same notification either way, on one "Kickabout" channel, and
- * opens MainActivity when it's tapped.
+ * While the app is in the background Android draws the notification itself,
+ * on the channel and with the icon the manifest names - the same ones used
+ * here. In the foreground the payload comes here instead, so this builds that
+ * same notification, on the one "Kickabout" channel, opening MainActivity
+ * when it's tapped.
  */
 class KickaboutMessagingService : FirebaseMessagingService() {
 
@@ -38,13 +40,7 @@ class KickaboutMessagingService : FirebaseMessagingService() {
     private fun show(title: String, body: String) {
         if (!canShowNotifications()) return
         val manager = getSystemService(NotificationManager::class.java) ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "Friendly requests, fixtures, messages and verification updates."
-                }
-            )
-        }
+        createChannel(this)
 
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -79,8 +75,24 @@ class KickaboutMessagingService : FirebaseMessagingService() {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    private companion object {
+    companion object {
+        /** Also named in the manifest as Firebase's default channel - keep the two the same. */
         const val CHANNEL_ID = "kickabout"
-        const val CHANNEL_NAME = "Kickabout"
+        private const val CHANNEL_NAME = "Kickabout"
+
+        /**
+         * Safe to call any number of times: creating a channel that already
+         * exists only refreshes its name and description, never the user's
+         * own settings for it.
+         */
+        fun createChannel(context: Context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+            val manager = context.getSystemService(NotificationManager::class.java) ?: return
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = "Friendly requests, fixtures, messages and verification updates."
+                }
+            )
+        }
     }
 }

@@ -42,13 +42,18 @@ class KickaboutApplication : Application() {
         if (!initialised) return
 
         PushTokens.markAvailable()
+        // Before any push can arrive: while the app is in the background,
+        // Android draws pushes itself on the channel the manifest names, and
+        // only uses it if it already exists.
+        KickaboutMessagingService.createChannel(this)
         // Firebase caches the registration token, so this is usually instant.
         // It fails without Google Play services, which is not an error worth
         // showing anyone - the app simply gets no push on that device.
         runCatching {
             FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                val token = task.result
-                if (task.isSuccessful && token != null) {
+                // task.result throws for a failed task, so check first.
+                val token = if (task.isSuccessful) task.result else null
+                if (token != null) {
                     PushTokens.update(PushPlatform.ANDROID, token)
                 } else {
                     Log.w(TAG, "No push token yet", task.exception)

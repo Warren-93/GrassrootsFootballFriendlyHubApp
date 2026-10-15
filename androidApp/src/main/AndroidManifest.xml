@@ -36,6 +36,19 @@
         </service>
 
         <!--
+          While the app is in the background, Firebase draws a push itself
+          rather than handing it to KickaboutMessagingService: these make it
+          use the same "Kickabout" channel (CHANNEL_ID there) and status-bar
+          icon, not Firebase's "Miscellaneous" channel and the launcher icon.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="kickabout" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+
+        <!--
           There is no google-services.json here: Firebase is initialised by
           hand from BuildConfig in KickaboutApplication (see the README).
           FirebaseInitProvider would otherwise run first and try to configure
