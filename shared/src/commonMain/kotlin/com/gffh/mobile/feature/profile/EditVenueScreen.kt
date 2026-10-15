@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
  * Editing seeds `coordinates` from the venue's existing lat/lon so leaving
  * the postcode field untouched keeps the current location rather than
  * forcing a re-lookup for an edit that has nothing to do with location.
+ * The postcode is seeded too, and only sent when it changed.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -42,6 +43,8 @@ fun EditVenueScreen(
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var postcode by remember { mutableStateOf("") }
+    // What the venue had when the screen opened, so an unchanged postcode isn't re-sent.
+    var originalPostcode by remember { mutableStateOf("") }
     var coordinates by remember { mutableStateOf<GeoPoint?>(null) }
     var surface by remember { mutableStateOf<PitchSurface?>(null) }
     var accessNotes by remember { mutableStateOf("") }
@@ -58,6 +61,8 @@ fun EditVenueScreen(
                 if (venue != null) {
                     name = venue.name
                     address = venue.address
+                    postcode = venue.postcode ?: ""
+                    originalPostcode = postcode
                     coordinates = GeoPoint(venue.latitude, venue.longitude)
                     surface = venue.pitchSurface?.let { s -> PitchSurface.entries.find { it.name == s } }
                     accessNotes = venue.accessNotes ?: ""
@@ -130,6 +135,7 @@ fun EditVenueScreen(
                         venueRepository.create(
                             CreateVenueRequest(
                                 clubId = clubId, name = name.trim(), address = address.trim(),
+                                postcode = postcode.trim().ifBlank { null },
                                 longitude = coordinates!!.longitude, latitude = coordinates!!.latitude,
                                 pitchSurface = surface?.name,
                                 accessNotes = accessNotes.ifBlank { null }
@@ -140,6 +146,8 @@ fun EditVenueScreen(
                             venueId!!,
                             UpdateVenueRequest(
                                 name = name.trim(), address = address.trim(),
+                                // Null keeps the venue's postcode as it is.
+                                postcode = postcode.trim().takeIf { it != originalPostcode.trim() },
                                 longitude = coordinates?.longitude, latitude = coordinates?.latitude,
                                 pitchSurface = surface?.name, accessNotes = accessNotes.ifBlank { null }
                             )

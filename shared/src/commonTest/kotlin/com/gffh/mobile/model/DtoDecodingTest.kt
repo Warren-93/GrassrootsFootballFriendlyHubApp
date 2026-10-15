@@ -129,4 +129,26 @@ class DtoDecodingTest {
         assertFalse(response.user.emailVerified)
         assertNull(response.verificationToken)
     }
+
+    @Test
+    fun aVenueReadsItsPostcodeAndStillDecodesWithoutOne() {
+        val body = """
+            {"id":"v1","clubId":"c1","name":"Rec Ground","address":"1 Park Road","postcode":"SW1A 1AA",
+             "longitude":-0.12,"latitude":51.5,"facilities":[],"isDefault":true,"createdAt":"2026-10-01T09:00:00Z"}
+        """.trimIndent()
+
+        assertEquals("SW1A 1AA", json.decodeFromString(VenueView.serializer(), body).postcode)
+        assertNull(json.decodeFromString(VenueView.serializer(), body.replace(""""postcode":"SW1A 1AA",""", "")).postcode)
+    }
+
+    @Test
+    fun aNewVenueSendsItsPostcodeOnlyWhenThereIsOne() {
+        val withPostcode = CreateVenueRequest(
+            clubId = "c1", name = "Rec Ground", address = "1 Park Road", postcode = "SW1A 1AA",
+            longitude = -0.12, latitude = 51.5
+        )
+
+        assertTrue(json.encodeToString(CreateVenueRequest.serializer(), withPostcode).contains(""""postcode":"SW1A 1AA""""))
+        assertFalse(json.encodeToString(CreateVenueRequest.serializer(), withPostcode.copy(postcode = null)).contains("postcode"))
+    }
 }

@@ -10,6 +10,8 @@ data class CreateVenueRequest(
     val clubId: String,
     val name: String,
     val address: String,
+    /** At most 10 characters. Left out, the API looks for one in [address] instead. */
+    val postcode: String? = null,
     val longitude: Double,
     val latitude: Double,
     val pitchSurface: String? = null,
@@ -23,6 +25,8 @@ data class CreateVenueRequest(
 data class UpdateVenueRequest(
     val name: String? = null,
     val address: String? = null,
+    /** Null keeps the current postcode; "" clears it. */
+    val postcode: String? = null,
     val longitude: Double? = null,
     val latitude: Double? = null,
     val pitchSurface: String? = null,
@@ -38,6 +42,8 @@ data class VenueView(
     val clubId: String,
     val name: String,
     val address: String,
+    /** The postcode entered for the venue, else one the API found in [address]; null when neither. */
+    val postcode: String? = null,
     val longitude: Double,
     val latitude: Double,
     val pitchSurface: String? = null,
