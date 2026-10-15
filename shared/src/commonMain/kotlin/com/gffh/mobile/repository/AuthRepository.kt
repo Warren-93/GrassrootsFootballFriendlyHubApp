@@ -85,6 +85,22 @@ class AuthRepository(private val api: ApiClient, private val tokenStore: TokenSt
         if (result is ApiResult.Success) tokenStore.updateEmailVerified(true)
     }
 
+    suspend fun changePassword(currentPassword: String, newPassword: String): ApiResult<Unit> = api.request<Unit> {
+        method = io.ktor.http.HttpMethod.Post
+        url("/api/v1/me/password")
+        setBody(ChangePasswordRequest(currentPassword, newPassword))
+    }
+
+    /** The new address starts unverified, so the stored session follows it straight away. */
+    suspend fun changeEmail(newEmail: String, currentPassword: String): ApiResult<ChangeEmailResponse> =
+        api.request<ChangeEmailResponse> {
+            method = io.ktor.http.HttpMethod.Post
+            url("/api/v1/me/email")
+            setBody(ChangeEmailRequest(newEmail, currentPassword))
+        }.also { result ->
+            if (result is ApiResult.Success) tokenStore.updateEmail(result.value.user.email, result.value.user.emailVerified)
+        }
+
     fun signOut() = tokenStore.clear()
 
     private fun persist(response: TokenResponse) {
