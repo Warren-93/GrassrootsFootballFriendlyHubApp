@@ -105,10 +105,9 @@ shows them; in the background Android draws them itself. The manifest points
 both at the same "Kickabout" notification channel and status-bar icon, and
 tapping one opens the app.
 
-The Play release workflow (`android-release.yml`) doesn't pass these
-variables yet, so a bundle it builds has no push. To change that, add the four
-as repository variables and pass them in the "Build release bundle" step's
-`env`, the way `GFFH_API_BASE_URL` is.
+The Play release workflow (`android-release.yml`) reads the four from
+repository variables of the same names (Settings > Secrets and variables >
+Actions > Variables). Until they're added, a bundle it builds has no push.
 
 ### iOS (APNs)
 

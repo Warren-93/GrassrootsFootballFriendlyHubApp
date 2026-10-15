@@ -16,6 +16,10 @@ name: Android Release Bundle
 # The API address comes from the repository variable GFFH_API_BASE_URL
 # (Settings > Secrets and variables > Actions > Variables), e.g. the Render
 # service's https URL. Unset, the build uses https://grassrootsfootballfriendlyhubapi.onrender.com.
+#
+# Push notifications need four more repository variables from the Firebase
+# project's Android app: FIREBASE_PROJECT_ID, FIREBASE_APPLICATION_ID,
+# FIREBASE_API_KEY and FIREBASE_SENDER_ID. Unset, the bundle has no push.
 
 on:
   workflow_dispatch:
@@ -95,6 +99,10 @@ jobs:
           VERSION_CODE: ${{ steps.version.outputs.code }}
           VERSION_NAME: ${{ steps.version.outputs.name }}
           GFFH_API_BASE_URL: ${{ vars.GFFH_API_BASE_URL }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIREBASE_APPLICATION_ID: ${{ vars.FIREBASE_APPLICATION_ID }}
+          FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+          FIREBASE_SENDER_ID: ${{ vars.FIREBASE_SENDER_ID }}
         run: >-
           ./gradlew :androidApp:bundleRelease --console=plain
           "-Pgffh.versionCode=$VERSION_CODE"
