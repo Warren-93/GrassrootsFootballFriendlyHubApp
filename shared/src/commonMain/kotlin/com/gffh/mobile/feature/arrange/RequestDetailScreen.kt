@@ -1,6 +1,8 @@
 package com.gffh.mobile.feature.arrange
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChatBubbleOutline
@@ -8,19 +10,28 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.core.platform.openUrl
 import com.gffh.mobile.model.FriendlyRequestView
+import com.gffh.mobile.model.VenueSummary
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.VenueCard
+import com.gffh.mobile.ui.components.directionsUrl
+import com.gffh.mobile.ui.components.pitchSurfaceLabel
+import com.gffh.mobile.ui.components.venueAddressLine
 import kotlinx.coroutines.launch
 
 /**
  * SCR-IN-04 Request detail. Purpose: let the recipient evaluate and resolve a
- * proposal, and let the sender track it.
+ * proposal, and let the sender track it. The header names the other team, and
+ * the venue (agreed or proposed) shows with directions.
  *
  * Actions render strictly from `availableActions`, exactly per the spec's
  * rule ("actions the state does not permit are hidden, not disabled") - the
@@ -96,13 +107,38 @@ fun RequestDetailScreen(
             return
         }
 
-        Column(Modifier.padding(24.dp).weight(1f)) {
+        val sentByUs = activeTeam?.teamId == r.senderTeamId
+        val otherTeam = if (sentByUs) r.recipientTeam else r.senderTeam
+        val homeTeam = if (r.homeTeamId == r.senderTeamId) r.senderTeam else r.recipientTeam
+
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp)) {
+            if (otherTeam != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CrestAvatar(otherTeam.name, size = 48.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (sentByUs) "Friendly request to" else "Friendly request from",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(otherTeam.name, style = MaterialTheme.typography.titleLarge)
+                        otherTeam.clubName?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
             StatusPill(r.status)
             Spacer(Modifier.height(16.dp))
             InfoRow("Date", r.date)
             InfoRow("Kick-off", r.startTime)
+            homeTeam?.let { InfoRow("Home team", it.name) }
             InfoRow("Cost share", r.costShare)
             InfoRow("Referee", r.refereeArrangement)
+
+            r.venue?.let {
+                Spacer(Modifier.height(16.dp))
+                VenueCard(it)
+            }
             r.message?.let {
                 Spacer(Modifier.height(12.dp))
                 Text("Message", style = MaterialTheme.typography.titleSmall)
@@ -117,7 +153,7 @@ fun RequestDetailScreen(
                 Text(it)
             }
 
-            if (r.proposedStartTime != null || r.proposedEndTime != null || r.proposedVenueId != null) {
+            if (r.proposedStartTime != null || r.proposedEndTime != null || r.proposedVenueId != null || r.proposedVenue != null) {
                 Spacer(Modifier.height(16.dp))
                 Card(
                     Modifier.fillMaxWidth(),
@@ -131,21 +167,32 @@ fun RequestDetailScreen(
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
-                        if (r.proposedVenueId != null) {
+                        val proposedVenue = r.proposedVenue
+                        if (proposedVenue != null) {
+                            ProposedVenue(proposedVenue)
+                        } else if (r.proposedVenueId != null) {
                             Text("A different venue has been proposed", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
             }
 
-            val contact = r.senderContact ?: r.recipientContact
-            if (contact != null) {
+            // Each side's contact, once the request has got far enough for the API to disclose them.
+            val contacts = listOfNotNull(
+                r.senderContact?.let { (it.teamName ?: r.senderTeam?.name ?: "Sender") to it },
+                r.recipientContact?.let { (it.teamName ?: r.recipientTeam?.name ?: "Recipient") to it }
+            ).filter { (_, c) -> c.managerName != null || c.contactPhone != null }
+            if (contacts.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Contact", style = MaterialTheme.typography.titleSmall)
-                        contact.managerName?.let { Text(it) }
-                        contact.contactPhone?.let { Text(it) }
+                        Text("Contact details", style = MaterialTheme.typography.titleSmall)
+                        contacts.forEach { (teamName, contact) ->
+                            Spacer(Modifier.height(8.dp))
+                            Text(teamName, style = MaterialTheme.typography.labelMedium)
+                            contact.managerName?.let { Text(it) }
+                            contact.contactPhone?.let { Text(it) }
+                        }
                     }
                 }
             }
@@ -197,7 +244,7 @@ fun RequestDetailScreen(
                     Text(if (opening) "Opening…" else "Message the other team")
                 }
                 TextButton(
-                    onClick = { navigator.push(Route.ReportBlock(otherTeamId, "this team")) },
+                    onClick = { navigator.push(Route.ReportBlock(otherTeamId, otherTeam?.name ?: "this team")) },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Report or block", color = MaterialTheme.colorScheme.error) }
             }
@@ -224,6 +271,19 @@ private fun consequenceText(action: String): String = when (action) {
     "acceptChanges" -> "The updated terms will be sent back for their final answer."
     "counter" -> "This sends the request back to them unchanged, for a fresh answer."
     else -> "Are you sure?"
+}
+
+/** The venue a suggested change proposes: its name, where it is and a Directions link. */
+@Composable
+private fun ProposedVenue(venue: VenueSummary) {
+    val url = directionsUrl(venue)
+    Spacer(Modifier.height(4.dp))
+    Text("New venue: ${venue.name}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+    val details = listOfNotNull(venueAddressLine(venue), venue.pitchSurface?.let { "${pitchSurfaceLabel(it)} pitch" })
+    if (details.isNotEmpty()) Text(details.joinToString(", "), style = MaterialTheme.typography.bodySmall)
+    if (url != null) {
+        TextButton(onClick = { openUrl(url) }, contentPadding = PaddingValues(0.dp)) { Text("Directions") }
+    }
 }
 
 @Composable
