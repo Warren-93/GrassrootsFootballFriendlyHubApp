@@ -57,6 +57,14 @@ class VenueCardTest {
     }
 
     @Test
+    fun addressLineDoesNotRepeatAPostcodeTheAddressAlreadyHas() {
+        // With no postcode entered, the API sends the one it found in the address.
+        val venue = VenueSummary("v1", "Rec", address = "1 Park Road, London sw1a1aa", postcode = "SW1A 1AA")
+
+        assertEquals("1 Park Road, London sw1a1aa", venueAddressLine(venue))
+    }
+
+    @Test
     fun pitchSurfacesReadAsPeopleSayThem() {
         assertEquals("3G", pitchSurfaceLabel("THREE_G"))
         assertEquals("Grass", pitchSurfaceLabel("GRASS"))

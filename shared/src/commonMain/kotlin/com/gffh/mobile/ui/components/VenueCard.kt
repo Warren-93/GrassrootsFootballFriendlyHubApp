@@ -82,12 +82,21 @@ private fun VenueNote(label: String, text: String) {
     Text(text, style = MaterialTheme.typography.bodyMedium)
 }
 
-/** "12 Park Road, AB1 2CD" - whichever of the address and postcode are known, or null if neither. */
-fun venueAddressLine(venue: VenueSummary): String? =
-    listOfNotNull(venue.address?.trim(), venue.postcode?.trim())
+/**
+ * "12 Park Road, AB1 2CD" - whichever of the address and postcode are known, or null if neither.
+ * The postcode isn't repeated when the address already has it in: with none entered for the
+ * venue, the API sends the one it found in the address.
+ */
+fun venueAddressLine(venue: VenueSummary): String? {
+    val address = venue.address?.trim().orEmpty()
+    val postcode = venue.postcode?.trim().orEmpty()
+    val postcodeInAddress = postcode.isNotEmpty() &&
+        address.replace(" ", "").contains(postcode.replace(" ", ""), ignoreCase = true)
+    return listOf(address, if (postcodeInAddress) "" else postcode)
         .filter { it.isNotEmpty() }
         .joinToString(", ")
         .ifEmpty { null }
+}
 
 /** The API's PitchSurface name as people say it - "3G", not "THREE_G". Unknown values pass through. */
 fun pitchSurfaceLabel(value: String): String = when (PitchSurface.entries.find { it.name == value }) {
