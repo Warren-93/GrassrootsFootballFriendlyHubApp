@@ -1,5 +1,6 @@
 package com.gffh.mobile.feature.auth
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,11 +17,16 @@ import com.gffh.mobile.core.validation.Validators
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
+import com.gffh.mobile.repository.ConfigRepository
 import kotlinx.coroutines.launch
 
-/** SCR-AU-03 Register. Purpose: create a credentialed account with the minimum possible friction. */
+/**
+ * SCR-AU-03 Register. Purpose: create a credentialed account with the minimum
+ * possible friction - or skip the form entirely with Google (Android) or
+ * Apple (iOS) when the API has it switched on (see [SocialSignInSection]).
+ */
 @Composable
-fun RegisterScreen(authRepository: AuthRepository, navigator: Navigator) {
+fun RegisterScreen(authRepository: AuthRepository, configRepository: ConfigRepository, navigator: Navigator) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -30,6 +36,7 @@ fun RegisterScreen(authRepository: AuthRepository, navigator: Navigator) {
     var submitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var emailTaken by remember { mutableStateOf(false) }
+    var socialWorking by remember { mutableStateOf(false) }
 
     val nameValid = Validators.isValidDisplayName(name)
     val emailValid = Validators.isValidEmail(email)
@@ -115,12 +122,22 @@ fun RegisterScreen(authRepository: AuthRepository, navigator: Navigator) {
                     }
                 }
             },
-            enabled = formValid && !submitting,
+            enabled = formValid && !submitting && !socialWorking,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (submitting) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             else Text("Create account")
         }
+
+        SocialSignInSection(
+            configRepository = configRepository,
+            authRepository = authRepository,
+            navigator = navigator,
+            enabled = !submitting,
+            onWorkingChange = { socialWorking = it },
+            onError = { errorMessage = it },
+            lightBackground = !isSystemInDarkTheme()
+        )
 
         TextButton(onClick = { navigator.pop() }, modifier = Modifier.fillMaxWidth()) { Text("Back") }
     }

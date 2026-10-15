@@ -22,18 +22,25 @@ targets:
       - path: iosApp
     # The shared framework is static, so the app links the system frameworks
     # its Kotlin code uses. PhotosUI is the team badge picker's
-    # (PHPickerViewController); nothing in the Swift code imports it.
+    # (PHPickerViewController) and AuthenticationServices is Sign in with
+    # Apple's (core/auth/SocialSignIn.ios.kt); nothing in the Swift code
+    # imports either.
     dependencies:
       - sdk: PhotosUI.framework
+      - sdk: AuthenticationServices.framework
     # Push notifications: the development (sandbox) APNs environment, which
     # is what a build run from Xcode uses. When an archive is exported for
     # TestFlight or the App Store, Xcode switches this to "production" from
-    # the distribution profile. Simulator builds sign nothing, so this is
-    # inert there.
+    # the distribution profile.
+    # Sign in with Apple: the bundle ID needs the Sign in with Apple
+    # capability in the Apple developer account too (see the README).
+    # Simulator builds sign nothing, so both are inert there.
     entitlements:
       path: Generated/iosApp.entitlements
       properties:
         aps-environment: development
+        com.apple.developer.applesignin:
+          - Default
     info:
       path: Generated/Info.plist
       properties:

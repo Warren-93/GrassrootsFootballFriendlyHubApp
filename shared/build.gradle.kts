@@ -113,6 +113,13 @@ kotlin {
                 implementation("io.ktor:ktor-client-okhttp:2.3.12")
                 implementation("androidx.activity:activity-compose:1.9.2")
                 implementation("androidx.appcompat:appcompat:1.7.0")
+
+                // "Continue with Google" (core/auth/SocialSignIn.android.kt):
+                // Credential Manager, its Play services backend for Android
+                // 13 and older, and Google's ID token credential type.
+                implementation("androidx.credentials:credentials:1.6.0")
+                implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
+                implementation("com.google.android.libraries.identity.googleid:googleid:1.2.1")
             }
         }
         if (enableIos) {

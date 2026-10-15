@@ -1,5 +1,6 @@
 package com.gffh.mobile.repository
 
+import com.gffh.mobile.core.auth.SocialProvider
 import com.gffh.mobile.core.auth.StoredSession
 import com.gffh.mobile.core.auth.TokenStore
 import com.gffh.mobile.core.network.ApiClient
@@ -38,6 +39,24 @@ class AuthRepository(
             method = io.ktor.http.HttpMethod.Post
             url("/api/v1/auth/login")
             setBody(LoginRequest(email, password))
+        }
+        if (result is ApiResult.Success) persist(result.value)
+        return result
+    }
+
+    /**
+     * `POST /api/v1/auth/oauth/{google|apple}`: trades the provider's ID
+     * token for a Kickabout session, stored exactly as [login] stores one -
+     * which is also what gets this phone registered for push, since
+     * PushRegistration sends the device token whenever a session appears.
+     * [TokenResponse.newUser] says whether this sign-in created the account.
+     * [displayName] is Apple's, given only on someone's first Apple sign-in.
+     */
+    suspend fun signInWith(provider: SocialProvider, idToken: String, displayName: String? = null): ApiResult<TokenResponse> {
+        val result = api.request<TokenResponse> {
+            method = io.ktor.http.HttpMethod.Post
+            url("/api/v1/auth/oauth/${provider.path}")
+            setBody(OAuthSignInRequest(idToken, displayName?.trim()?.takeIf { it.isNotEmpty() }))
         }
         if (result is ApiResult.Success) persist(result.value)
         return result

@@ -133,9 +133,9 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
         val screen: @Composable () -> Unit = {
             if (memberBlocked) MemberNoticeScreen(activeTeam!!, navigator) else when (route) {
             is Route.Splash -> SplashScreen(authRepository, navigator)
-            is Route.Welcome -> WelcomeScreen(navigator)
-            is Route.Register -> RegisterScreen(authRepository, navigator)
-            is Route.SignIn -> SignInScreen(authRepository, navigator)
+            is Route.Welcome -> WelcomeScreen(authRepository, configRepository, navigator)
+            is Route.Register -> RegisterScreen(authRepository, configRepository, navigator)
+            is Route.SignIn -> SignInScreen(authRepository, configRepository, navigator)
             is Route.ForgotPassword -> ForgotPasswordScreen(authRepository, navigator, route.prefilledEmail)
             is Route.EmailVerification -> EmailVerificationScreen(authRepository, navigator)
 

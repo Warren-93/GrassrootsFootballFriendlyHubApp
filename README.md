@@ -129,6 +129,70 @@ App Store builds.
 A real device also needs an APNs key for the bundle ID in the Apple developer
 account, the same key the API is given as `APNS_PRIVATE_KEY`.
 
+## Google and Apple sign-in
+
+Welcome, Sign in and Register show "Continue with Google" on Android and
+"Continue with Apple" on iOS, under an "or" divider, whenever
+`GET /api/v1/config` says that provider is on (`google.enabled` with a
+`clientId`; `apple.enabled`). With neither set up on the API, those screens are
+just the email and password forms. The platform's own sheet hands over an ID
+token (`core/auth/SocialSignIn.kt`, with an actual for each platform), the app
+sends it to `POST /api/v1/auth/oauth/google` or `/apple`, and stores the
+session exactly as a password sign-in does - which is also what registers the
+phone for push. A brand-new account (`newUser: true`) goes on to role
+selection, as after registering; anyone else goes to the dashboard. Backing out
+of the Google or Apple sheet shows nothing; any other failure shows on the
+screen's usual error line. Google on iOS and Apple on Android aren't offered.
+
+### Android: Google OAuth clients
+
+Nothing about Google is built into the app - the client ID comes from the API
+at runtime. In the Google Cloud console project (APIs & Services >
+Credentials, once the OAuth consent screen is set up), create:
+
+1. A **Web application** OAuth client. Its client ID is the API's
+   `GOOGLE_CLIENT_ID`; the API hands it to the app as `config.google.clientId`
+   and the app gives it to Credential Manager as `serverClientId`, so it's the
+   audience of every ID token Google issues to the app. gffh-web's Google
+   button uses the same client.
+2. An **Android** OAuth client for each key that signs an installed app:
+   package name `com.gffh.mobile.android` and that key's SHA-1 fingerprint.
+   Google only uses it to recognise the app, so its client ID isn't configured
+   anywhere. Debug builds are signed with your local debug keystore
+   (`keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android`),
+   release builds with the upload key
+   (`keytool -list -v -keystore <upload keystore> -alias <key alias>`), and an
+   app installed from Google Play is re-signed by Play - its SHA-1 is under
+   App integrity > App signing in the Play Console. Each needs its own
+   Android client.
+
+Without a matching Android client, Credential Manager refuses (logged under
+the `KickaboutSignIn` tag, typically "Developer console is not set up
+correctly") and the app says Google sign-in didn't work. The phone needs a
+Google account and Google Play services; Credential Manager uses Play services
+on Android 13 and older and the system's own on Android 14 and later.
+
+### iOS: the Sign in with Apple capability
+
+1. In the Apple developer account (Certificates, Identifiers & Profiles >
+   Identifiers), turn on **Sign in with Apple** for the app's App ID - bundle
+   ID `com.gffh.mobile.iosApp`, from `iosApp/project.yml` - as a primary App
+   ID, then regenerate its provisioning profiles.
+2. `iosApp/project.yml` already adds the `com.apple.developer.applesignin`
+   entitlement (`[Default]`, next to `aps-environment`) and links
+   `AuthenticationServices.framework`, since the shared framework is static.
+   Simulator CI builds sign nothing, so the entitlement is inert there and the
+   build still passes - but Apple only signs in a signed build, so in that
+   unsigned simulator build the button shows an error.
+3. On the API, set `APPLE_BUNDLE_ID=com.gffh.mobile.iosApp`: a token from the
+   app has the bundle ID as its audience, and `apple.enabled` is on once
+   `APPLE_BUNDLE_ID` or `APPLE_SERVICES_ID` is set (`APPLE_SERVICES_ID` is
+   only for the web).
+
+Apple shares the person's name and email only the first time they sign in to
+the app. The app sends that name as `displayName`, so the new account isn't
+named after its email address.
+
 ## Architecture
 
 Follows Technical Specification section 4/5, simplified where the full
@@ -138,7 +202,7 @@ ceremony wasn't worth it at this size:
 shared/src/commonMain/kotlin/com/gffh/mobile/
 ├── core/
 │   ├── network/       Ktor HttpClient wrapper, ApiResult (success/failure, never throws)
-│   ├── auth/           TokenStore (session persistence via multiplatform-settings)
+│   ├── auth/           TokenStore (session persistence via multiplatform-settings), expect/actual Google/Apple ID tokens
 │   ├── validation/     Field-level rules mirrored from the Screen Build Specification
 │   ├── image/          Team badges: data-URL decode, expect/actual photo picker
 │   ├── push/           Device token store, API registration, permission prompt
@@ -192,7 +256,7 @@ it:
 
 | Slice | Screens | Status |
 |---|---|---|
-| Access | SCR-AU-01 to 06 | **Built.** Register, sign in, forgot password, email verification, session resolve. |
+| Access | SCR-AU-01 to 06 | **Built.** Register, sign in, forgot password, email verification, session resolve, and "Continue with Google" (Android) or "Continue with Apple" (iOS) when the API has them on - see "Google and Apple sign-in" above. |
 | Setup | SCR-ON-01 to 06, SCR-PR-01/02 | **Built.** Role selection, create club, 4-step create team, add venue, add availability, onboarding complete, team profile, edit team - including uploading the team badge from the phone's photos, shown anywhere the app shows a team. |
 | Publish | SCR-AV-01 to 04, SCR-HM-01 | **Built.** Calendar (grid + list parity), day detail, add/edit availability slot, bulk add. The dashboard is real for availability/profile-completeness/fixtures/messages, with a team switcher dropdown whenever a manager runs more than one team. |
 | Discover | SCR-FF-01 to 06 | **Built.** Search entry, filters, results list (with score/reason chips), a relative-position map plot, opponent profile, match explanation. |
@@ -237,10 +301,10 @@ device, not from reading the code:
 
 ## What was simplified from spec, deliberately
 
-- **No social sign-in.** Volume 1/2 both list Apple and Google sign-in on
-  SCR-AU-02. The backend only implements email/password
-  (`gffh-api/src/main/java/com/gffh/api/web/AuthController.java`), so those
-  buttons are omitted rather than shown non-functional.
+- **One social sign-in per platform.** Volume 1/2 both list Apple and Google
+  sign-in on SCR-AU-02. Android offers Google and iOS offers Apple, each
+  through the platform's own sheet; Google on iOS and Apple on Android would
+  each need a browser-based flow, so they're left out.
 - **No password-reset confirmation screen.** SCR-AU-05 only specifies the
   *request* screen; the emailed link's destination isn't one of the 38
   screens in Volume 2, so it isn't guessed at here.
