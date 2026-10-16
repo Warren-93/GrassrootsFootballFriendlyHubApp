@@ -15,8 +15,10 @@ import com.gffh.mobile.core.auth.createSettings
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.core.network.defaultApiBaseUrl
+import com.gffh.mobile.core.push.NotificationTaps
 import com.gffh.mobile.core.push.PushNotificationSetup
 import com.gffh.mobile.core.push.PushRegistration
+import com.gffh.mobile.core.push.teamToSwitchTo
 import com.gffh.mobile.feature.auth.*
 import com.gffh.mobile.feature.availability.BulkAddAvailabilityScreen
 import com.gffh.mobile.feature.availability.CalendarScreen
@@ -56,6 +58,7 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.navigation.tabFor
 import com.gffh.mobile.repository.*
+import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.InvitationDraftState
 import com.gffh.mobile.session.SearchFilterState
@@ -129,6 +132,28 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                 val t = mine.value.firstOrNull { it.id == current.teamId } ?: return@LaunchedEffect
                 if (t.canManage == true) currentTeamStore.set(current.copy(canManage = true))
             }
+        }
+        // A tapped push (NotificationTaps) opens its screen once there's somewhere
+        // to open it from: someone signed in, on a team, past splash and onboarding.
+        // Pushes go to a team's managers, so one about another team the user
+        // manages switches to that team first, as the dashboard's switcher would.
+        val pendingTap = NotificationTaps.pending.collectAsState().value
+        val readyForTaps = signedIn && activeTeam != null && tab != null
+        LaunchedEffect(pendingTap, readyForTaps) {
+            val tap = pendingTap ?: return@LaunchedEffect
+            if (!readyForTaps) return@LaunchedEffect
+            val activeTeamId = currentTeamStore.active.value?.teamId
+            if (tap.teamId != null && tap.teamId != activeTeamId) {
+                val mine = teamRepository.mine()
+                if (mine is ApiResult.Success) {
+                    teamToSwitchTo(tap, activeTeamId, mine.value)?.let { t ->
+                        currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name, canManage = true))
+                    }
+                }
+            }
+            val target = tap.route() ?: Route.Notifications
+            if (navigator.current != target) navigator.push(target)
+            NotificationTaps.consume(tap)
         }
         val screen: @Composable () -> Unit = {
             if (memberBlocked) MemberNoticeScreen(activeTeam!!, navigator) else when (route) {

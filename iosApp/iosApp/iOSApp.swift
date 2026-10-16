@@ -17,6 +17,8 @@ struct iOSApp: App {
 /// Push notifications. Asks for permission at launch, registers with APNs,
 /// and hands the device token to the shared Kotlin code (PushBridge.kt),
 /// which sends it to `POST /api/v1/me/push-tokens` once someone is signed in.
+/// A tapped notification's ids go the same way, and the app opens the screen
+/// it's about.
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     func application(
@@ -60,5 +62,24 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .badge, .sound])
+    }
+
+    /// Someone tapped a notification - whether the app was open, in the background
+    /// or not running at all (the delegate is set in didFinishLaunching, in time for
+    /// that). The API's ApnsSender puts the ids next to `aps`, each only when present.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        PushBridgeKt.handleNotificationTap(
+            type: userInfo["type"] as? String,
+            requestId: userInfo["requestId"] as? String,
+            fixtureId: userInfo["fixtureId"] as? String,
+            conversationId: userInfo["conversationId"] as? String,
+            teamId: userInfo["teamId"] as? String
+        )
+        completionHandler()
     }
 }

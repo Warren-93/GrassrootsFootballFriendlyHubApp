@@ -16,9 +16,15 @@
         android:usesCleartextTraffic="${usesCleartextTraffic}"
         android:supportsRtl="true">
 
+        <!--
+          singleTop: tapping a notification while the app is open hands the
+          push's ids to the running MainActivity (onNewIntent) instead of
+          starting a fresh one and losing the screen you were on.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/AppTheme"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

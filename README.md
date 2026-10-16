@@ -69,6 +69,16 @@ APNs credentials for that (`FCM_SERVICE_ACCOUNT_JSON`, `APNS_KEY_ID`,
 `gffh-api/README.md`). Both ends are optional: with nothing configured the app
 simply never asks for notification permission, and the API sends no push.
 
+Tapping a notification opens the screen it's about. Every push carries its
+`type` and whichever of `requestId`, `fixtureId`, `conversationId` and
+`teamId` apply as data; the platform code hands them to
+`core/push/NotificationTaps.kt`, and `App.kt` opens the conversation, fixture,
+request or team verification screen - in that order of preference, the same
+as the API's email links. A tap that starts the app waits until someone is
+signed in, on a team and past the splash screen. A push about another team
+the user manages switches to that team first, and one that names none of
+those screens opens the notification centre.
+
 ### Android (Firebase Cloud Messaging)
 
 There is no `google-services.json` in the repository and no google-services
@@ -102,8 +112,12 @@ The app asks for POST_NOTIFICATIONS (Android 13+) after sign-in rather than at
 launch, so the prompt arrives when notifications are about to start mattering.
 While the app is open, pushes arrive in `KickaboutMessagingService`, which
 shows them; in the background Android draws them itself. The manifest points
-both at the same "Kickabout" notification channel and status-bar icon, and
-tapping one opens the app.
+both at the same "Kickabout" notification channel and status-bar icon. Either
+way a tap starts `MainActivity` with the push's ids as intent extras - FCM puts
+them on its own notifications, `KickaboutMessagingService` on the ones it
+builds (one `PendingIntent` per notification, so each keeps its own ids) - and
+`MainActivity` passes them on from `onCreate`, or from `onNewIntent` when the
+app is already open (it's `singleTop`, so the screen you were on stays put).
 
 The Play release workflow (`android-release.yml`) reads the four from
 repository variables of the same names (Settings > Secrets and variables >
@@ -115,7 +129,9 @@ Actions > Variables). Until they're added, a bundle it builds has no push.
 `UNUserNotificationCenter` for alert/badge/sound permission at launch,
 registers with APNs, and hands the device token (lowercase hex, which is what
 the API stores) to the shared code via `PushBridge.kt`. Notifications arriving
-while the app is open are shown as banners.
+while the app is open are shown as banners. Tapping one calls the delegate's
+`userNotificationCenter(_:didReceive:withCompletionHandler:)`, which passes the
+ids the API puts next to `aps` to `PushBridgeKt.handleNotificationTap`.
 
 `iosApp/project.yml` adds the `aps-environment: development` entitlement (the
 APNs sandbox, which is what a build run from Xcode uses - exporting an archive
@@ -205,7 +221,7 @@ shared/src/commonMain/kotlin/com/gffh/mobile/
 │   ├── auth/           TokenStore (session persistence via multiplatform-settings), expect/actual Google/Apple ID tokens
 │   ├── validation/     Field-level rules mirrored from the Screen Build Specification
 │   ├── image/          Team badges: data-URL decode, expect/actual photo picker
-│   ├── push/           Device token store, API registration, permission prompt
+│   ├── push/           Device token store, API registration, permission prompt, notification taps
 │   └── platform/       expect/actual platform intents (e.g. open mail app)
 ├── model/              Wire DTOs - one file per backend controller, field-for-field
 ├── repository/         API access, one per backend resource
@@ -288,9 +304,6 @@ device, not from reading the code:
 
 ### Known remaining gaps
 
-- **Tapping a notification only opens the app.** It doesn't deep-link to the
-  request, fixture or conversation the push is about, even though the payload
-  carries those ids - the app's `Navigator` has no route parser yet.
 - **Badges aren't fetched from https links.** A badge the app uploaded is an
   inlined image and shows everywhere; an `https://` badge set elsewhere falls
   back to the team's initials, since there's no image-loading library here.
