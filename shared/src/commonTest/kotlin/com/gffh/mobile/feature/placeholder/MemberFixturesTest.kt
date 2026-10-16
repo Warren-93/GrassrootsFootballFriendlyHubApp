@@ -6,6 +6,7 @@ import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MemberFixturesTest {
@@ -33,13 +34,18 @@ class MemberFixturesTest {
     fun theHomeTeamIsTheOneHosting() {
         val f = fixture("f1", date = "2026-10-18")
 
-        val home = f.sideOf("ours")
+        val home = f.sideOf("ours")!!
         assertTrue(home.isHome)
         assertEquals("theirs", home.opponent.id)
 
-        val away = f.copy(homeTeam = f.awayTeam, awayTeam = f.homeTeam).sideOf("ours")
+        val away = f.copy(homeTeam = f.awayTeam, awayTeam = f.homeTeam).sideOf("ours")!!
         assertFalse(away.isHome)
         assertEquals("theirs", away.opponent.id)
+    }
+
+    @Test
+    fun aTeamNotPlayingHasNoSide() {
+        assertNull(fixture("f1", date = "2026-10-18").sideOf("someoneElse"))
     }
 
     @Test

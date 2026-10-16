@@ -9,9 +9,12 @@ import kotlinx.datetime.number
 /** A fixture from one team's point of view: who they're playing, and whether they're the hosts. */
 data class FixtureSide(val opponent: FixtureTeamView, val isHome: Boolean)
 
-/** [teamId]'s side of this fixture. The home team is the one hosting it. */
-fun FixtureView.sideOf(teamId: String): FixtureSide =
-    if (homeTeam.id == teamId) FixtureSide(awayTeam, isHome = true) else FixtureSide(homeTeam, isHome = false)
+/** [teamId]'s side of this fixture - the home team is the one hosting it - or null when it isn't playing in it. */
+fun FixtureView.sideOf(teamId: String): FixtureSide? = when (teamId) {
+    homeTeam.id -> FixtureSide(awayTeam, isHome = true)
+    awayTeam.id -> FixtureSide(homeTeam, isHome = false)
+    else -> null
+}
 
 /**
  * The confirmed fixtures still to come, from [today] on, soonest first.

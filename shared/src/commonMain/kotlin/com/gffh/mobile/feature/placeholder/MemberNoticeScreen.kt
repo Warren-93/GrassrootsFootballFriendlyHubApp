@@ -110,7 +110,8 @@ fun MemberNoticeScreen(team: ActiveTeam, fixtureRepository: FixtureRepository, n
 /** When, who against and home or away - tap for the full fixture - with the venue card under it. */
 @Composable
 private fun UpcomingFixture(fixture: FixtureView, teamId: String, today: LocalDate, onOpen: () -> Unit) {
-    val side = fixture.sideOf(teamId)
+    // Every fixture listed for the team is one of its own.
+    val side = fixture.sideOf(teamId) ?: return
     Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text(fixtureDateLabel(fixture.date, today), style = MaterialTheme.typography.titleSmall)

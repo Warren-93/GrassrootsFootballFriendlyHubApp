@@ -75,10 +75,14 @@ fun MemberFixtureDetailScreen(
                 "${fixtureDateLabel(f.date, today)}, kick-off ${kickOffLabel(f.startTime)}",
                 style = MaterialTheme.typography.bodyMedium
             )
-            Text(
-                if (side.isHome) "${team.teamName} are at home" else "${team.teamName} are away",
-                style = MaterialTheme.typography.bodySmall
-            )
+            // Null for a fixture this team isn't playing in - one of the user's other
+            // teams', say, opened from the notification centre.
+            if (side != null) {
+                Text(
+                    if (side.isHome) "${team.teamName} are at home" else "${team.teamName} are away",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             when (f.status) {
                 "CANCELLED" -> Text(
                     "This fixture has been cancelled.",
