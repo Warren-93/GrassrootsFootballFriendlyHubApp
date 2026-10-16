@@ -154,6 +154,23 @@ class DtoDecodingTest {
     }
 
     @Test
+    fun teamsMineSaysWhetherTheCallerCanManageTheClub() {
+        val body = """
+            {"id":"t1","clubId":"c1","name":"Denny Warriors U12","clubName":"Denny FC","ageGroup":"U12",
+             "gender":"MIXED","format":"NINE_A_SIDE","abilityLevel":"INTERMEDIATE","postcode":"FK6 5AA",
+             "longitude":-3.9,"latitude":56.0,"travelRadiusMiles":15,"homeAwayPreference":"EITHER",
+             "verification":"VERIFIED","completenessPercent":80,"archived":false,"createdAt":"2026-10-01T09:00:00Z",
+             "canManage":true,"canManageClub":false,"readyForRequests":true,"profileChecklist":[]}
+        """.trimIndent()
+
+        val team = json.decodeFromString(TeamView.serializer(), body)
+        assertEquals(true, team.canManage)
+        assertEquals(false, team.canManageClub)
+        // Every other team view, and an older API, leaves it out.
+        assertNull(json.decodeFromString(TeamView.serializer(), body.replace(""""canManageClub":false,""", "")).canManageClub)
+    }
+
+    @Test
     fun aNewVenueSendsItsPostcodeOnlyWhenThereIsOne() {
         val withPostcode = CreateVenueRequest(
             clubId = "c1", name = "Rec Ground", address = "1 Park Road", postcode = "SW1A 1AA",

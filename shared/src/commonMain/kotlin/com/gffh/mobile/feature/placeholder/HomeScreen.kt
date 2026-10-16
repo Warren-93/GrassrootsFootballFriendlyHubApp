@@ -22,8 +22,9 @@ import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.NotificationRepository
 import com.gffh.mobile.repository.TeamRepository
-import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.session.canManageClubOf
+import com.gffh.mobile.session.toActiveTeam
 import com.gffh.mobile.ui.components.HeroBand
 import com.gffh.mobile.ui.components.ProfileChecklistCard
 import com.gffh.mobile.ui.components.StatTile
@@ -73,13 +74,15 @@ fun HomeScreen(
         if (result is ApiResult.Success) {
             myTeams = result.value
             // Keep the cached team in step with the server: pick one if none is
-            // cached, and refresh whether this user can manage it.
+            // cached, and refresh whether this user can manage it and its club.
             val current = currentTeamStore.active.value
             val t = result.value.firstOrNull { it.id == current?.teamId } ?: result.value.firstOrNull()
             if (t != null) {
-                val canManage = t.canManage ?: true
-                if (current?.teamId != t.id || current.canManage != canManage) {
-                    currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name, canManage))
+                val fromServer = t.toActiveTeam()
+                if (current?.teamId != t.id || current.canManage != fromServer.canManage ||
+                    current.canManageClub != fromServer.canManageClub
+                ) {
+                    currentTeamStore.set(fromServer)
                 }
             }
         }
@@ -140,7 +143,7 @@ fun HomeScreen(
                             text = { Text(t.name) },
                             onClick = {
                                 teamMenuOpen = false
-                                currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name, t.canManage ?: true))
+                                currentTeamStore.set(t.toActiveTeam())
                             }
                         )
                     }
@@ -212,7 +215,9 @@ fun HomeScreen(
             }
 
             team?.let {
-                ProfileChecklistCard(it, navigator, showOptional = false)
+                ProfileChecklistCard(
+                    it, navigator, showOptional = false, canManageClub = activeTeam.canManageClubOf(it.clubId)
+                )
                 if (it.readyForRequests == false) Spacer(Modifier.height(12.dp))
             }
 

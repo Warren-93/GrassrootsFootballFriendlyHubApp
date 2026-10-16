@@ -60,11 +60,11 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.navigation.tabFor
 import com.gffh.mobile.repository.*
-import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.InvitationDraftState
 import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
+import com.gffh.mobile.session.toActiveTeam
 import com.gffh.mobile.theme.GffhTheme
 
 /**
@@ -134,7 +134,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
             val mine = teamRepository.mine()
             if (mine is ApiResult.Success) {
                 val t = mine.value.firstOrNull { it.id == current.teamId } ?: return@LaunchedEffect
-                if (t.canManage == true) currentTeamStore.set(current.copy(canManage = true))
+                if (t.canManage == true) currentTeamStore.set(t.toActiveTeam())
             }
         }
         // A tapped push (NotificationTaps) opens its screen once there's somewhere
@@ -153,7 +153,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                 val mine = teamRepository.mine()
                 if (mine is ApiResult.Success) {
                     teamToSwitchTo(tap, activeTeamId, mine.value)?.let { t ->
-                        currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name, canManage = true))
+                        currentTeamStore.set(t.toActiveTeam())
                         navigator.resetTo(Route.Home)
                     }
                 }
@@ -179,15 +179,17 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                 availabilityRepository, venueRepository, navigator, route.teamId, route.clubId
             )
             is Route.OnboardingComplete -> OnboardingCompleteScreen(teamRepository, currentTeamStore, navigator, route.teamId)
-            is Route.TeamProfile -> TeamProfileScreen(teamRepository, venueRepository, navigator, route.teamId)
+            is Route.TeamProfile -> TeamProfileScreen(teamRepository, venueRepository, currentTeamStore, navigator, route.teamId)
             is Route.EditTeam -> EditTeamScreen(teamRepository, currentTeamStore, navigator, route.teamId)
             is Route.Settings -> SettingsScreen(authRepository, currentTeamStore, navigator)
             is Route.ReportBlock -> ReportBlockScreen(
                 reportRepository, currentTeamStore, navigator, route.teamId, route.teamName, route.fixtureId
             )
             is Route.BlockedTeams -> BlockedTeamsScreen(reportRepository, currentTeamStore, navigator)
-            is Route.VenuesList -> VenuesListScreen(venueRepository, navigator, route.clubId)
-            is Route.EditVenue -> EditVenueScreen(venueRepository, geocodeRepository, navigator, route.venueId, route.clubId)
+            is Route.VenuesList -> VenuesListScreen(venueRepository, currentTeamStore, navigator, route.clubId)
+            is Route.EditVenue -> EditVenueScreen(
+                venueRepository, geocodeRepository, currentTeamStore, navigator, route.venueId, route.clubId
+            )
             is Route.ClubProfile -> ClubProfileScreen(
                 clubRepository, teamRepository, currentTeamStore, navigator, route.clubId
             )

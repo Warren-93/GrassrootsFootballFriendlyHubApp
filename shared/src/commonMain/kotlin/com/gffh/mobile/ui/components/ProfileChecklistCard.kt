@@ -20,13 +20,18 @@ import com.gffh.mobile.navigation.Route
  * make the profile more useful to opponents. Draws nothing once there is
  * nothing left to show, or for teams the viewer doesn't manage (the API sends
  * an empty checklist then).
+ *
+ * [canManageClub] is the viewer's say over the team's club (see ActiveTeam):
+ * only a club admin can add the club's venues, so anyone else is told to ask
+ * theirs rather than sent to a form they couldn't save.
  */
 @Composable
 fun ProfileChecklistCard(
     team: TeamView,
     navigator: Navigator,
     modifier: Modifier = Modifier,
-    showOptional: Boolean = true
+    showOptional: Boolean = true,
+    canManageClub: Boolean? = null
 ) {
     val required = team.profileChecklist.filter { it.requiredForRequests }
     val optionalMissing = team.profileChecklist.filter { !it.requiredForRequests && !it.done }
@@ -49,19 +54,20 @@ fun ProfileChecklistCard(
             )
             if (requiredMissing) {
                 Spacer(Modifier.height(8.dp))
-                required.forEach { ChecklistItemRow(it, team, navigator) }
+                required.forEach { ChecklistItemRow(it, team, navigator, canManageClub) }
             }
             if (showOptional && optionalMissing.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
                 Text("Help opponents get to know you", style = MaterialTheme.typography.labelMedium)
-                optionalMissing.forEach { ChecklistItemRow(it, team, navigator) }
+                optionalMissing.forEach { ChecklistItemRow(it, team, navigator, canManageClub) }
             }
         }
     }
 }
 
 @Composable
-private fun ChecklistItemRow(item: ProfileChecklistItem, team: TeamView, navigator: Navigator) {
+private fun ChecklistItemRow(item: ProfileChecklistItem, team: TeamView, navigator: Navigator, canManageClub: Boolean?) {
+    val route = checklistItemRoute(item, team, canManageClub)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(
             if (item.done) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
@@ -71,16 +77,31 @@ private fun ChecklistItemRow(item: ProfileChecklistItem, team: TeamView, navigat
         )
         Spacer(Modifier.width(8.dp))
         Text(item.label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        if (!item.done) {
-            TextButton(onClick = {
-                navigator.push(
-                    when (item.key) {
-                        "VERIFICATION" -> Route.Verification(team.id)
-                        "VENUE" -> Route.EditVenue(null, team.clubId)
-                        else -> Route.EditTeam(team.id)
-                    }
-                )
-            }) { Text(if (item.key == "VERIFICATION" && team.verification == "PENDING") "View" else "Do it") }
+        if (!item.done && route != null) {
+            TextButton(onClick = { navigator.push(route) }) {
+                Text(if (item.key == "VERIFICATION" && team.verification == "PENDING") "View" else "Do it")
+            }
         }
     }
+    if (!item.done && route == null) {
+        // The venue item, for someone who isn't the club's admin: the club has no venues yet.
+        Text(
+            "Your club has no venues yet. Ask your club admin to add one.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 26.dp, bottom = 4.dp)
+        )
+    }
+}
+
+/**
+ * Where an unfinished item's "Do it" goes. Null for the venue item when
+ * [canManageClub] is false: the API answers anyone but a club admin's venue
+ * changes with "That club could not be found." Unknown (null) keeps the
+ * button, as before the API said.
+ */
+fun checklistItemRoute(item: ProfileChecklistItem, team: TeamView, canManageClub: Boolean?): Route? = when (item.key) {
+    "VERIFICATION" -> Route.Verification(team.id)
+    "VENUE" -> if (canManageClub == false) null else Route.EditVenue(null, team.clubId)
+    else -> Route.EditTeam(team.id)
 }

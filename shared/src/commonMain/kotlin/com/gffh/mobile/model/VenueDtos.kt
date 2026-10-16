@@ -53,7 +53,13 @@ data class VenueView(
     val pitchNumber: String? = null,
     val isDefault: Boolean,
     val createdAt: String
-)
+) {
+    /** What VenueCard shows: everything but the club-management fields. */
+    fun toSummary(): VenueSummary = VenueSummary(
+        id = id, name = name, address = address, postcode = postcode, pitchSurface = pitchSurface,
+        accessNotes = accessNotes, parkingNotes = parkingNotes, latitude = latitude, longitude = longitude
+    )
+}
 
 /**
  * Where a friendly request or fixture is being played, as the API attaches it

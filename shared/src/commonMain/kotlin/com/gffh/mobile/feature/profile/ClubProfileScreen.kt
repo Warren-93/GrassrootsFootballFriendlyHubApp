@@ -75,7 +75,8 @@ fun ClubProfileScreen(
         Spacer(Modifier.height(8.dp))
         teams.forEach { t ->
             Card(
-                onClick = { currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name)) },
+                // Only the club's admins get its teams list.
+                onClick = { currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name, canManageClub = true)) },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
             ) {
                 Row(
