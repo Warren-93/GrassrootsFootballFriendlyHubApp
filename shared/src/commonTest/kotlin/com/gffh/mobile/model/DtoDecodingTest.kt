@@ -180,4 +180,10 @@ class DtoDecodingTest {
         assertTrue(json.encodeToString(CreateVenueRequest.serializer(), withPostcode).contains(""""postcode":"SW1A 1AA""""))
         assertFalse(json.encodeToString(CreateVenueRequest.serializer(), withPostcode.copy(postcode = null)).contains("postcode"))
     }
+
+    @Test
+    fun aJoinCodeReadsItsCode() {
+        // GET /teams/{id}/members/join-code and POST .../join-code/regenerate both answer this.
+        assertEquals("KX7P3Q", json.decodeFromString(JoinCodeView.serializer(), """{"code":"KX7P3Q"}""").code)
+    }
 }

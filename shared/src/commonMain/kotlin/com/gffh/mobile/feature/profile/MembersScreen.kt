@@ -12,8 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.AddMemberOutcome
 import com.gffh.mobile.model.AddMemberRequest
@@ -24,6 +30,7 @@ import com.gffh.mobile.model.UpdateMemberRoleRequest
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.repository.MemberRepository
 import com.gffh.mobile.session.CurrentTeamStore
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private fun roleLabel(role: MemberRole): String = when (role) {
@@ -46,6 +53,12 @@ fun canChangeMember(role: MemberRole, canManageClub: Boolean?): Boolean =
     role != MemberRole.CLUB_ADMIN || canManageClub != false
 
 /**
+ * [code] a character at a time ("K X 7 P 3 Q"), so a screen reader spells a
+ * join code out instead of reading it as a word.
+ */
+fun spelledOut(code: String): String = code.toList().joinToString(" ")
+
+/**
  * SCR-PR-04 Team members and permissions. Purpose: control who can act on
  * behalf of a team - a safeguarding control as much as an admin one. Club
  * admins cascade to every squad the club runs, so promoting someone here
@@ -57,6 +70,9 @@ fun canChangeMember(role: MemberRole, canManageClub: Boolean?): Boolean =
  *
  * A team manager isn't offered the club admin role, nor a club admin's role
  * or remove controls - see [assignableRoles] and [canChangeMember].
+ *
+ * The team's join code sits at the top, for a manager to hand out - see
+ * [JoinCodeCard].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -164,6 +180,9 @@ fun MembersScreen(memberRepository: MemberRepository, currentTeamStore: CurrentT
         )
 
         Column(Modifier.padding(16.dp).weight(1f).verticalScroll(rememberScrollState())) {
+            JoinCodeCard(memberRepository, teamId)
+            Spacer(Modifier.height(16.dp))
+
             Text(
                 "Club admins can manage every squad the club runs. Team managers can only manage this one." +
                     (if (canManageClub == false) " Only a club admin can add, change or remove club admins." else ""),
@@ -330,6 +349,134 @@ fun MembersScreen(memberRepository: MemberRepository, currentTeamStore: CurrentT
                 }) { Text("Remove") }
             },
             dismissButton = { TextButton(onClick = { removeTarget = null }) { Text("Cancel") } }
+        )
+    }
+}
+
+/**
+ * The team's join code, for a manager to hand out. Players and parents enter
+ * it in Kickabout to join the team as a basic member (role USER), with
+ * read-only access, without anyone adding them by email. Only someone who can
+ * manage the team can read or regenerate it (the API answers 404 otherwise).
+ * There's one code per team: regenerating replaces it, and the old one stops
+ * working straight away, so it asks first.
+ */
+@Composable
+private fun JoinCodeCard(memberRepository: MemberRepository, teamId: String) {
+    // Deprecated for LocalClipboard, but that one's ClipEntry is built
+    // differently on Android and iOS - this takes plain text in common code.
+    @Suppress("DEPRECATION")
+    val clipboard = LocalClipboardManager.current
+    var code by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var regenerating by remember { mutableStateOf(false) }
+    // The code the user has asked to replace, while they confirm.
+    var regenerateTarget by remember { mutableStateOf<String?>(null) }
+    var copied by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    fun load() {
+        loading = true
+        errorMessage = null
+        scope.launch {
+            when (val result = memberRepository.joinCode(teamId)) {
+                is ApiResult.Success -> code = result.value.code
+                is ApiResult.Failure -> errorMessage = result.message
+            }
+            loading = false
+        }
+    }
+
+    fun regenerate() {
+        regenerating = true
+        errorMessage = null
+        scope.launch {
+            when (val result = memberRepository.regenerateJoinCode(teamId)) {
+                is ApiResult.Success -> {
+                    code = result.value.code
+                    copied = false
+                }
+                is ApiResult.Failure -> errorMessage = result.message
+            }
+            regenerating = false
+        }
+    }
+
+    LaunchedEffect(teamId) { load() }
+
+    // "Copied" stands in for Copy briefly, then it's back to Copy.
+    LaunchedEffect(copied) {
+        if (copied) {
+            delay(2_000)
+            copied = false
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Join code", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "Share it with players and parents - they use it to join the team in Kickabout, with read-only access.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(Modifier.height(12.dp))
+
+            val current = code
+            if (loading) {
+                Box(Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            } else if (current != null) {
+                Text(
+                    current,
+                    style = MaterialTheme.typography.headlineMedium.copy(fontFamily = FontFamily.Monospace, letterSpacing = 6.sp),
+                    modifier = Modifier.clearAndSetSemantics { contentDescription = "Join code ${spelledOut(current)}" }
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(current))
+                            copied = true
+                        },
+                        enabled = !regenerating
+                    ) { Text(if (copied) "Copied" else "Copy") }
+                    TextButton(onClick = { regenerateTarget = current }, enabled = !regenerating) {
+                        Text(if (regenerating) "Regenerating…" else "Regenerate")
+                    }
+                }
+            }
+
+            errorMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                // Nothing to show without a code, so offer another go at loading it.
+                if (current == null) {
+                    TextButton(onClick = { load() }) { Text("Try again") }
+                }
+            }
+        }
+    }
+
+    regenerateTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { regenerateTarget = null },
+            title = { Text("Regenerate the join code?") },
+            text = {
+                Text(
+                    "The current code, $target, will stop working straight away - anyone who hasn't joined " +
+                        "with it yet will need the new one. Everyone who's already joined stays on the team."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    regenerateTarget = null
+                    regenerate()
+                }) { Text("Regenerate") }
+            },
+            dismissButton = { TextButton(onClick = { regenerateTarget = null }) { Text("Cancel") } }
         )
     }
 }
