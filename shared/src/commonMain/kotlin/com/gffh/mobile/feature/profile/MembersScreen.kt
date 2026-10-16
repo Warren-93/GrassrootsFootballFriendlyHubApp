@@ -23,6 +23,7 @@ import com.gffh.mobile.model.MemberView
 import com.gffh.mobile.model.UpdateMemberRoleRequest
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.repository.MemberRepository
+import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 
 private fun roleLabel(role: MemberRole): String = when (role) {
@@ -30,6 +31,19 @@ private fun roleLabel(role: MemberRole): String = when (role) {
     MemberRole.TEAM_MANAGER -> "Team manager"
     MemberRole.CLUB_ADMIN -> "Club admin"
 }
+
+/**
+ * The roles the user can give someone, adding or changing them. Only a club
+ * admin can make someone a club admin (the API refuses a team manager with
+ * CLUB_ADMIN_ONLY), so it's left out when [canManageClub] is false; null -
+ * the API hasn't said - offers every role, as before.
+ */
+fun assignableRoles(canManageClub: Boolean?): List<MemberRole> =
+    if (canManageClub == false) MemberRole.entries - MemberRole.CLUB_ADMIN else MemberRole.entries
+
+/** Whether the user can change or remove a member with [role]: a club admin's membership is for club admins to change. */
+fun canChangeMember(role: MemberRole, canManageClub: Boolean?): Boolean =
+    role != MemberRole.CLUB_ADMIN || canManageClub != false
 
 /**
  * SCR-PR-04 Team members and permissions. Purpose: control who can act on
@@ -40,10 +54,17 @@ private fun roleLabel(role: MemberRole): String = when (role) {
  * Adding an email with no account yet emails them an invitation instead; it
  * shows under Pending invitations (cancellable) until they sign up and verify
  * that address, when it becomes a real membership.
+ *
+ * A team manager isn't offered the club admin role, nor a club admin's role
+ * or remove controls - see [assignableRoles] and [canChangeMember].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, teamId: String) {
+fun MembersScreen(memberRepository: MemberRepository, currentTeamStore: CurrentTeamStore, navigator: Navigator, teamId: String) {
+    val activeTeam by currentTeamStore.active.collectAsState()
+    // Whether the user is an admin of this team's club, as far as the active team says.
+    val canManageClub = activeTeam?.takeIf { it.teamId == teamId }?.canManageClub
+    val roles = assignableRoles(canManageClub)
     var members by remember { mutableStateOf<List<MemberView>>(emptyList()) }
     var invites by remember { mutableStateOf<List<InviteView>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -144,7 +165,8 @@ fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, team
 
         Column(Modifier.padding(16.dp).weight(1f).verticalScroll(rememberScrollState())) {
             Text(
-                "Club admins can manage every squad the club runs. Team managers can only manage this one.",
+                "Club admins can manage every squad the club runs. Team managers can only manage this one." +
+                    (if (canManageClub == false) " Only a club admin can add, change or remove club admins." else ""),
                 style = MaterialTheme.typography.bodySmall
             )
             Spacer(Modifier.height(12.dp))
@@ -161,6 +183,7 @@ fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, team
             } else {
                 members.forEach { m ->
                     val currentRole = MemberRole.entries.find { it.name == m.role } ?: MemberRole.USER
+                    val canChange = canChangeMember(currentRole, canManageClub)
                     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Column(Modifier.padding(16.dp)) {
                             Row(
@@ -177,21 +200,28 @@ fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, team
                                         AssistChip(onClick = {}, label = { Text("Club-wide") })
                                         Spacer(Modifier.width(4.dp))
                                     }
-                                    IconButton(onClick = { removeTarget = m }, enabled = busyId != m.membershipId) {
-                                        Icon(Icons.Filled.Delete, contentDescription = "Remove")
+                                    if (canChange) {
+                                        IconButton(onClick = { removeTarget = m }, enabled = busyId != m.membershipId) {
+                                            Icon(Icons.Filled.Delete, contentDescription = "Remove")
+                                        }
                                     }
                                 }
                             }
-                            Spacer(Modifier.height(8.dp))
-                            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                MemberRole.entries.forEach { r ->
-                                    FilterChip(
-                                        selected = currentRole == r,
-                                        onClick = { changeRole(m, r) },
-                                        enabled = busyId != m.membershipId,
-                                        label = { Text(roleLabel(r)) }
-                                    )
+                            if (canChange) {
+                                Spacer(Modifier.height(8.dp))
+                                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    roles.forEach { r ->
+                                        FilterChip(
+                                            selected = currentRole == r,
+                                            onClick = { changeRole(m, r) },
+                                            enabled = busyId != m.membershipId,
+                                            label = { Text(roleLabel(r)) }
+                                        )
+                                    }
                                 }
+                            } else {
+                                Spacer(Modifier.height(4.dp))
+                                Text(roleLabel(currentRole), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -253,7 +283,7 @@ fun MembersScreen(memberRepository: MemberRepository, navigator: Navigator, team
             )
             Spacer(Modifier.height(8.dp))
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MemberRole.entries.forEach { r ->
+                roles.forEach { r ->
                     FilterChip(selected = addRole == r, onClick = { addRole = r }, label = { Text(roleLabel(r)) })
                 }
             }

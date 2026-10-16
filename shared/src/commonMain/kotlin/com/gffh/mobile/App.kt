@@ -183,7 +183,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                 clubRepository, teamRepository, currentTeamStore, navigator, route.clubId
             )
             is Route.EditClub -> EditClubScreen(clubRepository, navigator, route.clubId)
-            is Route.Members -> MembersScreen(memberRepository, navigator, route.teamId)
+            is Route.Members -> MembersScreen(memberRepository, currentTeamStore, navigator, route.teamId)
             is Route.Verification -> VerificationScreen(verificationRepository, teamRepository, navigator, route.teamId)
             is Route.Privacy -> PrivacyScreen(privacyRepository, authRepository, teamRepository, currentTeamStore, navigator)
             is Route.Help -> HelpScreen(configRepository, navigator)
