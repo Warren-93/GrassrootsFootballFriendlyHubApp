@@ -11,19 +11,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.core.push.NotificationTap
+import com.gffh.mobile.core.push.switchToTeamOf
 import com.gffh.mobile.model.NotificationView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.NotificationRepository
+import com.gffh.mobile.repository.TeamRepository
+import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 
 /**
  * SCR-HM-02 Notification centre. Purpose: one place to see everything that
  * happened across requests, fixtures, verification and messages.
+ *
+ * Tapping a notification opens the same screen as tapping its push, as the
+ * same team (see App's push handling and NotificationTaps).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationsScreen(notificationRepository: NotificationRepository, navigator: Navigator) {
+fun NotificationsScreen(
+    notificationRepository: NotificationRepository,
+    teamRepository: TeamRepository,
+    currentTeamStore: CurrentTeamStore,
+    navigator: Navigator
+) {
     var notifications by remember { mutableStateOf<List<NotificationView>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var confirmClear by remember { mutableStateOf(false) }
@@ -44,12 +56,16 @@ fun NotificationsScreen(notificationRepository: NotificationRepository, navigato
     fun open(n: NotificationView) {
         scope.launch {
             if (!n.read) notificationRepository.markRead(n.id)
-            when {
-                n.relatedConversationId != null -> navigator.push(Route.ConversationThread(n.relatedConversationId))
-                n.relatedFixtureId != null -> navigator.push(Route.FixtureDetail(n.relatedFixtureId))
-                n.relatedRequestId != null -> navigator.push(Route.RequestDetail(n.relatedRequestId))
-                else -> load()
+            val tap = NotificationTap.of(n)
+            val target = tap.route()
+            if (target == null) {
+                load()
+                return@launch
             }
+            // A switch to the notification's own team starts again from its
+            // dashboard; back from what opens still comes here.
+            if (switchToTeamOf(tap, teamRepository, currentTeamStore, navigator)) navigator.push(Route.Notifications)
+            navigator.push(target)
         }
     }
 

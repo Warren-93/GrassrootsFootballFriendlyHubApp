@@ -19,7 +19,7 @@ import com.gffh.mobile.core.network.defaultApiBaseUrl
 import com.gffh.mobile.core.push.NotificationTaps
 import com.gffh.mobile.core.push.PushNotificationSetup
 import com.gffh.mobile.core.push.PushRegistration
-import com.gffh.mobile.core.push.teamToSwitchTo
+import com.gffh.mobile.core.push.switchToTeamOf
 import com.gffh.mobile.feature.auth.*
 import com.gffh.mobile.feature.availability.BulkAddAvailabilityScreen
 import com.gffh.mobile.feature.availability.CalendarScreen
@@ -139,25 +139,14 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
         }
         // A tapped push (NotificationTaps) opens its screen once there's somewhere
         // to open it from: someone signed in, on a team, past splash and onboarding.
-        // Pushes go to a team's managers, so one about another team the user
-        // manages switches to that team first, as the dashboard's switcher would,
-        // and opens over that team's dashboard: the screens underneath were the
-        // other team's, and would act for the wrong team if you went back to them.
+        // One about another team the user manages switches to that team first and
+        // opens over that team's dashboard - see switchToTeamOf.
         val pendingTap = NotificationTaps.pending.collectAsState().value
         val readyForTaps = signedIn && activeTeam != null && tab != null
         LaunchedEffect(pendingTap, readyForTaps) {
             val tap = pendingTap ?: return@LaunchedEffect
             if (!readyForTaps) return@LaunchedEffect
-            val activeTeamId = currentTeamStore.active.value?.teamId
-            if (tap.teamId != null && tap.teamId != activeTeamId) {
-                val mine = teamRepository.mine()
-                if (mine is ApiResult.Success) {
-                    teamToSwitchTo(tap, activeTeamId, mine.value)?.let { t ->
-                        currentTeamStore.set(t.toActiveTeam())
-                        navigator.resetTo(Route.Home)
-                    }
-                }
-            }
+            switchToTeamOf(tap, teamRepository, currentTeamStore, navigator)
             val target = tap.route() ?: Route.Notifications
             if (navigator.current != target) navigator.push(target)
             NotificationTaps.consume(tap)
@@ -204,7 +193,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                 authRepository, teamRepository, availabilityRepository, fixtureRepository,
                 notificationRepository, currentTeamStore, navigator
             )
-            is Route.Notifications -> NotificationsScreen(notificationRepository, navigator)
+            is Route.Notifications -> NotificationsScreen(notificationRepository, teamRepository, currentTeamStore, navigator)
             is Route.Messages -> ConversationsListScreen(conversationRepository, currentTeamStore, navigator)
             is Route.ConversationThread -> ConversationThreadScreen(
                 conversationRepository, currentTeamStore, navigator, route.conversationId

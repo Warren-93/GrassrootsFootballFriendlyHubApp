@@ -1,7 +1,13 @@
 package com.gffh.mobile.core.push
 
+import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.model.NotificationView
 import com.gffh.mobile.model.TeamView
+import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.repository.TeamRepository
+import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.session.toActiveTeam
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -53,6 +59,19 @@ data class NotificationTap(
             )
             return tap.takeIf { it != NotificationTap() }
         }
+
+        /**
+         * The same notification from the in-app notification centre, so tapping
+         * it there opens what tapping its push would: the API puts the
+         * notification's related ids on the push under these keys.
+         */
+        fun of(notification: NotificationView): NotificationTap = NotificationTap(
+            type = notification.type,
+            requestId = notification.relatedRequestId,
+            fixtureId = notification.relatedFixtureId,
+            conversationId = notification.relatedConversationId,
+            teamId = notification.relatedTeamId
+        )
     }
 }
 
@@ -89,4 +108,26 @@ fun teamToSwitchTo(tap: NotificationTap, activeTeamId: String?, myTeams: List<Te
     val teamId = tap.teamId ?: return null
     if (teamId == activeTeamId) return null
     return myTeams.firstOrNull { it.id == teamId && it.canManage != false }
+}
+
+/**
+ * Before opening [tap]: notifications go to a team's managers, so one about
+ * another team the user manages switches to that team first, as the
+ * dashboard's switcher would, and starts the back stack again from that
+ * team's dashboard - the screens underneath were the other team's, and would
+ * act for the wrong team if you went back to them. True when it switched.
+ */
+suspend fun switchToTeamOf(
+    tap: NotificationTap,
+    teamRepository: TeamRepository,
+    currentTeamStore: CurrentTeamStore,
+    navigator: Navigator
+): Boolean {
+    val activeTeamId = currentTeamStore.active.value?.teamId
+    if (tap.teamId == null || tap.teamId == activeTeamId) return false
+    val mine = teamRepository.mine() as? ApiResult.Success ?: return false
+    val team = teamToSwitchTo(tap, activeTeamId, mine.value) ?: return false
+    currentTeamStore.set(team.toActiveTeam())
+    navigator.resetTo(Route.Home)
+    return true
 }

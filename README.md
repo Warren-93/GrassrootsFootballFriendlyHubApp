@@ -78,7 +78,9 @@ as the API's email links. A tap that starts the app waits until someone is
 signed in, on a team and past the splash screen. A push about another team
 the user manages switches to that team first and opens over its dashboard
 (back doesn't return to the other team's screens), and one that names none
-of those screens opens the notification centre.
+of those screens opens the notification centre. Tapping a notification in the
+notification centre opens the same screen in the same way, with back
+returning to the centre.
 
 ### Android (Firebase Cloud Messaging)
 

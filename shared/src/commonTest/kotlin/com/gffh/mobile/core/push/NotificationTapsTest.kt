@@ -1,5 +1,6 @@
 package com.gffh.mobile.core.push
 
+import com.gffh.mobile.model.NotificationView
 import com.gffh.mobile.model.TeamView
 import com.gffh.mobile.navigation.Route
 import kotlin.test.Test
@@ -72,6 +73,41 @@ class NotificationTapsTest {
         assertNull(NotificationTap("VERIFICATION_APPROVED").route())
     }
 
+    // The notification centre opens an item the same way, from its stored ids.
+
+    @Test
+    fun aNotificationInTheCentreIsTheSameTapAsItsPush() {
+        val pushed = NotificationTap.from(
+            mapOf("type" to "FIXTURE_CONFIRMED", "requestId" to "r1", "fixtureId" to "f1", "teamId" to "t1")
+        )
+        val listed = NotificationTap.of(
+            notification("FIXTURE_CONFIRMED", teamId = "t1", requestId = "r1", fixtureId = "f1")
+        )
+
+        assertEquals(pushed, listed)
+        assertEquals(Route.FixtureDetail("f1"), listed.route())
+    }
+
+    @Test
+    fun aVerificationOutcomeInTheCentreOpensThatTeamsVerification() {
+        val tap = NotificationTap.of(notification("VERIFICATION_REJECTED", teamId = "t2"))
+
+        assertEquals(Route.Verification("t2"), tap.route())
+        assertEquals("t2", tap.teamId)
+    }
+
+    @Test
+    fun aMessageInTheCentreOpensItsConversation() {
+        val tap = NotificationTap.of(notification("MESSAGE_RECEIVED", teamId = "t1", conversationId = "c1"))
+
+        assertEquals(Route.ConversationThread("c1"), tap.route())
+    }
+
+    @Test
+    fun aNotificationInTheCentreNamingNoScreenOpensNothing() {
+        assertNull(NotificationTap.of(notification("VERIFICATION_APPROVED")).route())
+    }
+
     @Test
     fun switchesToTheTeamThePushIsAboutWhenTheUserManagesIt() {
         val tap = NotificationTap("REQUEST_RECEIVED", requestId = "r1", teamId = "t2")
@@ -135,6 +171,25 @@ class NotificationTapsTest {
         assertEquals(NotificationTap(type = "FIXTURE_CANCELLED", requestId = "r1"), NotificationTaps.pending.value)
         NotificationTaps.consume(NotificationTaps.pending.value!!)
     }
+
+    private fun notification(
+        type: String,
+        teamId: String? = null,
+        requestId: String? = null,
+        fixtureId: String? = null,
+        conversationId: String? = null
+    ) = NotificationView(
+        id = "n1",
+        type = type,
+        title = "Title",
+        body = "Body",
+        relatedTeamId = teamId,
+        relatedRequestId = requestId,
+        relatedFixtureId = fixtureId,
+        relatedConversationId = conversationId,
+        read = false,
+        createdAt = "2026-10-16T09:00:00Z"
+    )
 
     private fun team(id: String, canManage: Boolean? = true) = TeamView(
         id = id,
