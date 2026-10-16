@@ -26,7 +26,8 @@ private val FAQS = listOf(
         "How do I add another manager or club admin?",
         "From your team profile, choose Members and enter their email. If they don't have an account yet, we " +
             "email them an invitation and they join the team once they've signed up and verified that address. " +
-            "Club admins can manage every squad the club runs; team managers can only manage the one team."
+            "Club admins can manage every squad the club runs, and only they can add, change or remove club " +
+            "admins; team managers can only manage the one team."
     ),
     Faq(
         "How does matching work?",
