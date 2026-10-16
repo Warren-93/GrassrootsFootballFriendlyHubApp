@@ -389,6 +389,8 @@ private fun JoinCodeCard(memberRepository: MemberRepository, teamId: String) {
     }
 
     fun regenerate() {
+        // Once at a time: two at once could leave on screen the code the other one replaced.
+        if (regenerating) return
         regenerating = true
         errorMessage = null
         scope.launch {
@@ -413,10 +415,8 @@ private fun JoinCodeCard(memberRepository: MemberRepository, teamId: String) {
         }
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-    ) {
+    // A plain card, as the members' are: the buttons' and the error's colours barely show on primaryContainer.
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text("Join code", style = MaterialTheme.typography.titleSmall)
             Text(
@@ -454,7 +454,7 @@ private fun JoinCodeCard(memberRepository: MemberRepository, teamId: String) {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 // Nothing to show without a code, so offer another go at loading it.
                 if (current == null) {
-                    TextButton(onClick = { load() }) { Text("Try again") }
+                    TextButton(onClick = { if (!loading) load() }) { Text("Try again") }
                 }
             }
         }

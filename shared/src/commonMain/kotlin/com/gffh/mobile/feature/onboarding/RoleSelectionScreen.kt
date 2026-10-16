@@ -50,7 +50,7 @@ fun RoleSelectionScreen(memberRepository: MemberRepository, currentTeamStore: Cu
         Spacer(Modifier.height(12.dp))
         OptionCard(
             title = "Join with a code",
-            subtitle = "For an official invited by an existing club",
+            subtitle = "For a player or parent given a code by their team's manager",
             onClick = { showJoinField = !showJoinField }
         )
 
