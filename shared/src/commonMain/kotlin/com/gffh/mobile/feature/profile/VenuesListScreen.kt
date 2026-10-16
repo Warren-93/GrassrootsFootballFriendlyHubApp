@@ -68,10 +68,14 @@ fun VenuesListScreen(venueRepository: VenueRepository, currentTeamStore: Current
             if (loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else if (venues.isEmpty()) {
-                Text(
-                    if (canManageVenues) "No venues yet." else "Your club has no venues yet. Ask your club admin to add one.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // A team manager is only sent to their club admin once the list
+                // has loaded and really is empty, not when it failed to load.
+                if (canManageVenues || errorMessage == null) {
+                    Text(
+                        if (canManageVenues) "No venues yet." else "Your club has no venues yet. Ask your club admin to add one.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             } else if (!canManageVenues) {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     venues.forEach { v ->
