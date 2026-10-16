@@ -76,8 +76,9 @@ Tapping a notification opens the screen it's about. Every push carries its
 request or team verification screen - in that order of preference, the same
 as the API's email links. A tap that starts the app waits until someone is
 signed in, on a team and past the splash screen. A push about another team
-the user manages switches to that team first, and one that names none of
-those screens opens the notification centre.
+the user manages switches to that team first and opens over its dashboard
+(back doesn't return to the other team's screens), and one that names none
+of those screens opens the notification centre.
 
 ### Android (Firebase Cloud Messaging)
 

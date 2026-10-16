@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.gffh.mobile.core.auth.TokenStore
@@ -139,7 +140,9 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
         // A tapped push (NotificationTaps) opens its screen once there's somewhere
         // to open it from: someone signed in, on a team, past splash and onboarding.
         // Pushes go to a team's managers, so one about another team the user
-        // manages switches to that team first, as the dashboard's switcher would.
+        // manages switches to that team first, as the dashboard's switcher would,
+        // and opens over that team's dashboard: the screens underneath were the
+        // other team's, and would act for the wrong team if you went back to them.
         val pendingTap = NotificationTaps.pending.collectAsState().value
         val readyForTaps = signedIn && activeTeam != null && tab != null
         LaunchedEffect(pendingTap, readyForTaps) {
@@ -151,6 +154,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                 if (mine is ApiResult.Success) {
                     teamToSwitchTo(tap, activeTeamId, mine.value)?.let { t ->
                         currentTeamStore.set(ActiveTeam(t.id, t.clubId, t.name, canManage = true))
+                        navigator.resetTo(Route.Home)
                     }
                 }
             }
@@ -249,13 +253,17 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
             }
         }
 
+        // Keyed on the route, so a screen opened over another of its kind - a
+        // tapped push's conversation, fixture or request on top of the one you
+        // were reading - starts afresh instead of keeping that one's messages,
+        // draft or fixture until its own have loaded.
         if (tab != null) {
-            AppScaffold(navigator, tab) { screen() }
+            AppScaffold(navigator, tab) { key(route) { screen() } }
         } else {
             // Android draws edge to edge (and iOS always has), so screens without the
             // tab scaffold keep clear of the status bar, notch and keyboard here.
             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
-                screen()
+                key(route) { screen() }
             }
         }
     }
