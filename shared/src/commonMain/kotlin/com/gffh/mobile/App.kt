@@ -52,6 +52,7 @@ import com.gffh.mobile.feature.profile.VenuesListScreen
 import com.gffh.mobile.feature.profile.VerificationScreen
 import com.gffh.mobile.feature.profile.PrivacyScreen
 import com.gffh.mobile.feature.profile.HelpScreen
+import com.gffh.mobile.feature.placeholder.MemberFixtureDetailScreen
 import com.gffh.mobile.feature.placeholder.MemberNoticeScreen
 import com.gffh.mobile.navigation.AppScaffold
 import com.gffh.mobile.navigation.Navigator
@@ -67,8 +68,9 @@ import com.gffh.mobile.theme.GffhTheme
 
 /**
  * What a member who can't manage their team (joined with a code) may still open:
- * sign-in and onboarding (to create their own team), their team's profile, and
- * their own account settings.
+ * sign-in and onboarding (to create their own team), their team's profile, a
+ * read-only view of its fixtures (MemberFixtureDetailScreen), and their own
+ * account settings.
  */
 private fun memberCanOpen(route: Route, teamId: String): Boolean = when (route) {
     is Route.TeamProfile -> route.teamId == teamId
@@ -76,7 +78,7 @@ private fun memberCanOpen(route: Route, teamId: String): Boolean = when (route) 
     is Route.BulkAddAvailability, is Route.SuggestedMatches, is Route.SearchEntry, is Route.Filters,
     is Route.Results, is Route.ResultsMap, is Route.OpponentProfile, is Route.MatchExplanation,
     is Route.InvitationComposer, is Route.InvitationReview, is Route.InvitationSent, is Route.RequestDetail,
-    is Route.SuggestChanges, is Route.DeclineRequest, is Route.Fixtures, is Route.FixtureDetail,
+    is Route.SuggestChanges, is Route.DeclineRequest, is Route.Fixtures,
     is Route.Messages, is Route.ConversationThread, is Route.EditTeam, is Route.VenuesList, is Route.EditVenue,
     is Route.ClubProfile, is Route.EditClub, is Route.Members, is Route.Verification, is Route.ReportBlock,
     is Route.BlockedTeams -> false
@@ -122,7 +124,8 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
         val activeTeam = currentTeamStore.active.collectAsState().value
         val signedIn = tokenStore.session.collectAsState().value != null
         PushNotificationSetup(signedIn)
-        val memberBlocked = activeTeam != null && !activeTeam.canManage && !memberCanOpen(route, activeTeam.teamId)
+        val memberTeam = activeTeam?.takeIf { !it.canManage }
+        val memberBlocked = memberTeam != null && !memberCanOpen(route, memberTeam.teamId)
         // A member may since have been made a manager: check again whenever the app opens on them.
         LaunchedEffect(activeTeam?.teamId, activeTeam?.canManage) {
             val current = activeTeam ?: return@LaunchedEffect
@@ -156,7 +159,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
             NotificationTaps.consume(tap)
         }
         val screen: @Composable () -> Unit = {
-            if (memberBlocked) MemberNoticeScreen(activeTeam!!, navigator) else when (route) {
+            if (memberBlocked) MemberNoticeScreen(memberTeam, fixtureRepository, navigator) else when (route) {
             is Route.Splash -> SplashScreen(authRepository, navigator)
             is Route.Welcome -> WelcomeScreen(authRepository, configRepository, teamRepository, navigator)
             is Route.Register -> RegisterScreen(authRepository, configRepository, teamRepository, navigator)
@@ -234,9 +237,13 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
             )
             is Route.DeclineRequest -> DeclineScreen(friendlyRequestRepository, navigator, route.requestId)
             is Route.Fixtures -> FixturesScreen(friendlyRequestRepository, fixtureRepository, currentTeamStore, navigator)
-            is Route.FixtureDetail -> FixtureDetailScreen(
-                fixtureRepository, conversationRepository, currentTeamStore, navigator, route.fixtureId
-            )
+            is Route.FixtureDetail -> if (memberTeam != null) {
+                MemberFixtureDetailScreen(fixtureRepository, memberTeam, navigator, route.fixtureId)
+            } else {
+                FixtureDetailScreen(
+                    fixtureRepository, conversationRepository, currentTeamStore, navigator, route.fixtureId
+                )
+            }
 
             is Route.Placeholder -> PlaceholderScreen(route.label, navigator)
             }
