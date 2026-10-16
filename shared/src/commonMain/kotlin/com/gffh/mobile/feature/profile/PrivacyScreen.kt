@@ -211,7 +211,7 @@ fun PrivacyScreen(
                     scope.launch {
                         when (val result = privacyRepository.deleteAccount()) {
                             is ApiResult.Success -> {
-                                authRepository.signOut()
+                                authRepository.clearSession()
                                 currentTeamStore.clear()
                                 navigator.resetTo(Route.Welcome)
                             }

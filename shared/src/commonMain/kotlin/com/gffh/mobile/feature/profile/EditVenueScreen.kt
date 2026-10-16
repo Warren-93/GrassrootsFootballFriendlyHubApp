@@ -12,11 +12,15 @@ import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.CreateVenueRequest
 import com.gffh.mobile.model.PitchSurface
 import com.gffh.mobile.model.UpdateVenueRequest
+import com.gffh.mobile.model.VenueView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.repository.GeoPoint
 import com.gffh.mobile.repository.GeocodeRepository
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.session.canManageClubOf
 import com.gffh.mobile.ui.components.PostcodeLocationField
+import com.gffh.mobile.ui.components.VenueCard
 import kotlinx.coroutines.launch
 
 /**
@@ -27,21 +31,33 @@ import kotlinx.coroutines.launch
  * Editing seeds `coordinates` from the venue's existing lat/lon so leaving
  * the postcode field untouched keeps the current location rather than
  * forcing a re-lookup for an edit that has nothing to do with location.
+ * The postcode is seeded too, and only sent when it changed.
+ *
+ * Only the club's admin can save or delete. Nothing sends anyone else here,
+ * but if something does they get the venue read-only rather than a form the
+ * API would refuse with "That club could not be found."
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditVenueScreen(
     venueRepository: VenueRepository,
     geocodeRepository: GeocodeRepository,
+    currentTeamStore: CurrentTeamStore,
     navigator: Navigator,
     venueId: String?,
     clubId: String
 ) {
+    val activeTeam by currentTeamStore.active.collectAsState()
+    // Unknown (an older API) counts as yes, as before the API said.
+    val canManageVenues = activeTeam.canManageClubOf(clubId) != false
     val isNew = venueId == null
+    var venue by remember { mutableStateOf<VenueView?>(null) }
     var loading by remember { mutableStateOf(!isNew) }
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var postcode by remember { mutableStateOf("") }
+    // What the venue had when the screen opened, so an unchanged postcode isn't re-sent.
+    var originalPostcode by remember { mutableStateOf("") }
     var coordinates by remember { mutableStateOf<GeoPoint?>(null) }
     var surface by remember { mutableStateOf<PitchSurface?>(null) }
     var accessNotes by remember { mutableStateOf("") }
@@ -54,13 +70,16 @@ fun EditVenueScreen(
         if (venueId == null) return@LaunchedEffect
         when (val result = venueRepository.list(clubId)) {
             is ApiResult.Success -> {
-                val venue = result.value.find { it.id == venueId }
-                if (venue != null) {
-                    name = venue.name
-                    address = venue.address
-                    coordinates = GeoPoint(venue.latitude, venue.longitude)
-                    surface = venue.pitchSurface?.let { s -> PitchSurface.entries.find { it.name == s } }
-                    accessNotes = venue.accessNotes ?: ""
+                val found = result.value.find { it.id == venueId }
+                venue = found
+                if (found != null) {
+                    name = found.name
+                    address = found.address
+                    postcode = found.postcode ?: ""
+                    originalPostcode = postcode
+                    coordinates = GeoPoint(found.latitude, found.longitude)
+                    surface = found.pitchSurface?.let { s -> PitchSurface.entries.find { it.name == s } }
+                    accessNotes = found.accessNotes ?: ""
                 } else {
                     errorMessage = "Venue not found."
                 }
@@ -74,6 +93,25 @@ fun EditVenueScreen(
 
     if (loading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
+
+    if (!canManageVenues) {
+        Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
+            Text(if (isNew) "Add venue" else "Venue", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(24.dp))
+            venue?.let {
+                VenueCard(it.toSummary(), title = if (it.isDefault) "Default venue" else "Details")
+                Spacer(Modifier.height(16.dp))
+            }
+            Text("Only your club admin can add or change venues.", style = MaterialTheme.typography.bodyMedium)
+            errorMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(Modifier.height(24.dp))
+            TextButton(onClick = { navigator.pop() }, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+        }
         return
     }
 
@@ -130,6 +168,7 @@ fun EditVenueScreen(
                         venueRepository.create(
                             CreateVenueRequest(
                                 clubId = clubId, name = name.trim(), address = address.trim(),
+                                postcode = postcode.trim().ifBlank { null },
                                 longitude = coordinates!!.longitude, latitude = coordinates!!.latitude,
                                 pitchSurface = surface?.name,
                                 accessNotes = accessNotes.ifBlank { null }
@@ -140,6 +179,8 @@ fun EditVenueScreen(
                             venueId!!,
                             UpdateVenueRequest(
                                 name = name.trim(), address = address.trim(),
+                                // Null keeps the venue's postcode as it is.
+                                postcode = postcode.trim().takeIf { it != originalPostcode.trim() },
                                 longitude = coordinates?.longitude, latitude = coordinates?.latitude,
                                 pitchSurface = surface?.name, accessNotes = accessNotes.ifBlank { null }
                             )

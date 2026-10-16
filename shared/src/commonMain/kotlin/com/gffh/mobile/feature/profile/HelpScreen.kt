@@ -3,11 +3,15 @@ package com.gffh.mobile.feature.profile
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.gffh.mobile.core.platform.composeEmail
 import com.gffh.mobile.navigation.Navigator
+import com.gffh.mobile.repository.ConfigRepository
 
 private data class Faq(val question: String, val answer: String)
 
@@ -20,8 +24,10 @@ private val FAQS = listOf(
     ),
     Faq(
         "How do I add another manager or club admin?",
-        "From your team profile, choose Officials. They need an existing account with the email you enter. Club " +
-            "admins can manage every squad the club runs; team managers can only manage the one team."
+        "From your team profile, choose Members and enter their email. If they don't have an account yet, we " +
+            "email them an invitation and they join the team once they've signed up and verified that address. " +
+            "Club admins can manage every squad the club runs, and only they can add, change or remove club " +
+            "admins; team managers can only manage the one team."
     ),
     Faq(
         "How does matching work?",
@@ -49,10 +55,16 @@ private val FAQS = listOf(
 /**
  * SCR-PR-12 Help and support. Purpose: self-serve answers, plus a clear
  * pointer to the real escalation route (Report) for anything that needs a
- * human.
+ * human. "Email support" uses the API's configured support address and is
+ * left out entirely when there isn't one.
  */
 @Composable
-fun HelpScreen(navigator: Navigator) {
+fun HelpScreen(configRepository: ConfigRepository, navigator: Navigator) {
+    val config by configRepository.config.collectAsState()
+    var mailFailed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) { configRepository.get() }
+
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         Text("Help and support", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(16.dp))
@@ -79,6 +91,37 @@ fun HelpScreen(navigator: Navigator) {
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+
+            config?.supportEmail?.takeIf { it.isNotBlank() }?.let { supportEmail ->
+                Spacer(Modifier.height(12.dp))
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Still stuck?", style = MaterialTheme.typography.titleSmall)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Email the Kickabout support team at $supportEmail.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Button(
+                            onClick = { mailFailed = !composeEmail(supportEmail, "Kickabout support") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Filled.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Email support")
+                        }
+                        if (mailFailed) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "There's no email app on this device - write to $supportEmail from any email account.",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
         }
 

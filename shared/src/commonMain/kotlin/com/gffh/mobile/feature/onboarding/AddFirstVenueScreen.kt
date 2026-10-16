@@ -128,6 +128,7 @@ fun AddFirstVenueScreen(
                     val result = venueRepository.create(
                         CreateVenueRequest(
                             clubId = clubId, name = name.trim(), address = address.trim(),
+                            postcode = postcode.trim().ifBlank { null },
                             longitude = coordinates!!.longitude, latitude = coordinates!!.latitude,
                             pitchSurface = surface?.name, facilities = facilities.map { it.name },
                             accessNotes = accessNotes.ifBlank { null }

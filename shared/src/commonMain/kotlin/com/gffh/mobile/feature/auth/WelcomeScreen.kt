@@ -2,9 +2,11 @@ package com.gffh.mobile.feature.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -12,27 +14,38 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.repository.AuthRepository
+import com.gffh.mobile.repository.ConfigRepository
+import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.theme.displayHeadlineMedium
 import com.gffh.mobile.ui.components.heroGradientBrush
 
 /**
- * SCR-AU-02 Welcome. Purpose: state the proposition and offer the two entry
- * paths. Social sign-in (Apple/Google) is specified but has no backend
- * counterpart yet - the Technical Specification lists OAuth as a "recommended
- * technical decision" but only email/password is implemented server-side, so
- * those buttons are intentionally omitted rather than shown and non-functional.
+ * SCR-AU-02 Welcome. Purpose: state the proposition and offer the entry
+ * paths: create an account, sign in, or - when the API has it switched on -
+ * continue with Google (Android) or Apple (iOS), which signs in or creates
+ * the account in one step (see [SocialSignInSection]).
  *
  * Full-bleed navy gradient treatment, matching gffh-web's WelcomePage /
  * SignInPage marketing feel (see [heroGradientBrush]).
  */
 @Composable
-fun WelcomeScreen(navigator: Navigator) {
+fun WelcomeScreen(
+    authRepository: AuthRepository,
+    configRepository: ConfigRepository,
+    teamRepository: TeamRepository,
+    navigator: Navigator
+) {
+    var socialWorking by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     Box(
         modifier = Modifier.fillMaxSize().background(heroGradientBrush()),
         contentAlignment = Alignment.Center
     ) {
         Card(
-            modifier = Modifier.padding(24.dp).widthIn(max = 420.dp),
+            // Scrolls on a short phone now that the Google/Apple button can sit under the other two.
+            modifier = Modifier.padding(24.dp).widthIn(max = 420.dp).verticalScroll(rememberScrollState()),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
@@ -55,13 +68,35 @@ fun WelcomeScreen(navigator: Navigator) {
 
                 Button(
                     onClick = { navigator.push(Route.Register) },
+                    enabled = !socialWorking,
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Create account") }
 
                 OutlinedButton(
                     onClick = { navigator.push(Route.SignIn) },
+                    enabled = !socialWorking,
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
                 ) { Text("Sign in") }
+
+                SocialSignInSection(
+                    configRepository = configRepository,
+                    authRepository = authRepository,
+                    teamRepository = teamRepository,
+                    navigator = navigator,
+                    enabled = true,
+                    onWorkingChange = { socialWorking = it },
+                    onError = { errorMessage = it }
+                )
+
+                errorMessage?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
+                }
 
                 Row(modifier = Modifier.padding(top = 32.dp)) {
                     TextButton(onClick = { /* open in-app browser: terms */ }) { Text("Terms") }

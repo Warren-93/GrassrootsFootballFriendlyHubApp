@@ -68,11 +68,11 @@ fun FixturesScreen(
                 LazyColumnList {
                     if (waitingOnYou.isNotEmpty()) {
                         item { SectionHeader("Waiting on you") }
-                        items(waitingOnYou) { RequestRow(it, navigator) }
+                        items(waitingOnYou) { RequestRow(it, team?.teamId, navigator) }
                     }
                     if (waitingOnThem.isNotEmpty()) {
                         item { SectionHeader("Waiting on them") }
-                        items(waitingOnThem) { RequestRow(it, navigator) }
+                        items(waitingOnThem) { RequestRow(it, team?.teamId, navigator) }
                     }
                 }
             }
@@ -100,14 +100,17 @@ private fun SectionHeader(text: String) {
     Text(text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 8.dp))
 }
 
+/** Named after the other team when the API sends it (senderTeam/recipientTeam). */
 @Composable
-private fun RequestRow(request: FriendlyRequestView, navigator: Navigator) {
+private fun RequestRow(request: FriendlyRequestView, ourTeamId: String?, navigator: Navigator) {
+    val otherTeam = if (ourTeamId == request.senderTeamId) request.recipientTeam else request.senderTeam
     Card(
         onClick = { navigator.push(Route.RequestDetail(request.id)) },
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     ) {
         Row(Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
+                otherTeam?.let { Text(it.name, style = MaterialTheme.typography.titleSmall) }
                 Text(request.date, style = MaterialTheme.typography.bodyMedium)
                 Text(request.status, style = MaterialTheme.typography.bodySmall)
             }
@@ -126,9 +129,9 @@ private fun FixtureRow(fixture: FixtureView, navigator: Navigator) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CrestAvatar(fixture.homeTeam.name, size = 30.dp)
+            CrestAvatar(fixture.homeTeam.name, size = 30.dp, badgeUrl = fixture.homeTeam.badgeUrl)
             Text("vs", style = MaterialTheme.typography.bodySmall)
-            CrestAvatar(fixture.awayTeam.name, size = 30.dp)
+            CrestAvatar(fixture.awayTeam.name, size = 30.dp, badgeUrl = fixture.awayTeam.badgeUrl)
             Column(Modifier.weight(1f)) {
                 Text("${fixture.homeTeam.name} vs ${fixture.awayTeam.name}", style = MaterialTheme.typography.bodyMedium)
                 Text("${fixture.date} ${fixture.startTime}", style = MaterialTheme.typography.bodySmall)

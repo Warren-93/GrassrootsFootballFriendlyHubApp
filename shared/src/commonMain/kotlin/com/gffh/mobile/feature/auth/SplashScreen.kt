@@ -41,7 +41,7 @@ fun SplashScreen(authRepository: AuthRepository, navigator: Navigator) {
                 if (authRepository.refresh() is ApiResult.Success) {
                     navigator.resetTo(Route.Home)
                 } else {
-                    authRepository.signOut()
+                    authRepository.clearSession()
                     navigator.resetTo(Route.Welcome)
                 }
             }

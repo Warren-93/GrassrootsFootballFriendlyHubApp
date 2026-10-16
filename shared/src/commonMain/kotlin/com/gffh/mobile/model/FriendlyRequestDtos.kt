@@ -34,6 +34,7 @@ data class FriendlyRequestActionRequest(
 @Serializable
 data class TeamContact(
     val teamId: String,
+    val teamName: String? = null,
     val managerName: String? = null,
     val contactPhone: String? = null,
     val venueId: String? = null
@@ -60,5 +61,20 @@ data class FriendlyRequestView(
     val recipientContact: TeamContact? = null,
     val proposedStartTime: String? = null,
     val proposedEndTime: String? = null,
-    val proposedVenueId: String? = null
+    val proposedVenueId: String? = null,
+    /** The currently agreed venue ([venueId]), if any. */
+    val venue: VenueSummary? = null,
+    /** The venue a pending suggested change proposes ([proposedVenueId]), if any. */
+    val proposedVenue: VenueSummary? = null,
+    val senderTeam: TeamRef? = null,
+    val recipientTeam: TeamRef? = null
+)
+
+/** Who is on each side of a request, so screens can name them without another lookup. */
+@Serializable
+data class TeamRef(
+    val id: String,
+    val name: String,
+    val clubName: String? = null,
+    val badgeUrl: String? = null
 )

@@ -19,24 +19,34 @@ import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
+import com.gffh.mobile.repository.ConfigRepository
+import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.theme.displayHeadlineSmall
 import com.gffh.mobile.ui.components.heroGradientBrush
 import kotlinx.coroutines.launch
 
 /**
- * SCR-AU-04 Sign in. Purpose: return an existing user to their session.
+ * SCR-AU-04 Sign in. Purpose: return an existing user to their session -
+ * with their email and password, or with Google (Android) or Apple (iOS)
+ * when the API has it switched on (see [SocialSignInSection]).
  *
  * Full-bleed navy gradient treatment, matching gffh-web's SignInPage
  * marketing feel - the form itself sits in a white card over the gradient.
  */
 @Composable
-fun SignInScreen(authRepository: AuthRepository, navigator: Navigator) {
+fun SignInScreen(
+    authRepository: AuthRepository,
+    configRepository: ConfigRepository,
+    teamRepository: TeamRepository,
+    navigator: Navigator
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var submitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var lockoutMessage by remember { mutableStateOf<String?>(null) }
+    var socialWorking by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
 
@@ -116,12 +126,25 @@ fun SignInScreen(authRepository: AuthRepository, navigator: Navigator) {
                             }
                         }
                     },
-                    enabled = email.isNotBlank() && password.isNotBlank() && !submitting,
+                    enabled = email.isNotBlank() && password.isNotBlank() && !submitting && !socialWorking,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (submitting) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     else Text("Sign in")
                 }
+
+                SocialSignInSection(
+                    configRepository = configRepository,
+                    authRepository = authRepository,
+                    teamRepository = teamRepository,
+                    navigator = navigator,
+                    enabled = !submitting,
+                    onWorkingChange = { socialWorking = it },
+                    onError = {
+                        lockoutMessage = null
+                        errorMessage = it
+                    }
+                )
 
                 TextButton(onClick = { navigator.pop() }, modifier = Modifier.fillMaxWidth()) { Text("Back") }
             }

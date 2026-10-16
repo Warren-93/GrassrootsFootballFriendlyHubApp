@@ -95,7 +95,7 @@ fun ConversationThreadScreen(
                 val otherTeam = conversation?.otherTeam
                 if (otherTeam != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        CrestAvatar(otherTeam.name, size = 28.dp)
+                        CrestAvatar(otherTeam.name, size = 28.dp, badgeUrl = otherTeam.badgeUrl)
                         Spacer(Modifier.width(8.dp))
                         Text(otherTeam.name)
                     }

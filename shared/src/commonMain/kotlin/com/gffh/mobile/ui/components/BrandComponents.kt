@@ -1,5 +1,6 @@
 package com.gffh.mobile.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,13 +21,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.gffh.mobile.core.image.decodeBadge
 import com.gffh.mobile.theme.displayHeadlineMedium
 import com.gffh.mobile.theme.displayHeadlineSmall
 import com.gffh.mobile.theme.eyebrowLabel
@@ -210,26 +214,44 @@ fun MatchScoreChip(score: Int, modifier: Modifier = Modifier, onClick: (() -> Un
 }
 
 /**
- * A team's badge: a light rounded-square with its initials, distinct from a
- * circular user avatar so teams and people never look alike in a list.
- * Mirrors gffh-web's CrestAvatar.tsx.
+ * A team's badge: the uploaded image when it has one, otherwise a light
+ * rounded-square with its initials, distinct from a circular user avatar so
+ * teams and people never look alike in a list. Mirrors gffh-web's
+ * CrestAvatar.tsx, including falling back to initials for a badge that can't
+ * be shown - see [decodeBadge].
  */
 @Composable
-fun CrestAvatar(name: String, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = 36.dp) {
+fun CrestAvatar(
+    name: String,
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 36.dp,
+    badgeUrl: String? = null
+) {
+    val shape = RoundedCornerShape(size / 3.5f)
+    val badge = remember(badgeUrl) { decodeBadge(badgeUrl) }
     Box(
         modifier = modifier
             .size(size)
-            .clip(RoundedCornerShape(size / 3.5f))
+            .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(size / 3.5f)),
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            crestInitials(name),
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelMedium
-        )
+        if (badge != null) {
+            Image(
+                bitmap = badge,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+            )
+        } else {
+            Text(
+                crestInitials(name),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
     }
 }
 

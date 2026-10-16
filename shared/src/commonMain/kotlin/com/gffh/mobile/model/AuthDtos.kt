@@ -18,6 +18,17 @@ data class LoginRequest(
 @Serializable
 data class RefreshRequest(val refreshToken: String)
 
+/**
+ * `POST /api/v1/auth/oauth/{google|apple}`. [displayName] is only sent for
+ * Apple, and only when Apple handed the name over (the first sign-in): a
+ * Google token carries the name itself. Null is left out of the body.
+ */
+@Serializable
+data class OAuthSignInRequest(
+    val idToken: String,
+    val displayName: String? = null
+)
+
 @Serializable
 data class PasswordResetRequest(val email: String)
 
@@ -28,6 +39,19 @@ data class PasswordResetConfirmRequest(val token: String, val newPassword: Strin
 data class VerifyConfirmRequest(val token: String)
 
 @Serializable
+data class ChangePasswordRequest(val currentPassword: String, val newPassword: String)
+
+@Serializable
+data class ChangeEmailRequest(val newEmail: String, val currentPassword: String)
+
+@Serializable
+data class ChangeEmailResponse(
+    val user: UserView,
+    /** Only present while no real email provider is connected - see EmailVerificationScreen. */
+    val verificationToken: String? = null
+)
+
+@Serializable
 data class TokenResponse(
     val accessToken: String,
     val refreshToken: String,
@@ -35,7 +59,13 @@ data class TokenResponse(
     val expiresIn: Long,
     val user: UserView,
     /** Only present while no real email provider is connected - see EmailVerificationScreen. */
-    val verificationToken: String? = null
+    val verificationToken: String? = null,
+    /**
+     * Only sent by Google and Apple sign-in: true when that sign-in just
+     * created the account, so the app starts onboarding as it does after
+     * registering. Absent (false) for every other way of signing in.
+     */
+    val newUser: Boolean = false
 )
 
 @Serializable

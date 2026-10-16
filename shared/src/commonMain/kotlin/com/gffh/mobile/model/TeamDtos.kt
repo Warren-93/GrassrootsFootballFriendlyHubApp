@@ -76,6 +76,12 @@ data class TeamView(
     val createdAt: String,
     /** Only set on GET /teams/mine: false for a member who can't manage the team. */
     val canManage: Boolean? = null,
+    /**
+     * Only set on GET /teams/mine: true for the club's CLUB_ADMIN, false for
+     * anyone else - a team manager can see the club's venues, but not add,
+     * edit, make default or delete them. Null from an older API.
+     */
+    val canManageClub: Boolean? = null,
     /** Verified and has a venue: the only gate on sending and receiving friendly requests. */
     val readyForRequests: Boolean? = null,
     /** What's still to do. Empty for teams the caller doesn't manage. */

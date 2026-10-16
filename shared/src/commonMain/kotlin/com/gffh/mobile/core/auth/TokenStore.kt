@@ -56,6 +56,12 @@ class TokenStore(private val settings: Settings) {
         save(current.copy(emailVerified = verified))
     }
 
+    /** After an email change: the new address, which starts unverified until it's confirmed. */
+    fun updateEmail(email: String, verified: Boolean) {
+        val current = _session.value ?: return
+        save(current.copy(email = email, emailVerified = verified))
+    }
+
     fun clear() {
         settings.remove(KEY_TOKEN)
         settings.remove(KEY_REFRESH_TOKEN)

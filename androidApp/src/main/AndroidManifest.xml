@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+: asked for at runtime, after sign-in - see PushNotificationSetup. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".KickaboutApplication"
         android:label="Kickabout"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -12,9 +16,15 @@
         android:usesCleartextTraffic="${usesCleartextTraffic}"
         android:supportsRtl="true">
 
+        <!--
+          singleTop: tapping a notification while the app is open hands the
+          push's ids to the running MainActivity (onNewIntent) instead of
+          starting a fresh one and losing the screen you were on.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/AppTheme"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -22,5 +32,40 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".KickaboutMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!--
+          While the app is in the background, Firebase draws a push itself
+          rather than handing it to KickaboutMessagingService: these make it
+          use the same "Kickabout" channel (CHANNEL_ID there) and status-bar
+          icon, not Firebase's "Miscellaneous" channel and the launcher icon.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="kickabout" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+
+        <!--
+          There is no google-services.json here: Firebase is initialised by
+          hand from BuildConfig in KickaboutApplication (see the README).
+          FirebaseInitProvider would otherwise run first and try to configure
+          itself from string resources that don't exist, logging an error on
+          every launch - and in a build with no Firebase settings at all,
+          there is deliberately nothing to initialise.
+        -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            android:exported="false"
+            tools:node="remove" />
     </application>
 </manifest>

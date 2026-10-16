@@ -2,6 +2,7 @@ package com.gffh.mobile.core.platform
 
 import android.content.ContentValues
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -13,6 +14,24 @@ actual fun openMailApp() {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
     }
     runCatching { AndroidAppContext.context.startActivity(intent) }
+}
+
+actual fun openUrl(url: String): Boolean {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+    // startActivity throws ActivityNotFoundException when nothing handles it.
+    return runCatching { AndroidAppContext.context.startActivity(intent) }.isSuccess
+}
+
+/** ACTION_SENDTO with a mailto: URI offers only mail apps, not every app that can share text. */
+actual fun composeEmail(address: String, subject: String): Boolean {
+    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$address?subject=${Uri.encode(subject)}")).apply {
+        putExtra(Intent.EXTRA_EMAIL, arrayOf(address))
+        putExtra(Intent.EXTRA_SUBJECT, subject)
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+    return runCatching { AndroidAppContext.context.startActivity(intent) }.isSuccess
 }
 
 actual fun saveTextFile(filename: String, content: String): Boolean {

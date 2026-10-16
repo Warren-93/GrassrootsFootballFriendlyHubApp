@@ -18,6 +18,7 @@ import com.gffh.mobile.repository.VenueRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.InvitationDraftState
 import com.gffh.mobile.session.SearchResultsCache
+import com.gffh.mobile.session.canManageClubOf
 import com.gffh.mobile.ui.components.ProfileChecklistCard
 import kotlinx.datetime.LocalTime
 
@@ -98,7 +99,9 @@ fun InvitationComposerScreen(
         ourTeam?.let { team ->
             if (weAreNotReady) {
                 Spacer(Modifier.height(16.dp))
-                ProfileChecklistCard(team, navigator, showOptional = false)
+                ProfileChecklistCard(
+                    team, navigator, showOptional = false, canManageClub = activeTeam.canManageClubOf(team.clubId)
+                )
             }
         }
         if (theyAreNotReady) {

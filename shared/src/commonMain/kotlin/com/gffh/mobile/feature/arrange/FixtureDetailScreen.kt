@@ -19,6 +19,7 @@ import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.VenueCard
 import kotlinx.coroutines.launch
 
 /**
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
  * about an agreed match. Contact details and the exact venue appear here
  * because a fixture only exists once its request reached CONFIRMED - the
  * server-side disclosure rule that makes this screen safe to build plainly.
+ * The venue card's Directions button opens Google Maps (see VenueCard).
  *
  * SCR-FX-06 cancel is a dedicated button here (with a confirm dialog and
  * optional reason) rather than only reachable via the underlying friendly
@@ -117,10 +119,15 @@ fun FixtureDetailScreen(
             Text("${f.date}, kick-off ${f.startTime}", style = MaterialTheme.typography.bodyMedium)
             Text(f.status, style = MaterialTheme.typography.bodySmall)
 
+            f.venue?.let {
+                Spacer(Modifier.height(16.dp))
+                VenueCard(it)
+            }
+
             Spacer(Modifier.height(16.dp))
             SectionCard("Home") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CrestAvatar(f.homeTeam.name, size = 32.dp)
+                    CrestAvatar(f.homeTeam.name, size = 32.dp, badgeUrl = f.homeTeam.badgeUrl)
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text(f.homeTeam.name)
@@ -132,7 +139,7 @@ fun FixtureDetailScreen(
             Spacer(Modifier.height(12.dp))
             SectionCard("Away") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CrestAvatar(f.awayTeam.name, size = 32.dp)
+                    CrestAvatar(f.awayTeam.name, size = 32.dp, badgeUrl = f.awayTeam.badgeUrl)
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text(f.awayTeam.name)
@@ -146,7 +153,12 @@ fun FixtureDetailScreen(
             SectionCard("Arrangements") {
                 Text("Cost share: ${f.costShare}", style = MaterialTheme.typography.bodySmall)
                 Text("Referee: ${f.refereeArrangement}", style = MaterialTheme.typography.bodySmall)
-                f.venueId?.let { Text("Venue: $it", style = MaterialTheme.typography.bodySmall) }
+                if (f.venue == null) {
+                    Text(
+                        "Venue: not set yet - message the other team to agree one.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))

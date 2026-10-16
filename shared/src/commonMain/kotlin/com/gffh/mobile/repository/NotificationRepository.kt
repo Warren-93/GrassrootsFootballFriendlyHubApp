@@ -5,6 +5,7 @@ import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.NotificationPreferenceView
 import com.gffh.mobile.model.NotificationView
 import com.gffh.mobile.model.UnreadCountView
+import com.gffh.mobile.model.UpdateNotificationPreferenceRequest
 import io.ktor.client.request.*
 import io.ktor.http.HttpMethod
 
@@ -43,6 +44,16 @@ class NotificationRepository(private val api: ApiClient) {
     suspend fun updatePreferences(preferences: NotificationPreferenceView): ApiResult<NotificationPreferenceView> = api.request {
         method = HttpMethod.Patch
         url("/api/v1/me/notification-preferences")
-        setBody(preferences)
+        setBody(preferences.toUpdateRequest())
     }
 }
+
+/** Always sends both delivery switches, so turning one back on reaches the API (see [UpdateNotificationPreferenceRequest]). */
+internal fun NotificationPreferenceView.toUpdateRequest() = UpdateNotificationPreferenceRequest(
+    friendlyRequests = friendlyRequests,
+    fixtures = fixtures,
+    verification = verification,
+    messages = messages,
+    emailEnabled = emailEnabled,
+    pushEnabled = pushEnabled
+)

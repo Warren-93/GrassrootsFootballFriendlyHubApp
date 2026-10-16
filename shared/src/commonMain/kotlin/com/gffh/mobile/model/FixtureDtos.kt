@@ -12,7 +12,8 @@ data class FixtureTeamView(
     val clubName: String,
     val managerName: String? = null,
     val contactPhone: String? = null,
-    val venueId: String? = null
+    val venueId: String? = null,
+    val badgeUrl: String? = null
 )
 
 @Serializable
@@ -27,5 +28,7 @@ data class FixtureView(
     val venueId: String? = null,
     val status: String,
     val costShare: String,
-    val refereeArrangement: String
+    val refereeArrangement: String,
+    /** The fixture's venue, else the home team's default venue - null when neither is set. */
+    val venue: VenueSummary? = null
 )

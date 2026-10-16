@@ -23,6 +23,9 @@ Thumbs.db
 
 # iOS (Xcode, only relevant once iOS targets are enabled and built on a Mac)
 iosApp/build/
+# Written by XcodeGen from iosApp/project.yml - Info.plist, entitlements, the project itself
+iosApp/Generated/
+iosApp/iosApp.xcodeproj/
 *.xcuserstate
 xcuserdata/
 

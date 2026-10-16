@@ -50,10 +50,23 @@ class ApiClient(baseUrl: String, @PublishedApi internal val tokenStore: TokenSto
         }
     }
 
-    suspend inline fun <reified T> request(block: HttpRequestBuilder.() -> Unit): ApiResult<T> {
+    /**
+     * Pass [authenticated] = false for public endpoints (`GET /api/v1/config`):
+     * the API rejects an expired bearer token with 401 even on a route that
+     * needs none, so a stale session must not break them.
+     *
+     * Any 2xx is a success, including 202 Accepted with a body (adding a member
+     * by email answers 202 with an invitation when there's no account yet).
+     */
+    suspend inline fun <reified T> request(
+        authenticated: Boolean = true,
+        block: HttpRequestBuilder.() -> Unit
+    ): ApiResult<T> {
         return try {
             val response: HttpResponse = client.request {
-                tokenStore.currentAccessToken()?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                if (authenticated) {
+                    tokenStore.currentAccessToken()?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                }
                 block()
             }
             if (response.status.value in 200..299) {

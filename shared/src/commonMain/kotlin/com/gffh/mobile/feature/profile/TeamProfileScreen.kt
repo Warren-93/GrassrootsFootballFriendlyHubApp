@@ -16,6 +16,9 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.repository.VenueRepository
+import com.gffh.mobile.session.CurrentTeamStore
+import com.gffh.mobile.session.canManageClubOf
+import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.HeroBand
 import com.gffh.mobile.ui.components.ProfileChecklistCard
 import com.gffh.mobile.ui.components.StatTile
@@ -30,7 +33,14 @@ import com.gffh.mobile.ui.components.StatTileTone
  * SCR-FF-05 opponent-profile component, which belongs to the Discover slice.
  */
 @Composable
-fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepository, navigator: Navigator, teamId: String) {
+fun TeamProfileScreen(
+    teamRepository: TeamRepository,
+    venueRepository: VenueRepository,
+    currentTeamStore: CurrentTeamStore,
+    navigator: Navigator,
+    teamId: String
+) {
+    val activeTeam by currentTeamStore.active.collectAsState()
     var team by remember { mutableStateOf<TeamView?>(null) }
     var venues by remember { mutableStateOf<List<VenueView>>(emptyList()) }
     var loadError by remember { mutableStateOf<String?>(null) }
@@ -63,14 +73,19 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
             compact = true,
             modifier = Modifier.padding(16.dp)
         )
-        Text(
-            current.clubName,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .clickable { navigator.push(Route.ClubProfile(current.clubId)) }
-        )
+        Row(
+            Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CrestAvatar(current.name, size = 48.dp, badgeUrl = current.badgeUrl)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                current.clubName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { navigator.push(Route.ClubProfile(current.clubId)) }
+            )
+        }
 
         Spacer(Modifier.height(16.dp))
         Column(Modifier.padding(horizontal = 16.dp)) {
@@ -88,7 +103,7 @@ fun TeamProfileScreen(teamRepository: TeamRepository, venueRepository: VenueRepo
                 )
             }
             Spacer(Modifier.height(12.dp))
-            ProfileChecklistCard(current, navigator)
+            ProfileChecklistCard(current, navigator, canManageClub = activeTeam.canManageClubOf(current.clubId))
         }
 
         Spacer(Modifier.height(20.dp))
