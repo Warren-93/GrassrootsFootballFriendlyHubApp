@@ -25,6 +25,11 @@ class AuthRepository(
 
     val session: StateFlow<StoredSession?> = tokenStore.session
 
+    init {
+        // Lets ApiClient renew a lapsed access token mid-session and retry the call.
+        api.sessionRefresher = { refresh() is ApiResult.Success }
+    }
+
     suspend fun register(email: String, password: String, displayName: String): ApiResult<TokenResponse> {
         val result = api.request<TokenResponse> {
             method = io.ktor.http.HttpMethod.Post

@@ -86,6 +86,12 @@ private fun memberCanOpen(route: Route, teamId: String): Boolean = when (route) 
     else -> true
 }
 
+/** Everything but the screens you reach while signed out: those need a session to show anything. */
+private fun needsSession(route: Route): Boolean = when (route) {
+    is Route.Splash, is Route.Welcome, is Route.Register, is Route.SignIn, is Route.ForgotPassword -> false
+    else -> true
+}
+
 @Composable
 fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
     val settings = remember { createSettings() }
@@ -125,6 +131,13 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
         val activeTeam = currentTeamStore.active.collectAsState().value
         val signedIn = tokenStore.session.collectAsState().value != null
         PushNotificationSetup(signedIn)
+        // The session can end without anyone signing out - the API refused to
+        // renew it (see ApiClient) - so a screen that needs one goes back to Welcome.
+        LaunchedEffect(signedIn) {
+            if (signedIn || !needsSession(navigator.current)) return@LaunchedEffect
+            currentTeamStore.clear()
+            navigator.resetTo(Route.Welcome)
+        }
         val memberTeam = activeTeam?.takeIf { !it.canManage }
         val memberBlocked = memberTeam != null && !memberCanOpen(route, memberTeam.teamId)
         // A member may since have been made a manager: check again whenever the app opens on them.
