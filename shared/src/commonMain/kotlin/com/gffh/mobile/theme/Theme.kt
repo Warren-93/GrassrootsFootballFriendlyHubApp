@@ -73,7 +73,10 @@ val DarkColors = darkColorScheme(
     primaryContainer = PitchDeep,
     onPrimaryContainer = Lime,
     secondary = DarkVoidLight,
-    error = Coral,
+    // Brand coral is too dim to read as text on the navy ground (error messages,
+    // Delete account), so dark mode uses the lighter coral, as the web does.
+    error = DarkCoralText,
+    onError = DarkCoralBg,
     errorContainer = DarkCoralBg,
     onErrorContainer = DarkCoralText,
     tertiary = Amber,
