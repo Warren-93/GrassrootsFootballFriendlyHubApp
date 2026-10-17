@@ -25,5 +25,10 @@ class SearchResultsCache {
         _lastResponse.value = response
     }
 
+    /** On sign-out: the next account mustn't see this one's results. */
+    fun clear() {
+        _lastResponse.value = null
+    }
+
     fun find(teamId: String): MatchSummary? = _lastResponse.value?.results?.firstOrNull { it.team.id == teamId }
 }

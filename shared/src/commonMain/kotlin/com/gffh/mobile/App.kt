@@ -131,10 +131,15 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
         val activeTeam = currentTeamStore.active.collectAsState().value
         val signedIn = tokenStore.session.collectAsState().value != null
         PushNotificationSetup(signedIn)
-        // The session can end without anyone signing out - the API refused to
-        // renew it (see ApiClient) - so a screen that needs one goes back to Welcome.
         LaunchedEffect(signedIn) {
-            if (signedIn || !needsSession(navigator.current)) return@LaunchedEffect
+            if (signedIn) return@LaunchedEffect
+            // Nothing from the last account's searches or invitation draft carries over to the next.
+            filterState.reset()
+            resultsCache.clear()
+            invitationDraft.clear()
+            // The session can end without anyone signing out - the API refused to
+            // renew it (see ApiClient) - so a screen that needs one goes back to Welcome.
+            if (!needsSession(navigator.current)) return@LaunchedEffect
             currentTeamStore.clear()
             navigator.resetTo(Route.Welcome)
         }
