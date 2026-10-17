@@ -16,6 +16,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Thin wrapper around a configured [HttpClient]. Every repository call goes
@@ -80,6 +81,10 @@ class ApiClient(baseUrl: String, @PublishedApi internal val tokenStore: TokenSto
                     httpStatus = response.status.value
                 )
             }
+        } catch (e: CancellationException) {
+            // The caller went away (a screen closed, a timeout fired): that has
+            // to reach it, not turn into a "check your connection" failure.
+            throw e
         } catch (e: Exception) {
             ApiResult.Failure(
                 code = "NETWORK_ERROR",
