@@ -16,6 +16,7 @@ import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-FX-01/02/03 Fixtures - Pending, Confirmed, Completed. Purpose: hold
@@ -48,6 +49,15 @@ fun FixturesScreen(
     val waitingOnThem = pending.filter { it.availableActions.size == 1 && it.availableActions.first() == "withdraw" }
     val confirmed = fixtures.filter { it.status == "CONFIRMED" }
     val completed = fixtures.filter { it.status == "COMPLETED" }
+
+    // Nothing to load without a team - the effect above returns early, so
+    // this can't wait on loading, which would spin for good.
+    if (team == null) {
+        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            Text("No active team. Create or select a team first.")
+        }
+        return
+    }
 
     Column(Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
@@ -112,7 +122,7 @@ private fun RequestRow(request: FriendlyRequestView, ourTeamId: String?, navigat
             Column {
                 otherTeam?.let { Text(it.name, style = MaterialTheme.typography.titleSmall) }
                 Text(request.date, style = MaterialTheme.typography.bodyMedium)
-                Text(request.status, style = MaterialTheme.typography.bodySmall)
+                Text(codeLabel(request.status), style = MaterialTheme.typography.bodySmall)
             }
         }
     }

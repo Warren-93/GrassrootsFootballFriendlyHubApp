@@ -3,9 +3,7 @@ package com.gffh.mobile.navigation
 /**
  * Every screen the app can navigate to, named after its SCR-XX-NN identifier
  * in the Screen Build Specification. Every slice through Govern is built -
- * see gffh-mobile/README.md for what each covers. [Route.Placeholder] is a
- * fallback for routes that don't correspond to any built screen, not a
- * standing "not built yet" state.
+ * see gffh-mobile/README.md for what each covers.
  */
 sealed class Route {
     // Access (SCR-AU-*)
@@ -66,6 +64,4 @@ sealed class Route {
     data class DeclineRequest(val requestId: String) : Route()               // SCR-IN-06
     data object Fixtures : Route()                                          // SCR-FX-01/02/03
     data class FixtureDetail(val fixtureId: String) : Route()                // SCR-FX-04
-
-    data class Placeholder(val label: String) : Route()
 }

@@ -13,9 +13,13 @@ import io.ktor.client.request.request
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Thin wrapper around a configured [HttpClient]. Every repository call goes
@@ -31,6 +35,17 @@ import kotlinx.serialization.json.Json
  * goes out without one. Reading [TokenStore] fresh on every call avoids that.
  */
 class ApiClient(baseUrl: String, @PublishedApi internal val tokenStore: TokenStore) {
+
+    /**
+     * Renews the session after an authenticated call gets a 401, answering
+     * whether it did. Set by AuthRepository when it's created - it owns the
+     * refresh call and decides when a refused refresh token ends the session -
+     * so neither class needs the other at construction.
+     */
+    var sessionRefresher: (suspend () -> Boolean)? = null
+
+    /** One refresh at a time: calls that hit a 401 together share it. */
+    private val refreshMutex = Mutex()
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -63,12 +78,7 @@ class ApiClient(baseUrl: String, @PublishedApi internal val tokenStore: TokenSto
         block: HttpRequestBuilder.() -> Unit
     ): ApiResult<T> {
         return try {
-            val response: HttpResponse = client.request {
-                if (authenticated) {
-                    tokenStore.currentAccessToken()?.let { header(HttpHeaders.Authorization, "Bearer $it") }
-                }
-                block()
-            }
+            val response: HttpResponse = execute(authenticated, HttpRequestBuilder().apply(block))
             if (response.status.value in 200..299) {
                 ApiResult.Success(response.body())
             } else {
@@ -80,6 +90,10 @@ class ApiClient(baseUrl: String, @PublishedApi internal val tokenStore: TokenSto
                     httpStatus = response.status.value
                 )
             }
+        } catch (e: CancellationException) {
+            // The caller went away (a screen closed, a timeout fired): that has
+            // to reach it, not turn into a "check your connection" failure.
+            throw e
         } catch (e: Exception) {
             ApiResult.Failure(
                 code = "NETWORK_ERROR",
@@ -87,6 +101,43 @@ class ApiClient(baseUrl: String, @PublishedApi internal val tokenStore: TokenSto
                 requestId = null,
                 httpStatus = null
             )
+        }
+    }
+
+    /**
+     * Sends [prepared] with the stored access token when [authenticated]. A
+     * 401 to that token renews the session once ([renewedAccessToken]) and
+     * sends the request again with the new one; otherwise the 401 stands.
+     */
+    @PublishedApi
+    internal suspend fun execute(authenticated: Boolean, prepared: HttpRequestBuilder): HttpResponse {
+        val sentToken = if (authenticated) tokenStore.currentAccessToken() else null
+        val response = send(prepared, sentToken)
+        if (sentToken == null || response.status != HttpStatusCode.Unauthorized) return response
+        val renewed = renewedAccessToken(sentToken) ?: return response
+        return send(prepared, renewed)
+    }
+
+    private suspend fun send(prepared: HttpRequestBuilder, accessToken: String?): HttpResponse =
+        client.request(
+            HttpRequestBuilder().takeFrom(prepared).apply {
+                accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+            }
+        )
+
+    /**
+     * An access token to retry with after [rejected] got a 401, or null when
+     * there's none: no refresher, no session, or the refresh failed (when the
+     * API refused the refresh token, AuthRepository has dropped the session
+     * and App() takes the user back to Welcome). A call that waited while
+     * another refreshed just uses the token that one got.
+     */
+    private suspend fun renewedAccessToken(rejected: String): String? {
+        val refresher = sessionRefresher ?: return null
+        return refreshMutex.withLock {
+            val current = tokenStore.currentAccessToken() ?: return@withLock null
+            if (current != rejected) return@withLock current
+            if (refresher()) tokenStore.currentAccessToken() else null
         }
     }
 }

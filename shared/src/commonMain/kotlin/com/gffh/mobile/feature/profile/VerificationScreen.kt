@@ -19,6 +19,7 @@ import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.repository.VerificationRepository
 import com.gffh.mobile.ui.components.CrestAvatar
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-PR-07 Verification submission. Purpose: let a manager put their team
@@ -89,7 +90,7 @@ fun VerificationScreen(
                     }
                     AssistChip(
                         onClick = {},
-                        label = { Text(current.verification) },
+                        label = { Text(codeLabel(current.verification)) },
                         colors = AssistChipDefaults.assistChipColors(containerColor = chipContainer, labelColor = chipLabel),
                         border = null,
                         modifier = Modifier.padding(top = 4.dp)

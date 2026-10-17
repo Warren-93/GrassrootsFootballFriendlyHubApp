@@ -15,6 +15,7 @@ import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.codeLabel
 
 /** How many ranked opponents one search returns. */
 internal const val SEARCH_LIMIT = 50
@@ -52,7 +53,7 @@ fun SearchEntryScreen(
         val slots = (availabilityRepository.list(t.teamId) as? ApiResult.Success)?.value.orEmpty()
         hasAvailability = slots.isNotEmpty()
         if (teamView != null) {
-            summaryText = "Every ${teamView.ageGroup} ${teamView.gender} team, all ability levels, best fit first"
+            summaryText = "Every ${codeLabel(teamView.ageGroup)} ${codeLabel(teamView.gender).lowercase()} team, all ability levels, best fit first"
         }
     }
 

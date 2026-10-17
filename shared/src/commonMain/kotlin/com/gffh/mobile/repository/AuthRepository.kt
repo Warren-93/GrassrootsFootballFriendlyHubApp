@@ -5,11 +5,13 @@ import com.gffh.mobile.core.auth.StoredSession
 import com.gffh.mobile.core.auth.TokenStore
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.core.network.endsSession
 import com.gffh.mobile.core.network.map
 import com.gffh.mobile.core.push.PushRegistration
 import com.gffh.mobile.model.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * [pushRegistration] is only there for sign-out: this device's push token has
@@ -23,6 +25,11 @@ class AuthRepository(
 ) {
 
     val session: StateFlow<StoredSession?> = tokenStore.session
+
+    init {
+        // Lets ApiClient renew a lapsed access token mid-session and retry the call.
+        api.sessionRefresher = { refresh() is ApiResult.Success }
+    }
 
     suspend fun register(email: String, password: String, displayName: String): ApiResult<TokenResponse> {
         val result = api.request<TokenResponse> {
@@ -62,10 +69,16 @@ class AuthRepository(
         return result
     }
 
+    /**
+     * Trades the refresh token for a new pair. Unauthenticated: the API answers
+     * 401 to any expired bearer token, even here. The session is only dropped
+     * when the API refuses the refresh token ([endsSession]), not when it
+     * can't be reached.
+     */
     suspend fun refresh(): ApiResult<Unit> {
         val refreshToken = tokenStore.currentRefreshToken()
             ?: return ApiResult.Failure("NO_SESSION", "Not signed in.", null, null)
-        val result = api.request<TokenResponse> {
+        val result = api.request<TokenResponse>(authenticated = false) {
             method = io.ktor.http.HttpMethod.Post
             url("/api/v1/auth/refresh")
             setBody(RefreshRequest(refreshToken))
@@ -76,7 +89,7 @@ class AuthRepository(
                 ApiResult.Success(Unit)
             }
             is ApiResult.Failure -> {
-                tokenStore.clear()
+                if (result.endsSession()) tokenStore.clear()
                 result
             }
         }
@@ -133,18 +146,41 @@ class AuthRepository(
     /**
      * Signs out on purpose: tells the API to stop pushing to this device
      * first (`DELETE /api/v1/me/push-tokens`, which needs an access token that
-     * still works - see [refreshedAccessToken]), then drops the session.
+     * still works - see [refreshedTokens]), then revokes the refresh token
+     * (`POST /api/v1/auth/logout`) and drops the session.
      */
     suspend fun signOut() {
-        pushRegistration?.unregister(freshAccessToken = { refreshedAccessToken() })
+        var renewedRefreshToken: String? = null
+        pushRegistration?.unregister(freshAccessToken = {
+            refreshedTokens()?.let { tokens ->
+                renewedRefreshToken = tokens.refreshToken
+                tokens.accessToken
+            }
+        })
+        (renewedRefreshToken ?: tokenStore.currentRefreshToken())?.let { logout(it) }
         tokenStore.clear()
     }
 
     /**
-     * A new access token for sign-out's last call, when the stored one has
-     * lapsed. Deliberately not saved: the session is dropped straight after.
+     * Best effort, like the web's: the session is dropped here either way, so
+     * a failure is ignored and a slow API isn't waited on for long.
+     * Unauthenticated - the refresh token is the credential.
      */
-    private suspend fun refreshedAccessToken(): String? {
+    private suspend fun logout(refreshToken: String) {
+        withTimeoutOrNull(LOGOUT_TIMEOUT_MS) {
+            api.request<Unit>(authenticated = false) {
+                method = io.ktor.http.HttpMethod.Post
+                url("/api/v1/auth/logout")
+                setBody(RefreshRequest(refreshToken))
+            }
+        }
+    }
+
+    /**
+     * A new token pair for sign-out's last calls, when the stored access token
+     * has lapsed. Deliberately not saved: the session is dropped straight after.
+     */
+    private suspend fun refreshedTokens(): TokenResponse? {
         val refreshToken = tokenStore.currentRefreshToken() ?: return null
         val result = api.request<TokenResponse>(authenticated = false) {
             method = io.ktor.http.HttpMethod.Post
@@ -152,7 +188,7 @@ class AuthRepository(
             setBody(RefreshRequest(refreshToken))
         }
         return when (result) {
-            is ApiResult.Success -> result.value.accessToken
+            is ApiResult.Success -> result.value
             is ApiResult.Failure -> null
         }
     }
@@ -176,5 +212,9 @@ class AuthRepository(
                 emailVerified = response.user.emailVerified
             )
         )
+    }
+
+    private companion object {
+        const val LOGOUT_TIMEOUT_MS = 5_000L
     }
 }

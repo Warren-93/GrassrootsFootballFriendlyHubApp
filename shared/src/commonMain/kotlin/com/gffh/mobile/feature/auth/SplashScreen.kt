@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.core.network.endsSession
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.AuthRepository
@@ -32,17 +33,23 @@ fun SplashScreen(authRepository: AuthRepository, navigator: Navigator) {
             navigator.resetTo(Route.Welcome)
             return@LaunchedEffect
         }
-        when (authRepository.me()) {
+        when (val result = authRepository.me()) {
             // Unverified accounts may still browse (SCR-AU-06) - verification
             // is enforced per-action server-side, not gated here.
             is ApiResult.Success -> navigator.resetTo(Route.Home)
             is ApiResult.Failure -> {
-                // Refresh failure clears stored credentials silently - never shown as an error (SCR-AU-01).
-                if (authRepository.refresh() is ApiResult.Success) {
-                    navigator.resetTo(Route.Home)
-                } else {
-                    authRepository.clearSession()
-                    navigator.resetTo(Route.Welcome)
+                val refreshed = if (result.httpStatus == 401) authRepository.refresh() else result
+                when {
+                    refreshed is ApiResult.Success -> navigator.resetTo(Route.Home)
+                    // Refresh failure clears stored credentials silently - never shown as an error (SCR-AU-01).
+                    refreshed is ApiResult.Failure && refreshed.endsSession() -> {
+                        authRepository.clearSession()
+                        navigator.resetTo(Route.Welcome)
+                    }
+                    // The API couldn't be reached (no signal, or the host still
+                    // waking up): keep the stored session rather than signing
+                    // out - Home's own calls show the connection error.
+                    else -> navigator.resetTo(Route.Home)
                 }
             }
         }

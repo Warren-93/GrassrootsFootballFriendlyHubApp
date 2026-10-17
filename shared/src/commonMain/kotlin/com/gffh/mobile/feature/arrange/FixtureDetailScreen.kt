@@ -21,6 +21,9 @@ import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.VenueCard
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.refereeLabel
+import com.gffh.mobile.ui.components.costShareLabel
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-FX-04 Fixture detail. Purpose: be the single reference for everything
@@ -117,7 +120,7 @@ fun FixtureDetailScreen(
         Column(Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
             Text("${f.homeTeam.name} vs ${f.awayTeam.name}", style = MaterialTheme.typography.headlineSmall)
             Text("${f.date}, kick-off ${f.startTime}", style = MaterialTheme.typography.bodyMedium)
-            Text(f.status, style = MaterialTheme.typography.bodySmall)
+            Text(codeLabel(f.status), style = MaterialTheme.typography.bodySmall)
 
             f.venue?.let {
                 Spacer(Modifier.height(16.dp))
@@ -151,8 +154,8 @@ fun FixtureDetailScreen(
 
             Spacer(Modifier.height(12.dp))
             SectionCard("Arrangements") {
-                Text("Cost share: ${f.costShare}", style = MaterialTheme.typography.bodySmall)
-                Text("Referee: ${f.refereeArrangement}", style = MaterialTheme.typography.bodySmall)
+                Text("Cost share: ${costShareLabel(f.costShare)}", style = MaterialTheme.typography.bodySmall)
+                Text("Referee: ${refereeLabel(f.refereeArrangement)}", style = MaterialTheme.typography.bodySmall)
                 if (f.venue == null) {
                     Text(
                         "Venue: not set yet - message the other team to agree one.",

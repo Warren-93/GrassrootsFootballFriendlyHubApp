@@ -20,11 +20,15 @@
           singleTop: tapping a notification while the app is open hands the
           push's ids to the running MainActivity (onNewIntent) instead of
           starting a fresh one and losing the screen you were on.
+          configChanges: App() keeps its navigator in plain remember, so a
+          recreated activity (rotation, dark mode, font size...) would start
+          again at Splash. Compose redraws for these changes by itself.
         -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|keyboardHidden|keyboard|density|locale|layoutDirection|fontScale"
             android:theme="@style/AppTheme"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

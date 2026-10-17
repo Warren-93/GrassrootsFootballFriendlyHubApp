@@ -14,6 +14,8 @@ import com.gffh.mobile.session.InvitationDraftState
 import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import com.gffh.mobile.ui.components.refereeLabel
+import com.gffh.mobile.ui.components.costShareLabel
 
 /**
  * SCR-IN-02 Invitation review. Purpose: give one last unambiguous read before
@@ -46,8 +48,8 @@ fun InvitationReviewScreen(
                 SummaryRow("Duration", "${draft.startTime} - ${draft.endTime}")
                 SummaryRow("Home team", if (draft.isSenderHome) "You" else draft.opponentTeamName)
                 if (draft.isSenderHome) SummaryRow("Venue", draft.venueName ?: "Not set")
-                SummaryRow("Referee", draft.refereeArrangement)
-                SummaryRow("Cost share", draft.costShare)
+                SummaryRow("Referee", refereeLabel(draft.refereeArrangement))
+                SummaryRow("Cost share", costShareLabel(draft.costShare))
             }
         }
 

@@ -20,6 +20,8 @@ import com.gffh.mobile.theme.displayHeadlineSmall
 import com.gffh.mobile.theme.eyebrowLabel
 import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.pitchSurfaceLabel
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-ON-04 Add first venue. Purpose: capture a home venue so that home
@@ -80,7 +82,7 @@ fun AddFirstVenueScreen(
             PitchSurface.entries.forEach { s ->
                 FilterChip(
                     selected = surface == s, onClick = { surface = if (surface == s) null else s },
-                    label = { Text(s.name) },
+                    label = { Text(pitchSurfaceLabel(s.name)) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary
@@ -96,7 +98,7 @@ fun AddFirstVenueScreen(
                 FilterChip(
                     selected = f in facilities,
                     onClick = { facilities = if (f in facilities) facilities - f else facilities + f },
-                    label = { Text(f.name.replace('_', ' ')) },
+                    label = { Text(codeLabel(f.name)) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary

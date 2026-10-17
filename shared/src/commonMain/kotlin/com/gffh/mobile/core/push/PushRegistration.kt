@@ -33,14 +33,23 @@ class PushRegistration(
     /** The user and token the API last accepted this run, so a token refresh doesn't send it again. */
     private var registered: Pair<String, DeviceToken>? = null
 
+    /**
+     * Set by [unregister] until the session is dropped: a 401 during sign-out
+     * can renew the session (ApiClient), and that "new" session mustn't
+     * register the device again behind the DELETE.
+     */
+    private var signingOut = false
+
     /** Runs until cancelled: App() launches it once for the life of the UI. */
     suspend fun keepRegistered() {
         combine(PushTokens.token, tokenStore.session) { device, session -> device to session }
             .collect { (device, session) ->
                 if (session == null) {
                     registered = null
+                    signingOut = false
                     return@collect
                 }
+                if (signingOut) return@collect
                 if (device == null) return@collect
                 val key = session.userId to device
                 if (registered == key) return@collect
@@ -55,12 +64,12 @@ class PushRegistration(
      * Called by AuthRepository.signOut before it clears the session. Gives up
      * after a few seconds, so signing out never hangs on a bad connection.
      *
-     * The access token only lasts an hour and nothing renews it while the app
-     * stays open, so a 401 is tried once more with [freshAccessToken] - left
-     * there, this phone would go on getting the signed-out account's
-     * notifications. That token is used for the DELETE alone, not stored: the
-     * session is about to be dropped, and storing it would hand
-     * [keepRegistered] a "new" session to register the device for again.
+     * The access token only lasts an hour. ApiClient renews a lapsed one
+     * itself ([signingOut] keeps that renewed session from registering the
+     * device again); should that fail, a 401 is tried once more with
+     * [freshAccessToken] - left there, this phone would go on getting the
+     * signed-out account's notifications. That token is used for the DELETE
+     * alone, not stored: the session is about to be dropped.
      */
     suspend fun unregister(freshAccessToken: suspend () -> String? = { null }) {
         val tokens = listOfNotNull(PushTokens.token.value?.token, settings.getStringOrNull(KEY_REGISTERED_TOKEN)).distinct()
@@ -68,6 +77,7 @@ class PushRegistration(
         settings.remove(KEY_REGISTERED_TOKEN)
         // Nothing to authenticate with (the session already lapsed): the API can't be told.
         if (tokenStore.currentAccessToken() == null) return
+        signingOut = true
         var renewed: String? = null
         for (token in tokens) {
             withTimeoutOrNull(UNREGISTER_TIMEOUT_MS) {

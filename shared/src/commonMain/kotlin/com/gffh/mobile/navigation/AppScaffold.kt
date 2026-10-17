@@ -85,7 +85,7 @@ fun tabFor(route: Route): AppTab? = when (route) {
     is Route.EditAvailabilitySlot,
     is Route.BulkAddAvailability -> AppTab.PROFILE
 
-    // Access, Setup and the untargeted Placeholder fallback render full-screen,
+    // Access and Setup render full-screen,
     // with no persistent chrome.
     is Route.Splash,
     is Route.Welcome,
@@ -98,8 +98,7 @@ fun tabFor(route: Route): AppTab? = when (route) {
     is Route.CreateTeam,
     is Route.AddFirstVenue,
     is Route.AddFirstAvailability,
-    is Route.OnboardingComplete,
-    is Route.Placeholder -> null
+    is Route.OnboardingComplete -> null
 }
 
 /**

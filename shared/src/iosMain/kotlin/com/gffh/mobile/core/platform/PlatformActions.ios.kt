@@ -11,9 +11,7 @@ import platform.posix.fclose
 import platform.posix.fopen
 import platform.posix.fputs
 
-actual fun openMailApp() {
-    openUrl("message://")
-}
+actual fun openMailApp(): Boolean = openUrl("message://")
 
 /**
  * Uses openURL(_:options:completionHandler:) - the one-argument openURL(_:)

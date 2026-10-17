@@ -38,7 +38,6 @@ import com.gffh.mobile.feature.home.NotificationsScreen
 import com.gffh.mobile.feature.messages.ConversationsListScreen
 import com.gffh.mobile.feature.messages.ConversationThreadScreen
 import com.gffh.mobile.feature.placeholder.HomeScreen
-import com.gffh.mobile.feature.placeholder.PlaceholderScreen
 import com.gffh.mobile.feature.profile.NotificationPreferencesScreen
 import com.gffh.mobile.feature.profile.ClubProfileScreen
 import com.gffh.mobile.feature.profile.EditClubScreen
@@ -58,6 +57,7 @@ import com.gffh.mobile.feature.placeholder.MemberNoticeScreen
 import com.gffh.mobile.navigation.AppScaffold
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.navigation.SystemBackHandler
 import com.gffh.mobile.navigation.tabFor
 import com.gffh.mobile.repository.*
 import com.gffh.mobile.session.CurrentTeamStore
@@ -83,6 +83,12 @@ private fun memberCanOpen(route: Route, teamId: String): Boolean = when (route) 
     is Route.Messages, is Route.ConversationThread, is Route.EditTeam, is Route.VenuesList, is Route.EditVenue,
     is Route.ClubProfile, is Route.EditClub, is Route.Members, is Route.Verification, is Route.ReportBlock,
     is Route.BlockedTeams -> false
+    else -> true
+}
+
+/** Everything but the screens you reach while signed out: those need a session to show anything. */
+private fun needsSession(route: Route): Boolean = when (route) {
+    is Route.Splash, is Route.Welcome, is Route.Register, is Route.SignIn, is Route.ForgotPassword -> false
     else -> true
 }
 
@@ -125,6 +131,20 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
         val activeTeam = currentTeamStore.active.collectAsState().value
         val signedIn = tokenStore.session.collectAsState().value != null
         PushNotificationSetup(signedIn)
+        // Back goes back a screen; on the first screen of a stack it's the system's (closing the app).
+        SystemBackHandler(enabled = navigator.canGoBack) { navigator.pop() }
+        LaunchedEffect(signedIn) {
+            if (signedIn) return@LaunchedEffect
+            // Nothing from the last account's searches or invitation draft carries over to the next.
+            filterState.reset()
+            resultsCache.clear()
+            invitationDraft.clear()
+            // The session can end without anyone signing out - the API refused to
+            // renew it (see ApiClient) - so a screen that needs one goes back to Welcome.
+            if (!needsSession(navigator.current)) return@LaunchedEffect
+            currentTeamStore.clear()
+            navigator.resetTo(Route.Welcome)
+        }
         val memberTeam = activeTeam?.takeIf { !it.canManage }
         val memberBlocked = memberTeam != null && !memberCanOpen(route, memberTeam.teamId)
         // A member may since have been made a manager: check again whenever the app opens on them.
@@ -239,8 +259,6 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                     fixtureRepository, conversationRepository, currentTeamStore, navigator, route.fixtureId
                 )
             }
-
-            is Route.Placeholder -> PlaceholderScreen(route.label, navigator)
             }
         }
 

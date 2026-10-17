@@ -5,9 +5,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * SCR-FF-04's results map needs approximate opponent positions, but the
@@ -30,15 +33,7 @@ class GeocodeRepository {
         cache[key]?.let { return it }
         if (cache.containsKey(key)) return null
 
-        return try {
-            val response: OutcodeResponse = client.get("https://api.postcodes.io/outcodes/$key").body()
-            val point = response.result?.let { GeoPoint(it.latitude, it.longitude) }
-            cache[key] = point
-            point
-        } catch (e: Exception) {
-            cache[key] = null
-            null
-        }
+        return lookUp("https://api.postcodes.io/outcodes/$key", key)
     }
 
     /**
@@ -53,15 +48,32 @@ class GeocodeRepository {
         cache[key]?.let { return it }
         if (cache.containsKey(key)) return null
 
-        return try {
-            val response: OutcodeResponse = client.get("https://api.postcodes.io/postcodes/$trimmed").body()
-            val point = response.result?.let { GeoPoint(it.latitude, it.longitude) }
-            cache[key] = point
-            point
-        } catch (e: Exception) {
-            cache[key] = null
-            null
+        return lookUp("https://api.postcodes.io/postcodes/$trimmed", key)
+    }
+
+    /**
+     * Only a found point or postcodes.io's own 404 is cached: a dropped
+     * connection or a server error is tried again next time, rather than
+     * leaving that postcode without a pin for the rest of the session.
+     */
+    private suspend fun lookUp(url: String, key: String): GeoPoint? = try {
+        val response = client.get(url)
+        when {
+            response.status.isSuccess() -> {
+                val point = response.body<OutcodeResponse>().result?.let { GeoPoint(it.latitude, it.longitude) }
+                if (point != null) cache[key] = point
+                point
+            }
+            response.status == HttpStatusCode.NotFound -> {
+                cache[key] = null
+                null
+            }
+            else -> null
         }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
     }
 }
 

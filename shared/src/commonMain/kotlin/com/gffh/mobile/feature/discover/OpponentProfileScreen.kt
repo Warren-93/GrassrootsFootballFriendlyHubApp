@@ -19,6 +19,7 @@ import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.MatchScoreChip
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-FF-05 Opponent profile. Purpose: give a manager everything needed to
@@ -95,9 +96,9 @@ fun OpponentProfileScreen(
             MatchScoreChip(match.score, onClick = { navigator.push(Route.MatchExplanation(teamId)) })
 
             Spacer(Modifier.height(16.dp))
-            InfoRow("Age group", match.team.ageGroup)
-            InfoRow("Format", match.team.format)
-            InfoRow("Ability", match.team.abilityLevel)
+            InfoRow("Age group", codeLabel(match.team.ageGroup))
+            InfoRow("Format", codeLabel(match.team.format))
+            InfoRow("Ability", codeLabel(match.team.abilityLevel))
             match.team.league?.let { InfoRow("League", it) }
             InfoRow("Distance", "${match.milesApart} miles")
             match.team.generalArea?.let { InfoRow("Area", it) }

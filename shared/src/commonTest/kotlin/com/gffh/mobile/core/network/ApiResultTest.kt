@@ -2,7 +2,9 @@ package com.gffh.mobile.core.network
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class ApiResultTest {
 
@@ -25,5 +27,19 @@ class ApiResultTest {
 
         assertIs<ApiResult.Failure>(mapped)
         assertEquals(failure, mapped)
+    }
+
+    @Test
+    fun onlyARefusedRefreshTokenEndsTheSession() {
+        fun failure(status: Int?) = ApiResult.Failure("X", "x", null, status)
+
+        assertTrue(failure(401).endsSession())
+        assertTrue(failure(403).endsSession())
+        assertTrue(failure(400).endsSession())
+        // No connection, a timeout while the API wakes up, or a server error: keep it.
+        assertFalse(failure(null).endsSession())
+        assertFalse(failure(500).endsSession())
+        assertFalse(failure(503).endsSession())
+        assertFalse(failure(429).endsSession())
     }
 }

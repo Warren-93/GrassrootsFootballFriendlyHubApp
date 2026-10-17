@@ -19,6 +19,8 @@ import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.VenueCard
+import com.gffh.mobile.ui.components.refereeLabel
+import com.gffh.mobile.ui.components.costShareLabel
 
 /**
  * SCR-FX-04 for a member who joined with a code: the same fixture, read-only.
@@ -113,8 +115,8 @@ fun MemberFixtureDetailScreen(
                 Column(Modifier.padding(16.dp)) {
                     Text("Arrangements", style = MaterialTheme.typography.titleSmall)
                     Spacer(Modifier.height(4.dp))
-                    Text("Cost share: ${f.costShare}", style = MaterialTheme.typography.bodySmall)
-                    Text("Referee: ${f.refereeArrangement}", style = MaterialTheme.typography.bodySmall)
+                    Text("Cost share: ${costShareLabel(f.costShare)}", style = MaterialTheme.typography.bodySmall)
+                    Text("Referee: ${refereeLabel(f.refereeArrangement)}", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

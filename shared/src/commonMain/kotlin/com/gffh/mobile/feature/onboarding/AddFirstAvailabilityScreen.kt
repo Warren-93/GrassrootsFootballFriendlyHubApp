@@ -18,6 +18,7 @@ import com.gffh.mobile.theme.eyebrowLabel
 import com.gffh.mobile.ui.components.TimeField
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import com.gffh.mobile.ui.components.codeLabel
 
 private fun nextSaturday(today: LocalDate): LocalDate {
     var d = today
@@ -100,7 +101,7 @@ fun AddFirstAvailabilityScreen(
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             HomeAwayPreference.entries.forEach { pref ->
                 FilterChip(
-                    selected = homeAway == pref, onClick = { homeAway = pref }, label = { Text(pref.name) },
+                    selected = homeAway == pref, onClick = { homeAway = pref }, label = { Text(codeLabel(pref.name)) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary
