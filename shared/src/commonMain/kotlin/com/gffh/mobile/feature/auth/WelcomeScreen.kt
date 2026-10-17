@@ -19,6 +19,7 @@ import com.gffh.mobile.repository.ConfigRepository
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.theme.displayHeadlineMedium
 import com.gffh.mobile.ui.components.heroGradientBrush
+import com.gffh.mobile.core.platform.openUrl
 
 /**
  * SCR-AU-02 Welcome. Purpose: state the proposition and offer the entry
@@ -100,9 +101,12 @@ fun WelcomeScreen(
 
                 Row(modifier = Modifier.padding(top = 32.dp)) {
                     TextButton(onClick = { /* open in-app browser: terms */ }) { Text("Terms") }
-                    TextButton(onClick = { /* open in-app browser: privacy */ }) { Text("Privacy") }
+                    TextButton(onClick = { openUrl(PRIVACY_POLICY_URL) }) { Text("Privacy") }
                 }
             }
         }
     }
 }
+
+// The public policy page on the web app, which Google Play links to as well.
+private const val PRIVACY_POLICY_URL = "https://grassroots-football-friendly-hub-we.vercel.app/privacy-policy"
