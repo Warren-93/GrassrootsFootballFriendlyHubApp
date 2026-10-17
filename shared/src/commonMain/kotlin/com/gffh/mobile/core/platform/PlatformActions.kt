@@ -1,7 +1,10 @@
 package com.gffh.mobile.core.platform
 
-/** Opens the device's default mail client, if one exists. */
-expect fun openMailApp()
+/**
+ * Opens the device's default mail client. Returns false when there's none to
+ * open, so the caller can say so.
+ */
+expect fun openMailApp(): Boolean
 
 /**
  * Opens [url] in whichever app handles it - a Google Maps directions link in

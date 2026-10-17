@@ -76,7 +76,12 @@ fun EmailVerificationScreen(authRepository: AuthRepository, navigator: Navigator
         }
 
         Spacer(Modifier.height(24.dp))
-        Button(onClick = { openMailApp() }, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = {
+                if (!openMailApp()) statusMessage = "There's no email app on this phone - open your inbox in a browser instead."
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("Open mail app")
         }
 

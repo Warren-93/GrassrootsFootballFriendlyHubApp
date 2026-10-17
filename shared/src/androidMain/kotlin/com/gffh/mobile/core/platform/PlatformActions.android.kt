@@ -8,12 +8,13 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.gffh.mobile.core.auth.AndroidAppContext
 
-actual fun openMailApp() {
+actual fun openMailApp(): Boolean {
     val intent = Intent(Intent.ACTION_MAIN).apply {
         addCategory(Intent.CATEGORY_APP_EMAIL)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
     }
-    runCatching { AndroidAppContext.context.startActivity(intent) }
+    // startActivity throws ActivityNotFoundException when there's no mail app.
+    return runCatching { AndroidAppContext.context.startActivity(intent) }.isSuccess
 }
 
 actual fun openUrl(url: String): Boolean {
