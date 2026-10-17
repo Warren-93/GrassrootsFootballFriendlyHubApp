@@ -38,7 +38,6 @@ import com.gffh.mobile.feature.home.NotificationsScreen
 import com.gffh.mobile.feature.messages.ConversationsListScreen
 import com.gffh.mobile.feature.messages.ConversationThreadScreen
 import com.gffh.mobile.feature.placeholder.HomeScreen
-import com.gffh.mobile.feature.placeholder.PlaceholderScreen
 import com.gffh.mobile.feature.profile.NotificationPreferencesScreen
 import com.gffh.mobile.feature.profile.ClubProfileScreen
 import com.gffh.mobile.feature.profile.EditClubScreen
@@ -260,8 +259,6 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                     fixtureRepository, conversationRepository, currentTeamStore, navigator, route.fixtureId
                 )
             }
-
-            is Route.Placeholder -> PlaceholderScreen(route.label, navigator)
             }
         }
 
