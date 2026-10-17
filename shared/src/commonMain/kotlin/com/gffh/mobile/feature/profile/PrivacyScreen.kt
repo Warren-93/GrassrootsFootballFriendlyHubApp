@@ -115,7 +115,7 @@ fun PrivacyScreen(
                             OutlinedButton(
                                 onClick = {
                                     val json = PRETTY_JSON.encodeToString(d)
-                                    downloadMessage = if (saveTextFile("my-gffh-data.json", json)) {
+                                    downloadMessage = if (saveTextFile("kickabout-data.json", json)) {
                                         "Saved to Downloads."
                                     } else {
                                         "Couldn't save a file on this device/OS version."
