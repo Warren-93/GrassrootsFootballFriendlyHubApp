@@ -31,6 +31,8 @@ private val WEEKDAYS = listOf(
     DayOfWeek.THURSDAY to "Thu", DayOfWeek.FRIDAY to "Fri", DayOfWeek.SATURDAY to "Sat", DayOfWeek.SUNDAY to "Sun"
 )
 
+private fun parseDateOrNull(text: String): LocalDate? = runCatching { LocalDate.parse(text.trim()) }.getOrNull()
+
 private fun datesMatching(from: LocalDate, to: LocalDate, days: Set<DayOfWeek>): List<LocalDate> {
     val result = mutableListOf<LocalDate>()
     var cursor = from
@@ -56,8 +58,9 @@ fun BulkAddAvailabilityScreen(
     val team = currentTeamStore.active.collectAsState().value
     val today = todayDate()
 
-    var fromDate by remember { mutableStateOf(today) }
-    var toDate by remember { mutableStateOf(today.plus(56, DateTimeUnit.DAY)) }
+    // Kept as typed, so a date can be edited through states that don't parse yet.
+    var fromText by remember { mutableStateOf(today.toString()) }
+    var toText by remember { mutableStateOf(today.plus(56, DateTimeUnit.DAY).toString()) }
     var selectedDays by remember { mutableStateOf(setOf(DayOfWeek.SATURDAY)) }
     var startTime by remember { mutableStateOf("10:00") }
     var endTime by remember { mutableStateOf("12:00") }
@@ -78,7 +81,18 @@ fun BulkAddAvailabilityScreen(
         }
     }
 
-    val previewDates = if (fromDate <= toDate) datesMatching(fromDate, toDate, selectedDays) else emptyList()
+    val fromDate = parseDateOrNull(fromText)
+    val toDate = parseDateOrNull(toText)
+    val dateProblem = when {
+        fromDate == null || toDate == null -> "Enter both dates as YYYY-MM-DD, e.g. ${today}."
+        toDate != null && fromDate != null && toDate < fromDate -> "The To date can't be before the From date."
+        else -> null
+    }
+    val previewDates = if (fromDate != null && toDate != null && fromDate <= toDate) {
+        datesMatching(fromDate, toDate, selectedDays)
+    } else {
+        emptyList()
+    }
 
     if (team == null) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) { Text("No active team.") }
@@ -114,13 +128,15 @@ fun BulkAddAvailabilityScreen(
         Spacer(Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = fromDate.toString(), onValueChange = { runCatching { fromDate = LocalDate.parse(it) } },
-            label = { Text("From (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth()
+            value = fromText, onValueChange = { fromText = it },
+            label = { Text("From (YYYY-MM-DD)") }, isError = fromDate == null, singleLine = true,
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
-            value = toDate.toString(), onValueChange = { runCatching { toDate = LocalDate.parse(it) } },
-            label = { Text("To (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth()
+            value = toText, onValueChange = { toText = it },
+            label = { Text("To (YYYY-MM-DD)") }, isError = toDate == null, singleLine = true,
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(Modifier.height(16.dp))
@@ -169,10 +185,14 @@ fun BulkAddAvailabilityScreen(
         )
 
         Spacer(Modifier.height(16.dp))
-        Text(
-            "${previewDates.size} date${if (previewDates.size == 1) "" else "s"} will be published.",
-            style = MaterialTheme.typography.bodySmall
-        )
+        if (dateProblem != null) {
+            Text(dateProblem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        } else {
+            Text(
+                "${previewDates.size} date${if (previewDates.size == 1) "" else "s"} will be published.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
 
         errorMessage?.let {
             Spacer(Modifier.height(8.dp))
