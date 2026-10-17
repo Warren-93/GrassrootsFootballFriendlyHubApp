@@ -58,6 +58,7 @@ import com.gffh.mobile.feature.placeholder.MemberNoticeScreen
 import com.gffh.mobile.navigation.AppScaffold
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.navigation.SystemBackHandler
 import com.gffh.mobile.navigation.tabFor
 import com.gffh.mobile.repository.*
 import com.gffh.mobile.session.CurrentTeamStore
@@ -131,6 +132,8 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
         val activeTeam = currentTeamStore.active.collectAsState().value
         val signedIn = tokenStore.session.collectAsState().value != null
         PushNotificationSetup(signedIn)
+        // Back goes back a screen; on the first screen of a stack it's the system's (closing the app).
+        SystemBackHandler(enabled = navigator.canGoBack) { navigator.pop() }
         LaunchedEffect(signedIn) {
             if (signedIn) return@LaunchedEffect
             // Nothing from the last account's searches or invitation draft carries over to the next.
