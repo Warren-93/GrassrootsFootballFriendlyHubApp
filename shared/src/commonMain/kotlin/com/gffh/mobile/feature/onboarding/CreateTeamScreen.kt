@@ -19,6 +19,7 @@ import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.theme.eyebrowLabel
 import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.codeLabel
 
 private fun gendersFor(ageGroup: AgeGroup): List<Gender> =
     if (ageGroup == AgeGroup.ADULT || ageGroup == AgeGroup.VETERANS) listOf(Gender.MEN, Gender.WOMEN, Gender.MIXED)
@@ -29,11 +30,6 @@ private fun suggestedFormat(ageGroup: AgeGroup): Format = when (ageGroup) {
     AgeGroup.U9, AgeGroup.U10 -> Format.SEVEN_A_SIDE
     AgeGroup.U11, AgeGroup.U12 -> Format.NINE_A_SIDE
     else -> Format.ELEVEN_A_SIDE
-}
-
-private fun formatLabel(f: Format) = when (f) {
-    Format.FIVE_A_SIDE -> "5v5"; Format.SEVEN_A_SIDE -> "7v7"
-    Format.NINE_A_SIDE -> "9v9"; Format.ELEVEN_A_SIDE -> "11v11"
 }
 
 /**
@@ -109,25 +105,25 @@ fun CreateTeamScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text("Age group", style = MaterialTheme.typography.labelLarge)
-                    FlowChips(AgeGroup.entries.toList(), ageGroup, { it.name }) {
+                    FlowChips(AgeGroup.entries.toList(), ageGroup, { codeLabel(it.name) }) {
                         ageGroup = it
                         if (!formatManuallySet) format = suggestedFormat(it)
                         if (gender !in gendersFor(it)) gender = Gender.MIXED
                     }
                     Spacer(Modifier.height(16.dp))
                     Text("Gender", style = MaterialTheme.typography.labelLarge)
-                    SingleChoiceRow(gendersFor(ageGroup), gender, { it.name }) { gender = it }
+                    SingleChoiceRow(gendersFor(ageGroup), gender, { codeLabel(it.name) }) { gender = it }
                 }
                 1 -> {
                     Text("Format and ability", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(12.dp))
                     Text("Format", style = MaterialTheme.typography.labelLarge)
-                    SingleChoiceRow(Format.entries.toList(), format, ::formatLabel) {
+                    SingleChoiceRow(Format.entries.toList(), format, { codeLabel(it.name) }) {
                         format = it; formatManuallySet = true
                     }
                     Spacer(Modifier.height(16.dp))
                     Text("Ability level", style = MaterialTheme.typography.labelLarge)
-                    SingleChoiceRow(AbilityLevel.entries.toList(), ability, { it.name }) { ability = it }
+                    SingleChoiceRow(AbilityLevel.entries.toList(), ability, { codeLabel(it.name) }) { ability = it }
                     Text(
                         when (ability) {
                             AbilityLevel.DEVELOPMENT -> "New to competitive football, focused on participation."
@@ -161,7 +157,7 @@ fun CreateTeamScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text("Home / Away preference", style = MaterialTheme.typography.labelLarge)
-                    SingleChoiceRow(HomeAwayPreference.entries.toList(), homeAway, { it.name }) { homeAway = it }
+                    SingleChoiceRow(HomeAwayPreference.entries.toList(), homeAway, { codeLabel(it.name) }) { homeAway = it }
                 }
                 3 -> {
                     Text("Contact details", style = MaterialTheme.typography.titleMedium)

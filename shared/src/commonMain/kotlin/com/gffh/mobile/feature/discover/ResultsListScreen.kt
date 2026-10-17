@@ -18,6 +18,7 @@ import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.MatchScoreChip
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-FF-03 Results list. Purpose: present ranked opponents so fit can be
@@ -84,7 +85,7 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
                         }
                     }
                     Text(
-                        "${match.team.clubName} - ${match.team.ageGroup} - ${match.team.format}",
+                        "${match.team.clubName} - ${codeLabel(match.team.ageGroup)} - ${codeLabel(match.team.format)}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }

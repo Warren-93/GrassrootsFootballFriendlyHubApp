@@ -15,8 +15,7 @@ import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import kotlinx.coroutines.launch
-
-private fun label(value: String) = value.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() }
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-FF-02 Filters. Optional narrowing of the results: nothing selected
@@ -56,7 +55,7 @@ fun FiltersScreen(
                 FilterChip(
                     selected = a.name in abilities,
                     onClick = { abilities = if (a.name in abilities) abilities - a.name else abilities + a.name },
-                    label = { Text(label(a.name)) }
+                    label = { Text(codeLabel(a.name)) }
                 )
             }
         }
@@ -68,7 +67,7 @@ fun FiltersScreen(
                 FilterChip(
                     selected = f.name in formats,
                     onClick = { formats = if (f.name in formats) formats - f.name else formats + f.name },
-                    label = { Text(label(f.name)) }
+                    label = { Text(codeLabel(f.name)) }
                 )
             }
         }

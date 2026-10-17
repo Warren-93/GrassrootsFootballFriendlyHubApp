@@ -20,6 +20,7 @@ import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.HeroBand
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-PR-03 Club profile. Purpose: manage club identity and the squads beneath it.
@@ -102,7 +103,7 @@ fun ClubProfileScreen(
                             Spacer(Modifier.width(10.dp))
                             Column {
                                 Text(t.name, style = MaterialTheme.typography.titleSmall)
-                                Text("${t.ageGroup} · ${t.format} · ${t.completenessPercent}% complete", style = MaterialTheme.typography.bodySmall)
+                                Text("${codeLabel(t.ageGroup)} · ${codeLabel(t.format)} · ${t.completenessPercent}% complete", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                         if (t.id == activeTeam?.teamId) {

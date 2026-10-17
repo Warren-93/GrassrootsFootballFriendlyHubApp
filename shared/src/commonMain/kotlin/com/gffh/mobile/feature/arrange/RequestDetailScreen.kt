@@ -27,6 +27,9 @@ import com.gffh.mobile.ui.components.directionsUrl
 import com.gffh.mobile.ui.components.pitchSurfaceLabel
 import com.gffh.mobile.ui.components.venueAddressLine
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.codeLabel
+import com.gffh.mobile.ui.components.refereeLabel
+import com.gffh.mobile.ui.components.costShareLabel
 
 /**
  * SCR-IN-04 Request detail. Purpose: let the recipient evaluate and resolve a
@@ -127,13 +130,13 @@ fun RequestDetailScreen(
                 }
                 Spacer(Modifier.height(12.dp))
             }
-            StatusPill(r.status)
+            StatusPill(codeLabel(r.status))
             Spacer(Modifier.height(16.dp))
             InfoRow("Date", r.date)
             InfoRow("Kick-off", r.startTime)
             homeTeam?.let { InfoRow("Home team", it.name) }
-            InfoRow("Cost share", r.costShare)
-            InfoRow("Referee", r.refereeArrangement)
+            InfoRow("Cost share", costShareLabel(r.costShare))
+            InfoRow("Referee", refereeLabel(r.refereeArrangement))
 
             r.venue?.let {
                 Spacer(Modifier.height(16.dp))

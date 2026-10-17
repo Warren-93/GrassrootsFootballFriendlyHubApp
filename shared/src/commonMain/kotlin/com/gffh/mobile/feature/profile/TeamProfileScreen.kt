@@ -24,6 +24,7 @@ import com.gffh.mobile.ui.components.ProfileChecklistCard
 import com.gffh.mobile.ui.components.StatTile
 import com.gffh.mobile.ui.components.StatTileRow
 import com.gffh.mobile.ui.components.StatTileTone
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-PR-01 Team profile. Purpose: show the manager their team exactly as
@@ -109,17 +110,17 @@ fun TeamProfileScreen(
         Spacer(Modifier.height(20.dp))
         Column(Modifier.padding(horizontal = 24.dp)) {
         SectionCard("Identity") {
-            InfoRow("Age group", current.ageGroup)
-            InfoRow("Gender", current.gender)
-            InfoRow("Format", current.format)
-            InfoRow("Ability", current.abilityLevel)
+            InfoRow("Age group", codeLabel(current.ageGroup))
+            InfoRow("Gender", codeLabel(current.gender))
+            InfoRow("Format", codeLabel(current.format))
+            InfoRow("Ability", codeLabel(current.abilityLevel))
             current.league?.let { InfoRow("League", it) }
         }
         Spacer(Modifier.height(12.dp))
         SectionCard("Location") {
             InfoRow("Postcode", current.postcode)
             InfoRow("Travel radius", "${current.travelRadiusMiles} miles")
-            InfoRow("Home/Away", current.homeAwayPreference)
+            InfoRow("Home/Away", codeLabel(current.homeAwayPreference))
         }
         Spacer(Modifier.height(12.dp))
         SectionCard("Contact") {
@@ -140,7 +141,7 @@ fun TeamProfileScreen(
         Card(onClick = { navigator.push(Route.Verification(teamId)) }, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 Text("Verification", style = MaterialTheme.typography.titleSmall)
-                Text(current.verification, style = MaterialTheme.typography.bodySmall)
+                Text(codeLabel(current.verification), style = MaterialTheme.typography.bodySmall)
             }
         }
 

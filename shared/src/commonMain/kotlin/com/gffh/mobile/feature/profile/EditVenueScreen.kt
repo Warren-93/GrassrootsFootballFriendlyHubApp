@@ -22,6 +22,7 @@ import com.gffh.mobile.session.canManageClubOf
 import com.gffh.mobile.ui.components.PostcodeLocationField
 import com.gffh.mobile.ui.components.VenueCard
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.pitchSurfaceLabel
 
 /**
  * SCR-PR-06 Add / edit venue, as its own reachable screen (not just inline
@@ -141,7 +142,7 @@ fun EditVenueScreen(
         Text("Pitch surface", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PitchSurface.entries.forEach { s ->
-                FilterChip(selected = surface == s, onClick = { surface = if (surface == s) null else s }, label = { Text(s.name) })
+                FilterChip(selected = surface == s, onClick = { surface = if (surface == s) null else s }, label = { Text(pitchSurfaceLabel(s.name)) })
             }
         }
 

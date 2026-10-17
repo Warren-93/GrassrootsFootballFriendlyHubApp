@@ -21,6 +21,7 @@ import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.codeLabel
 
 private val PENDING_STATUSES = setOf("SENT", "CHANGES_REQUESTED", "UPDATED")
 
@@ -116,7 +117,7 @@ fun DayDetailScreen(
                         ) {
                             Column(Modifier.padding(16.dp)) {
                                 Text("${request.startTime} - ${request.endTime}", style = MaterialTheme.typography.bodyMedium)
-                                Text(request.status, style = MaterialTheme.typography.bodySmall)
+                                Text(codeLabel(request.status), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -134,7 +135,7 @@ fun DayDetailScreen(
                             ) {
                                 Column {
                                     Text("${slot.startTime} - ${slot.endTime}", style = MaterialTheme.typography.bodyMedium)
-                                    Text(slot.homeAwayPreference, style = MaterialTheme.typography.bodySmall)
+                                    Text(codeLabel(slot.homeAwayPreference), style = MaterialTheme.typography.bodySmall)
                                     slot.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                                 }
                                 Row {

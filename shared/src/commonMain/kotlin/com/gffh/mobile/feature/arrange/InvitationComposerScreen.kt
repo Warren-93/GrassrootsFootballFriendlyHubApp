@@ -21,6 +21,8 @@ import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.session.canManageClubOf
 import com.gffh.mobile.ui.components.ProfileChecklistCard
 import kotlinx.datetime.LocalTime
+import com.gffh.mobile.ui.components.refereeLabel
+import com.gffh.mobile.ui.components.costShareLabel
 
 /** Mirrors the backend's AgeGroup.defaultMatchMinutes() table (SCR-IN-01's "Match duration" default). */
 private fun defaultMatchMinutes(ageGroup: String?): Int = when (ageGroup) {
@@ -141,7 +143,7 @@ fun InvitationComposerScreen(
         Text("Referee", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("NONE", "CLUB_SUPPLIED", "APPOINTED").forEach { opt ->
-                FilterChip(selected = refereeArrangement == opt, onClick = { refereeArrangement = opt }, label = { Text(opt) })
+                FilterChip(selected = refereeArrangement == opt, onClick = { refereeArrangement = opt }, label = { Text(refereeLabel(opt)) })
             }
         }
 
@@ -149,7 +151,7 @@ fun InvitationComposerScreen(
         Text("Cost share", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("NONE", "SPLIT", "HOST_PAYS", "VISITOR_PAYS").forEach { opt ->
-                FilterChip(selected = costShare == opt, onClick = { costShare = opt }, label = { Text(opt) })
+                FilterChip(selected = costShare == opt, onClick = { costShare = opt }, label = { Text(costShareLabel(opt)) })
             }
         }
 

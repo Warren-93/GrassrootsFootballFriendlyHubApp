@@ -21,6 +21,7 @@ import com.gffh.mobile.session.CurrentTeamStore
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.gffh.mobile.ui.components.codeLabel
 
 private val PRETTY_JSON = Json { prettyPrint = true }
 
@@ -105,7 +106,7 @@ fun PrivacyScreen(
                             } else {
                                 d.memberships.forEach { m ->
                                     Text(
-                                        "${m.role} - ${m.teamName ?: m.clubName ?: m.clubId}",
+                                        "${codeLabel(m.role)} - ${m.teamName ?: m.clubName ?: m.clubId}",
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }

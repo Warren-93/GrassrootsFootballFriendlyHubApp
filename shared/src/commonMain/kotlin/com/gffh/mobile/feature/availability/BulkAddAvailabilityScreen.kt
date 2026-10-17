@@ -25,6 +25,7 @@ import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import com.gffh.mobile.ui.components.codeLabel
 
 private val WEEKDAYS = listOf(
     DayOfWeek.MONDAY to "Mon", DayOfWeek.TUESDAY to "Tue", DayOfWeek.WEDNESDAY to "Wed",
@@ -164,7 +165,7 @@ fun BulkAddAvailabilityScreen(
         Text("Home / Away", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             HomeAwayPreference.entries.forEach { pref ->
-                FilterChip(selected = homeAway == pref, onClick = { homeAway = pref }, label = { Text(pref.name) })
+                FilterChip(selected = homeAway == pref, onClick = { homeAway = pref }, label = { Text(codeLabel(pref.name)) })
             }
         }
 

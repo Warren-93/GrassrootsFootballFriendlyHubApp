@@ -16,6 +16,7 @@ import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.FriendlyRequestRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-FX-01/02/03 Fixtures - Pending, Confirmed, Completed. Purpose: hold
@@ -121,7 +122,7 @@ private fun RequestRow(request: FriendlyRequestView, ourTeamId: String?, navigat
             Column {
                 otherTeam?.let { Text(it.name, style = MaterialTheme.typography.titleSmall) }
                 Text(request.date, style = MaterialTheme.typography.bodyMedium)
-                Text(request.status, style = MaterialTheme.typography.bodySmall)
+                Text(codeLabel(request.status), style = MaterialTheme.typography.bodySmall)
             }
         }
     }

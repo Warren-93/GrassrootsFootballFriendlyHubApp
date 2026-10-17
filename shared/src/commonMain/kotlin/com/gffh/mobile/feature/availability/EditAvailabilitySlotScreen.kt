@@ -21,6 +21,7 @@ import com.gffh.mobile.ui.components.formatHourMinute
 import com.gffh.mobile.ui.components.parseHourMinute
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-AV-03 Add / edit availability slot. Purpose: publish or amend a window
@@ -107,7 +108,7 @@ fun EditAvailabilitySlotScreen(
         Text("Home / Away", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             HomeAwayPreference.entries.forEach { pref ->
-                FilterChip(selected = homeAway == pref, onClick = { homeAway = pref }, label = { Text(pref.name) })
+                FilterChip(selected = homeAway == pref, onClick = { homeAway = pref }, label = { Text(codeLabel(pref.name)) })
             }
         }
 
