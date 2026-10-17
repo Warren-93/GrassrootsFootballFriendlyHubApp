@@ -1,6 +1,7 @@
 package com.gffh.mobile.android
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +30,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             App(apiBaseUrl = BuildConfig.API_BASE_URL)
         }
+    }
+
+    /**
+     * The manifest keeps this Activity through rotation and dark mode switches
+     * (configChanges), so the system bars' icon colours are picked again here
+     * for the new theme - enableEdgeToEdge only reads it when called.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        enableEdgeToEdge()
     }
 
     override fun onNewIntent(intent: Intent) {
