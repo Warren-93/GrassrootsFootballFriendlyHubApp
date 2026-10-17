@@ -5,6 +5,7 @@ import com.gffh.mobile.core.auth.StoredSession
 import com.gffh.mobile.core.auth.TokenStore
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.core.network.endsSession
 import com.gffh.mobile.core.network.map
 import com.gffh.mobile.core.push.PushRegistration
 import com.gffh.mobile.model.*
@@ -62,10 +63,16 @@ class AuthRepository(
         return result
     }
 
+    /**
+     * Trades the refresh token for a new pair. Unauthenticated: the API answers
+     * 401 to any expired bearer token, even here. The session is only dropped
+     * when the API refuses the refresh token ([endsSession]), not when it
+     * can't be reached.
+     */
     suspend fun refresh(): ApiResult<Unit> {
         val refreshToken = tokenStore.currentRefreshToken()
             ?: return ApiResult.Failure("NO_SESSION", "Not signed in.", null, null)
-        val result = api.request<TokenResponse> {
+        val result = api.request<TokenResponse>(authenticated = false) {
             method = io.ktor.http.HttpMethod.Post
             url("/api/v1/auth/refresh")
             setBody(RefreshRequest(refreshToken))
@@ -76,7 +83,7 @@ class AuthRepository(
                 ApiResult.Success(Unit)
             }
             is ApiResult.Failure -> {
-                tokenStore.clear()
+                if (result.endsSession()) tokenStore.clear()
                 result
             }
         }
