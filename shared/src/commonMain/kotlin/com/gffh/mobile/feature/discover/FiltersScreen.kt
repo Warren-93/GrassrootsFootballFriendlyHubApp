@@ -49,13 +49,13 @@ fun FiltersScreen(
         )
         Spacer(Modifier.height(24.dp))
 
-        Text("Ability level", style = MaterialTheme.typography.labelLarge)
+        Text("Division", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AbilityLevel.entries.forEach { a ->
                 FilterChip(
                     selected = a.name in abilities,
                     onClick = { abilities = if (a.name in abilities) abilities - a.name else abilities + a.name },
-                    label = { Text(codeLabel(a.name)) }
+                    label = { Text(a.label) }
                 )
             }
         }

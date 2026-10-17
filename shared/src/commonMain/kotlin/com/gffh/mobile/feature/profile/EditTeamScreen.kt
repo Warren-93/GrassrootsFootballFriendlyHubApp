@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.image.BadgePickResult
 import com.gffh.mobile.core.image.rememberBadgeImagePicker
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.model.AbilityLevel
+import com.gffh.mobile.model.Organisation
 import com.gffh.mobile.model.TeamView
 import com.gffh.mobile.model.UpdateTeamRequest
 import com.gffh.mobile.navigation.Navigator
@@ -20,6 +22,7 @@ import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
+import com.gffh.mobile.ui.components.OptionPicker
 import kotlinx.coroutines.launch
 
 /**
@@ -42,6 +45,8 @@ fun EditTeamScreen(
     var name by remember { mutableStateOf("") }
     var badge by remember { mutableStateOf("") }
     var badgeError by remember { mutableStateOf<String?>(null) }
+    var organisation by remember { mutableStateOf<Organisation?>(null) }
+    var division by remember { mutableStateOf<AbilityLevel?>(null) }
     var league by remember { mutableStateOf("") }
     var managerName by remember { mutableStateOf("") }
     var contactPhone by remember { mutableStateOf("") }
@@ -71,6 +76,8 @@ fun EditTeamScreen(
                 original = t
                 name = t.name
                 badge = t.badgeUrl ?: ""
+                organisation = Organisation.fromCode(t.organisation)
+                division = AbilityLevel.fromCode(t.abilityLevel)
                 league = t.league ?: ""
                 managerName = t.managerName ?: ""
                 contactPhone = t.contactPhone ?: ""
@@ -90,7 +97,11 @@ fun EditTeamScreen(
     }
 
     val badgeChanged = badge != (current.badgeUrl ?: "")
-    val dirty = name != current.name || badgeChanged || league != (current.league ?: "") ||
+    // Null when the team has none yet (organisation) or the API sent a value this build doesn't know.
+    val organisationChanged = organisation != null && organisation != Organisation.fromCode(current.organisation)
+    val divisionChanged = division != null && division != AbilityLevel.fromCode(current.abilityLevel)
+    val dirty = name != current.name || badgeChanged || organisationChanged || divisionChanged ||
+        league != (current.league ?: "") ||
         managerName != (current.managerName ?: "") || contactPhone != (current.contactPhone ?: "") ||
         description != (current.description ?: "") || travelRadius != current.travelRadiusMiles.toString()
 
@@ -121,6 +132,22 @@ fun EditTeamScreen(
 
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Team name") },
             modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(12.dp))
+        OptionPicker(
+            label = "Organisation",
+            options = Organisation.entries.toList(),
+            selected = organisation,
+            optionLabel = { it.label },
+            onSelect = { organisation = it }
+        )
+        Spacer(Modifier.height(12.dp))
+        OptionPicker(
+            label = "Division",
+            options = AbilityLevel.entries.toList(),
+            selected = division,
+            optionLabel = { it.label },
+            onSelect = { division = it }
+        )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = league, onValueChange = { league = it }, label = { Text("League") },
             modifier = Modifier.fillMaxWidth())
@@ -175,6 +202,8 @@ fun EditTeamScreen(
                             // Only when it changed: the API keeps the current badge for null,
                             // and clears it for "" - and an unchanged badge is a wasted 30KB.
                             badgeUrl = if (badgeChanged) badge else null,
+                            organisation = organisation?.name?.takeIf { organisationChanged },
+                            abilityLevel = division?.name?.takeIf { divisionChanged },
                             league = league.ifBlank { null },
                             managerName = managerName.ifBlank { null }, contactPhone = contactPhone.ifBlank { null },
                             description = description.ifBlank { null },

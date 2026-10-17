@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 /**
  * SCR-HM-03 Suggested matches. Purpose: show every opponent worth considering
  * right now - runs the search (every team with the same age group and
- * gender, all ability levels) and lands on the existing results screen.
+ * gender, all divisions) and lands on the existing results screen.
  */
 @Composable
 fun SuggestedMatchesScreen(

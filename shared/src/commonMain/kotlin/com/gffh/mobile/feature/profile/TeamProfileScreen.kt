@@ -25,6 +25,8 @@ import com.gffh.mobile.ui.components.StatTile
 import com.gffh.mobile.ui.components.StatTileRow
 import com.gffh.mobile.ui.components.StatTileTone
 import com.gffh.mobile.ui.components.codeLabel
+import com.gffh.mobile.ui.components.divisionLabel
+import com.gffh.mobile.ui.components.organisationLabel
 
 /**
  * SCR-PR-01 Team profile. Purpose: show the manager their team exactly as
@@ -113,7 +115,8 @@ fun TeamProfileScreen(
             InfoRow("Age group", codeLabel(current.ageGroup))
             InfoRow("Gender", codeLabel(current.gender))
             InfoRow("Format", codeLabel(current.format))
-            InfoRow("Ability", codeLabel(current.abilityLevel))
+            current.organisation?.let { InfoRow("Organisation", organisationLabel(it)) }
+            InfoRow("Division", divisionLabel(current.abilityLevel))
             current.league?.let { InfoRow("League", it) }
         }
         Spacer(Modifier.height(12.dp))

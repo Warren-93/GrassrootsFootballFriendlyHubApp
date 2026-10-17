@@ -20,6 +20,8 @@ import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.MatchScoreChip
 import kotlinx.coroutines.launch
 import com.gffh.mobile.ui.components.codeLabel
+import com.gffh.mobile.ui.components.divisionLabel
+import com.gffh.mobile.ui.components.organisationLabel
 
 /**
  * SCR-FF-05 Opponent profile. Purpose: give a manager everything needed to
@@ -98,7 +100,8 @@ fun OpponentProfileScreen(
             Spacer(Modifier.height(16.dp))
             InfoRow("Age group", codeLabel(match.team.ageGroup))
             InfoRow("Format", codeLabel(match.team.format))
-            InfoRow("Ability", codeLabel(match.team.abilityLevel))
+            match.team.organisation?.let { InfoRow("Organisation", organisationLabel(it)) }
+            InfoRow("Division", divisionLabel(match.team.abilityLevel))
             match.team.league?.let { InfoRow("League", it) }
             InfoRow("Distance", "${match.milesApart} miles")
             match.team.generalArea?.let { InfoRow("Area", it) }

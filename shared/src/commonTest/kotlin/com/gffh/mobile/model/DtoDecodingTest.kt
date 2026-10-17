@@ -157,7 +157,7 @@ class DtoDecodingTest {
     fun teamsMineSaysWhetherTheCallerCanManageTheClub() {
         val body = """
             {"id":"t1","clubId":"c1","name":"Denny Warriors U12","clubName":"Denny FC","ageGroup":"U12",
-             "gender":"MIXED","format":"NINE_A_SIDE","abilityLevel":"INTERMEDIATE","postcode":"FK6 5AA",
+             "gender":"MIXED","format":"NINE_A_SIDE","abilityLevel":"DIVISION_2","postcode":"FK6 5AA",
              "longitude":-3.9,"latitude":56.0,"travelRadiusMiles":15,"homeAwayPreference":"EITHER",
              "verification":"VERIFIED","completenessPercent":80,"archived":false,"createdAt":"2026-10-01T09:00:00Z",
              "canManage":true,"canManageClub":false,"readyForRequests":true,"profileChecklist":[]}
@@ -185,5 +185,35 @@ class DtoDecodingTest {
     fun aJoinCodeReadsItsCode() {
         // GET /teams/{id}/members/join-code and POST .../join-code/regenerate both answer this.
         assertEquals("KX7P3Q", json.decodeFromString(JoinCodeView.serializer(), """{"code":"KX7P3Q"}""").code)
+    }
+
+    @Test
+    fun aTeamReadsItsOrganisationAndToleratesAnUnknownDivision() {
+        val body = """
+            {"id":"t1","clubId":"c1","name":"Denny Warriors U12","clubName":"Denny FC","ageGroup":"U12",
+             "gender":"MIXED","format":"NINE_A_SIDE","abilityLevel":"SOME_FUTURE_DIVISION","organisation":"SYFA",
+             "postcode":"FK6 5AA","longitude":-3.9,"latitude":56.0,"travelRadiusMiles":15,
+             "homeAwayPreference":"EITHER","verification":"VERIFIED","completenessPercent":80,
+             "createdAt":"2026-10-01T09:00:00Z"}
+        """.trimIndent()
+
+        val team = json.decodeFromString(TeamView.serializer(), body)
+        assertEquals(Organisation.SYFA, Organisation.fromCode(team.organisation))
+        assertNull(AbilityLevel.fromCode(team.abilityLevel))
+        // Older teams have no organisation.
+        assertNull(json.decodeFromString(TeamView.serializer(), body.replace(""""organisation":"SYFA",""", "")).organisation)
+    }
+
+    @Test
+    fun aNewTeamSendsItsOrganisationCode() {
+        val request = CreateTeamRequest(
+            name = "Denny Warriors U12", ageGroup = "U12", gender = "MIXED", abilityLevel = "DIVISION_2",
+            organisation = "SYFA", postcode = "FK6 5AA", longitude = -3.9, latitude = 56.0,
+            travelRadiusMiles = 15, homeAwayPreference = "EITHER"
+        )
+
+        val encoded = json.encodeToString(CreateTeamRequest.serializer(), request)
+        assertTrue(encoded.contains(""""organisation":"SYFA""""))
+        assertTrue(encoded.contains(""""abilityLevel":"DIVISION_2""""))
     }
 }

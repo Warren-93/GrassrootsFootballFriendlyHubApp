@@ -1,5 +1,8 @@
 package com.gffh.mobile.ui.components
 
+import com.gffh.mobile.model.AbilityLevel
+import com.gffh.mobile.model.Organisation
+
 /** The codes that read badly with just their underscores taken out. */
 private val KNOWN_LABELS = mapOf(
     "FIVE_A_SIDE" to "5v5",
@@ -16,7 +19,7 @@ private val KNOWN_LABELS = mapOf(
 
 /**
  * The API's enum codes as people say them, for every screen that shows one:
- * "U12", "Boys", "7v7", "Intermediate", "No preference", "Changes requested".
+ * "U12", "Boys", "7v7", "Division 2", "No preference", "Changes requested".
  * Any other code - including one the API adds after this build - just loses
  * its underscores and capitals ("CLUB_SUPPLIED" reads "Club supplied"), so
  * nothing is ever shown raw. "NONE" depends on what it's the answer to: see
@@ -35,3 +38,19 @@ fun costShareLabel(code: String): String = when (code) {
     "NONE" -> "No costs"
     else -> codeLabel(code)
 }
+
+/**
+ * A team's division. Takes either the code (team views) or the label the
+ * match results already send, so "DIVISION_1" and "Division 1 / Championship"
+ * both read "Division 1 / Championship"; anything else goes through [codeLabel].
+ */
+fun divisionLabel(value: String): String =
+    AbilityLevel.fromCode(value)?.label
+        ?: value.takeIf { v -> AbilityLevel.entries.any { it.label == v } }
+        ?: codeLabel(value)
+
+/** A team's organisation, from its code or its label - see [divisionLabel]. */
+fun organisationLabel(value: String): String =
+    Organisation.fromCode(value)?.label
+        ?: value.takeIf { v -> Organisation.entries.any { it.label == v } }
+        ?: codeLabel(value)
