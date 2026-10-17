@@ -49,6 +49,15 @@ fun FixturesScreen(
     val confirmed = fixtures.filter { it.status == "CONFIRMED" }
     val completed = fixtures.filter { it.status == "COMPLETED" }
 
+    // Nothing to load without a team - the effect above returns early, so
+    // this can't wait on loading, which would spin for good.
+    if (team == null) {
+        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            Text("No active team. Create or select a team first.")
+        }
+        return
+    }
+
     Column(Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
             Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Pending (${pending.size})") })
