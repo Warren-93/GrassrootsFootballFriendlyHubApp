@@ -68,6 +68,12 @@ fun HomeScreen(
         if (result is ApiResult.Success) unreadCount = result.value.count
     }
 
+    // The link is opened in the browser, so the stored flag only changes when
+    // asked: me() updates it whenever Home opens on an unverified account.
+    LaunchedEffect(Unit) {
+        if (authRepository.session.value?.emailVerified == false) authRepository.me()
+    }
+
     LaunchedEffect(session?.userId) {
         if (session == null) return@LaunchedEffect
         val result = teamRepository.mine()
