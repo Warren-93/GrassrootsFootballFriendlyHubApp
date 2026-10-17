@@ -9,7 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.navigation.Navigator
@@ -48,7 +48,7 @@ fun WelcomeScreen(
             // Scrolls on a short phone now that the Google/Apple button can sit under the other two.
             modifier = Modifier.padding(24.dp).widthIn(max = 420.dp).verticalScroll(rememberScrollState()),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
         ) {
             Column(
@@ -86,7 +86,8 @@ fun WelcomeScreen(
                     navigator = navigator,
                     enabled = true,
                     onWorkingChange = { socialWorking = it },
-                    onError = { errorMessage = it }
+                    onError = { errorMessage = it },
+                    lightBackground = !isSystemInDarkTheme()
                 )
 
                 errorMessage?.let {
