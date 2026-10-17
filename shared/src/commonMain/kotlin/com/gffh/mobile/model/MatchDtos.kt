@@ -48,6 +48,8 @@ data class TeamSummary(
     val gender: String,
     val format: String,
     val abilityLevel: String,
+    /** The organisation's label, like the fields above - not its code. Null for older teams. */
+    val organisation: String? = null,
     val league: String? = null,
     val description: String? = null,
     val generalArea: String? = null,

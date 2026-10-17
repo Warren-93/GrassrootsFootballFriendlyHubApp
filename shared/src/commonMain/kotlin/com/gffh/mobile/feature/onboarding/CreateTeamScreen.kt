@@ -19,6 +19,7 @@ import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.theme.eyebrowLabel
 import com.gffh.mobile.ui.components.PostcodeLocationField
 import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.OptionPicker
 import com.gffh.mobile.ui.components.codeLabel
 
 private fun gendersFor(ageGroup: AgeGroup): List<Gender> =
@@ -54,13 +55,14 @@ fun CreateTeamScreen(
 ) {
     var step by remember { mutableStateOf(0) }
 
+    var organisation by remember { mutableStateOf<Organisation?>(null) }
     var teamName by remember { mutableStateOf("") }
     var ageGroup by remember { mutableStateOf(AgeGroup.U12) }
     var gender by remember { mutableStateOf(Gender.MIXED) }
 
     var format by remember { mutableStateOf(suggestedFormat(AgeGroup.U12)) }
     var formatManuallySet by remember { mutableStateOf(false) }
-    var ability by remember { mutableStateOf(AbilityLevel.INTERMEDIATE) }
+    var ability by remember { mutableStateOf(AbilityLevel.DIVISION_2) }
     var league by remember { mutableStateOf("") }
 
     var postcode by remember { mutableStateOf("") }
@@ -76,7 +78,7 @@ fun CreateTeamScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    val step1Valid = teamName.trim().length in 3..80
+    val step1Valid = organisation != null && teamName.trim().length in 3..80
     val step3Valid = postcode.isNotBlank() && coordinates != null
     val step4Valid = managerName.trim().length in 2..60
 
@@ -97,6 +99,15 @@ fun CreateTeamScreen(
                 0 -> {
                     Text("Team identity", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(12.dp))
+                    OptionPicker(
+                        label = "Organisation",
+                        options = Organisation.entries.toList(),
+                        selected = organisation,
+                        optionLabel = { it.label },
+                        onSelect = { organisation = it },
+                        supportingText = "The association your team plays under"
+                    )
+                    Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = teamName, onValueChange = { teamName = it },
                         label = { Text("Team name") },
@@ -115,22 +126,19 @@ fun CreateTeamScreen(
                     SingleChoiceRow(gendersFor(ageGroup), gender, { codeLabel(it.name) }) { gender = it }
                 }
                 1 -> {
-                    Text("Format and ability", style = MaterialTheme.typography.titleMedium)
+                    Text("Format and division", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(12.dp))
                     Text("Format", style = MaterialTheme.typography.labelLarge)
                     SingleChoiceRow(Format.entries.toList(), format, { codeLabel(it.name) }) {
                         format = it; formatManuallySet = true
                     }
                     Spacer(Modifier.height(16.dp))
-                    Text("Ability level", style = MaterialTheme.typography.labelLarge)
-                    SingleChoiceRow(AbilityLevel.entries.toList(), ability, { codeLabel(it.name) }) { ability = it }
+                    Text("Division", style = MaterialTheme.typography.labelLarge)
+                    SingleChoiceRow(AbilityLevel.entries.toList(), ability, { it.label }) { ability = it }
                     Text(
-                        when (ability) {
-                            AbilityLevel.DEVELOPMENT -> "New to competitive football, focused on participation."
-                            AbilityLevel.INTERMEDIATE -> "Regular league football, solid fundamentals."
-                            AbilityLevel.COMPETITIVE -> "Strong, established side playing at a high standard."
-                        },
-                        style = MaterialTheme.typography.bodySmall
+                        "The division you play in within your league - teams are matched with sides at a similar level.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(16.dp))
                     OutlinedTextField(
@@ -216,6 +224,7 @@ fun CreateTeamScreen(
                                     clubId = clubId, clubName = if (clubId == null) teamName.trim() else null,
                                     name = teamName.trim(), ageGroup = ageGroup.name, gender = gender.name,
                                     format = format.name, abilityLevel = ability.name,
+                                    organisation = organisation?.name,
                                     league = league.ifBlank { null }, postcode = postcode.trim(),
                                     longitude = coordinates!!.longitude, latitude = coordinates!!.latitude,
                                     travelRadiusMiles = travelRadius, homeAwayPreference = homeAway.name,

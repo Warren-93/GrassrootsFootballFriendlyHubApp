@@ -18,7 +18,7 @@ class ProfileChecklistCardTest {
         ageGroup = "U12",
         gender = "MIXED",
         format = "NINE_A_SIDE",
-        abilityLevel = "INTERMEDIATE",
+        abilityLevel = "DIVISION_2",
         postcode = "FK6 5AA",
         longitude = -3.9,
         latitude = 56.0,

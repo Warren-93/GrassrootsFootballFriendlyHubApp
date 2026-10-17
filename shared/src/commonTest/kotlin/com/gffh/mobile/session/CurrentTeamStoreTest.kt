@@ -72,7 +72,7 @@ class CurrentTeamStoreTest {
         ageGroup = "U11",
         gender = "MIXED",
         format = "SEVEN_A_SIDE",
-        abilityLevel = "INTERMEDIATE",
+        abilityLevel = "DIVISION_2",
         postcode = "AB1 2CD",
         longitude = -1.0,
         latitude = 52.0,

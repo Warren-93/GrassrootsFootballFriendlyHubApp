@@ -25,7 +25,7 @@ internal const val SEARCH_LIMIT = 50
  * one tap.
  *
  * The search opens with no filters: the API returns every team with the same
- * age group and gender, all ability levels and formats, ranked by fit, and
+ * age group and gender, all divisions and formats, ranked by fit, and
  * optional filters are set from the results (SCR-FF-02). Availability is
  * not required either - a new team sees who is out there before publishing
  * any dates, so the add-availability prompt is a tip, not a gate.
@@ -53,7 +53,7 @@ fun SearchEntryScreen(
         val slots = (availabilityRepository.list(t.teamId) as? ApiResult.Success)?.value.orEmpty()
         hasAvailability = slots.isNotEmpty()
         if (teamView != null) {
-            summaryText = "Every ${codeLabel(teamView.ageGroup)} ${codeLabel(teamView.gender).lowercase()} team, all ability levels, best fit first"
+            summaryText = "Every ${codeLabel(teamView.ageGroup)} ${codeLabel(teamView.gender).lowercase()} team, all divisions, best fit first"
         }
     }
 

@@ -5,7 +5,43 @@ import kotlinx.serialization.Serializable
 enum class AgeGroup { U7, U8, U9, U10, U11, U12, U13, U14, U15, U16, U17, U18, ADULT, VETERANS }
 enum class Gender { BOYS, GIRLS, MIXED, MEN, WOMEN }
 enum class Format { FIVE_A_SIDE, SEVEN_A_SIDE, NINE_A_SIDE, ELEVEN_A_SIDE }
-enum class AbilityLevel { DEVELOPMENT, INTERMEDIATE, COMPETITIVE }
+
+/**
+ * The division a team plays in within its league, shown as "Division". The
+ * API property keeps the name `abilityLevel`. Every DTO carries it as a plain
+ * String, so a value added after this build still decodes - see [fromCode].
+ */
+enum class AbilityLevel(val label: String) {
+    PREMIER("Premier / top division"),
+    DIVISION_1("Division 1 / Championship"),
+    DIVISION_2("Division 2"),
+    DIVISION_3_PLUS("Division 3 or lower"),
+    NOT_IN_LEAGUE("Not in a league"),
+    FESTIVAL("Festival / non-competitive");
+
+    companion object {
+        /** Null for a code this build doesn't know, rather than throwing. */
+        fun fromCode(code: String?): AbilityLevel? = entries.firstOrNull { it.name == code }
+    }
+}
+
+/**
+ * The Scottish FA association a team plays under. Nullable on every DTO:
+ * older teams have none. Carried as a String, like [AbilityLevel].
+ */
+enum class Organisation(val label: String) {
+    SYFA("Scottish Youth FA (SYFA)"),
+    SAFA("Scottish Amateur FA (SAFA)"),
+    SWF("Scottish Women's Football (SWF)"),
+    SWFA("Scottish Welfare FA (SWFA)"),
+    SSFA("Scottish Schools' FA (SSFA)"),
+    SJFA("Scottish Junior FA (SJFA)"),
+    OTHER("Other / not affiliated");
+
+    companion object {
+        fun fromCode(code: String?): Organisation? = entries.firstOrNull { it.name == code }
+    }
+}
 enum class HomeAwayPreference { HOME, AWAY, EITHER }
 
 @Serializable
@@ -18,6 +54,8 @@ data class CreateTeamRequest(
     val gender: String,
     val format: String? = null,
     val abilityLevel: String,
+    /** An [Organisation] code. */
+    val organisation: String? = null,
     val league: String? = null,
     val postcode: String,
     val longitude: Double,
@@ -38,6 +76,8 @@ data class UpdateTeamRequest(
     val gender: String? = null,
     val format: String? = null,
     val abilityLevel: String? = null,
+    /** An [Organisation] code; null leaves it unchanged. */
+    val organisation: String? = null,
     val league: String? = null,
     val postcode: String? = null,
     val longitude: Double? = null,
@@ -61,6 +101,8 @@ data class TeamView(
     val gender: String,
     val format: String,
     val abilityLevel: String,
+    /** An [Organisation] code. Null for teams created before it was asked for. */
+    val organisation: String? = null,
     val league: String? = null,
     val postcode: String,
     val longitude: Double,
