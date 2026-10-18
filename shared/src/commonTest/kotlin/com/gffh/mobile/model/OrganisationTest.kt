@@ -24,4 +24,15 @@ class OrganisationTest {
     fun unknownAgeGroupOffersEverything() {
         assertEquals(Organisation.entries.toList(), Organisation.availableFor(null))
     }
+
+    @Test
+    fun womensFootballIsHiddenFromBoysAndMen() {
+        assertEquals(
+            listOf(Organisation.SYFA, Organisation.SSFA, Organisation.OTHER),
+            Organisation.availableFor(AgeGroup.U12, Gender.BOYS)
+        )
+        assertFalse(Organisation.SWF in Organisation.availableFor(AgeGroup.ADULT, Gender.MEN))
+        assertTrue(Organisation.SWF in Organisation.availableFor(AgeGroup.ADULT, Gender.WOMEN))
+        assertTrue(Organisation.SWF in Organisation.availableFor(AgeGroup.U14, Gender.MIXED))
+    }
 }
