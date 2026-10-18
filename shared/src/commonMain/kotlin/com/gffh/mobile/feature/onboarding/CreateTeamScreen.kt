@@ -101,7 +101,7 @@ fun CreateTeamScreen(
                     Spacer(Modifier.height(12.dp))
                     OptionPicker(
                         label = "Organisation",
-                        options = Organisation.entries.toList(),
+                        options = Organisation.availableFor(ageGroup),
                         selected = organisation,
                         optionLabel = { it.label },
                         onSelect = { organisation = it },
@@ -120,6 +120,7 @@ fun CreateTeamScreen(
                         ageGroup = it
                         if (!formatManuallySet) format = suggestedFormat(it)
                         if (gender !in gendersFor(it)) gender = Gender.MIXED
+                        if (organisation != null && organisation !in Organisation.availableFor(it)) organisation = null
                     }
                     Spacer(Modifier.height(16.dp))
                     Text("Gender", style = MaterialTheme.typography.labelLarge)

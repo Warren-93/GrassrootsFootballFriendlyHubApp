@@ -40,6 +40,16 @@ enum class Organisation(val label: String) {
 
     companion object {
         fun fromCode(code: String?): Organisation? = entries.firstOrNull { it.name == code }
+
+        /**
+         * Mirrors the API's Organisation.availableFor: youth, schools and girls'
+         * bodies for youth teams; amateur, welfare, junior and women's for adults.
+         */
+        fun availableFor(ageGroup: AgeGroup?): List<Organisation> = when (ageGroup) {
+            null -> entries.toList()
+            AgeGroup.ADULT, AgeGroup.VETERANS -> listOf(SAFA, SWF, SWFA, SJFA, OTHER)
+            else -> listOf(SYFA, SWF, SSFA, OTHER)
+        }
     }
 }
 enum class HomeAwayPreference { HOME, AWAY, EITHER }
