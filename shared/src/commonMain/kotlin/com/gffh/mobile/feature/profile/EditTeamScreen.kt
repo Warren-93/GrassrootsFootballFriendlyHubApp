@@ -14,6 +14,8 @@ import com.gffh.mobile.core.image.BadgePickResult
 import com.gffh.mobile.core.image.rememberBadgeImagePicker
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.AbilityLevel
+import com.gffh.mobile.model.AgeGroup
+import com.gffh.mobile.model.Gender
 import com.gffh.mobile.model.Organisation
 import com.gffh.mobile.model.TeamView
 import com.gffh.mobile.model.UpdateTeamRequest
@@ -135,7 +137,10 @@ fun EditTeamScreen(
         Spacer(Modifier.height(12.dp))
         OptionPicker(
             label = "Organisation",
-            options = Organisation.entries.toList(),
+            options = Organisation.availableFor(
+                AgeGroup.entries.firstOrNull { it.name == current.ageGroup },
+                Gender.entries.firstOrNull { it.name == current.gender }
+            ),
             selected = organisation,
             optionLabel = { it.label },
             onSelect = { organisation = it }

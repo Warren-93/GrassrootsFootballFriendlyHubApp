@@ -40,6 +40,20 @@ enum class Organisation(val label: String) {
 
     companion object {
         fun fromCode(code: String?): Organisation? = entries.firstOrNull { it.name == code }
+
+        /**
+         * Mirrors the API's Organisation.availableFor: youth, schools and girls'
+         * bodies for youth teams; amateur, welfare, junior and women's for adults.
+         * Scottish Women's Football is left out for boys' and men's teams.
+         */
+        fun availableFor(ageGroup: AgeGroup?, gender: Gender? = null): List<Organisation> {
+            val byAge = when (ageGroup) {
+                null -> entries.toList()
+                AgeGroup.ADULT, AgeGroup.VETERANS -> listOf(SAFA, SWF, SWFA, SJFA, OTHER)
+                else -> listOf(SYFA, SWF, SSFA, OTHER)
+            }
+            return if (gender == Gender.BOYS || gender == Gender.MEN) byAge - SWF else byAge
+        }
     }
 }
 enum class HomeAwayPreference { HOME, AWAY, EITHER }
