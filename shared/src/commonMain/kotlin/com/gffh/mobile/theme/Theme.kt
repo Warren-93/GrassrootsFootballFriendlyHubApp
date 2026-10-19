@@ -1,10 +1,12 @@
 package com.gffh.mobile.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
 // Brand palette - the exact hex values from gffh-web's src/theme/theme.ts
@@ -95,5 +97,10 @@ val DarkColors = darkColorScheme(
 @Composable
 fun GffhTheme(content: @Composable () -> Unit) {
     val colors = if (isSystemInDarkTheme()) DarkColors else LightColors
-    MaterialTheme(colorScheme = colors, typography = GffhTypography, content = content)
+    MaterialTheme(colorScheme = colors, typography = GffhTypography) {
+        // Screens sit on a plain background Box, not a Surface, so without this
+        // any Text with no explicit color falls back to black - unreadable on
+        // the dark-mode navy.
+        CompositionLocalProvider(LocalContentColor provides colors.onBackground, content = content)
+    }
 }
