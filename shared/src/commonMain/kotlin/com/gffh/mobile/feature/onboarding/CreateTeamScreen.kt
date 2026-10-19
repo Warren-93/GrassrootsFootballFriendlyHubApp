@@ -159,6 +159,13 @@ fun CreateTeamScreen(
                         postcode = postcode, onPostcodeChange = { postcode = it },
                         coordinates = coordinates, onCoordinatesChange = { coordinates = it }
                     )
+                    if (coordinates == null) {
+                        Text(
+                            "Enter your team's full postcode. Next unlocks once we've found it.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Spacer(Modifier.height(16.dp))
                     Text("Travel radius: $travelRadius miles", style = MaterialTheme.typography.labelLarge)
                     Slider(
