@@ -1,18 +1,10 @@
 name: iOS Simulator Build
 
+# Manual only for now (Mark, 2026-10-19): it no longer runs on pushes to main
+# or on pull requests. Start it from the Actions tab ("Run workflow") when an
+# iOS build is wanted; restore the push/pull_request triggers to turn it back on.
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'shared/**'
-      - 'iosApp/**'
-      - '.github/workflows/ios-simulator.yml'
-  pull_request:
-    paths:
-      - 'shared/**'
-      - 'iosApp/**'
-      - '.github/workflows/ios-simulator.yml'
 
 jobs:
   build:
