@@ -172,7 +172,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
             NotificationTaps.consume(tap)
         }
         val screen: @Composable () -> Unit = {
-            if (memberBlocked) MemberNoticeScreen(memberTeam, fixtureRepository, navigator) else when (route) {
+            if (memberBlocked) MemberNoticeScreen(memberTeam, fixtureRepository, availabilityRepository, navigator) else when (route) {
             is Route.Splash -> SplashScreen(authRepository, navigator)
             is Route.Welcome -> WelcomeScreen(authRepository, configRepository, teamRepository, navigator)
             is Route.Register -> RegisterScreen(authRepository, configRepository, teamRepository, navigator)
@@ -251,7 +251,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
                 friendlyRequestRepository, venueRepository, currentTeamStore, navigator, route.requestId
             )
             is Route.DeclineRequest -> DeclineScreen(friendlyRequestRepository, navigator, route.requestId)
-            is Route.Fixtures -> FixturesScreen(friendlyRequestRepository, fixtureRepository, currentTeamStore, navigator)
+            is Route.Fixtures -> FixturesScreen(friendlyRequestRepository, fixtureRepository, availabilityRepository, currentTeamStore, navigator)
             is Route.FixtureDetail -> if (memberTeam != null) {
                 MemberFixtureDetailScreen(fixtureRepository, memberTeam, navigator, route.fixtureId)
             } else {

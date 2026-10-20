@@ -8,12 +8,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.feature.availability.todayDate
+import com.gffh.mobile.feature.placeholder.fixtureDateLabel
+import com.gffh.mobile.feature.placeholder.kickOffLabel
 import com.gffh.mobile.model.FixtureView
 import com.gffh.mobile.model.FriendlyRequestView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.FriendlyRequestRepository
+import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.codeLabel
@@ -27,18 +31,23 @@ import com.gffh.mobile.ui.components.codeLabel
 fun FixturesScreen(
     friendlyRequestRepository: FriendlyRequestRepository,
     fixtureRepository: FixtureRepository,
+    availabilityRepository: AvailabilityRepository,
     currentTeamStore: CurrentTeamStore,
     navigator: Navigator
 ) {
     val team = currentTeamStore.active.collectAsState().value
     var requests by remember { mutableStateOf<List<FriendlyRequestView>>(emptyList()) }
     var fixtures by remember { mutableStateOf<List<FixtureView>>(emptyList()) }
+    var publishedDates by remember { mutableStateOf<Set<String>>(emptySet()) }
     var loading by remember { mutableStateOf(true) }
     var tab by remember { mutableStateOf(0) }
 
     LaunchedEffect(team?.teamId) {
         val t = team ?: return@LaunchedEffect
         (friendlyRequestRepository.list(t.teamId) as? ApiResult.Success)?.let { requests = it.value }
+        (availabilityRepository.list(t.teamId) as? ApiResult.Success)?.let { slots ->
+            publishedDates = slots.value.map { it.date }.toSet()
+        }
         (fixtureRepository.list(t.teamId) as? ApiResult.Success)?.let { fixtures = it.value }
         loading = false
     }
@@ -47,8 +56,8 @@ fun FixturesScreen(
     val pending = requests.filter { it.status in openStatuses }
     val waitingOnYou = pending.filter { !(it.availableActions.size == 1 && it.availableActions.first() == "withdraw") }
     val waitingOnThem = pending.filter { it.availableActions.size == 1 && it.availableActions.first() == "withdraw" }
-    val confirmed = fixtures.filter { it.status == "CONFIRMED" }
-    val completed = fixtures.filter { it.status == "COMPLETED" }
+    val confirmed = fixtures.filter { it.status == "CONFIRMED" && it.date in publishedDates }
+    val completed = fixtures.filter { it.status == "COMPLETED" && it.date in publishedDates }
 
     // Nothing to load without a team - the effect above returns early, so
     // this can't wait on loading, which would spin for good.
@@ -130,6 +139,7 @@ private fun RequestRow(request: FriendlyRequestView, ourTeamId: String?, navigat
 
 @Composable
 private fun FixtureRow(fixture: FixtureView, navigator: Navigator) {
+    val today = remember { todayDate() }
     Card(
         onClick = { navigator.push(Route.FixtureDetail(fixture.id)) },
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
@@ -144,7 +154,10 @@ private fun FixtureRow(fixture: FixtureView, navigator: Navigator) {
             CrestAvatar(fixture.awayTeam.name, size = 30.dp, badgeUrl = fixture.awayTeam.badgeUrl)
             Column(Modifier.weight(1f)) {
                 Text("${fixture.homeTeam.name} vs ${fixture.awayTeam.name}", style = MaterialTheme.typography.bodyMedium)
-                Text("${fixture.date} ${fixture.startTime}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "${fixtureDateLabel(fixture.date, today)} ${kickOffLabel(fixture.startTime)}",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }

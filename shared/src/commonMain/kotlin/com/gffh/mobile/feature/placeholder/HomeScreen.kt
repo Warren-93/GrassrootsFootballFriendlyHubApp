@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.feature.availability.todayDate
 import com.gffh.mobile.model.FixtureView
 import com.gffh.mobile.model.SlotView
 import com.gffh.mobile.model.TeamView
@@ -58,6 +59,7 @@ fun HomeScreen(
 
     var team by remember { mutableStateOf<TeamView?>(null) }
     var futureSlots by remember { mutableStateOf<List<SlotView>>(emptyList()) }
+    var publishedDates by remember { mutableStateOf<Set<String>>(emptySet()) }
     var fixtures by remember { mutableStateOf<List<FixtureView>>(emptyList()) }
     var unreadCount by remember { mutableStateOf(0L) }
     var loaded by remember { mutableStateOf(false) }
@@ -103,15 +105,20 @@ fun HomeScreen(
 
         val today = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())
         val horizon = today.plus(56, DateTimeUnit.DAY)
-        val slotResult = availabilityRepository.list(t.teamId, today.toString(), horizon.toString())
-        if (slotResult is ApiResult.Success) futureSlots = slotResult.value
+        val slotResult = availabilityRepository.list(t.teamId)
+        if (slotResult is ApiResult.Success) {
+            publishedDates = slotResult.value.map { it.date }.toSet()
+            futureSlots = slotResult.value.filter { it.date >= today.toString() && it.date <= horizon.toString() }
+        }
 
         val fixtureResult = fixtureRepository.list(t.teamId)
         if (fixtureResult is ApiResult.Success) fixtures = fixtureResult.value
         loaded = true
     }
 
-    val nextFixture = fixtures.filter { it.status == "CONFIRMED" }.minByOrNull { it.date }
+    val today = remember { todayDate() }
+    val publishedFixtures = fixturesMatchingPublishedAvailability(fixtures, publishedDates)
+    val nextFixture = upcomingFixtures(publishedFixtures, today).firstOrNull()
     val completeness = team?.completenessPercent
     val actionItems = buildList {
         if (loaded && futureSlots.isEmpty()) add("No availability published yet.")
@@ -183,7 +190,7 @@ fun HomeScreen(
             StatTileRow {
                 StatTile(
                     label = "Confirmed fixtures",
-                    value = fixtures.count { it.status == "CONFIRMED" }.toString(),
+                    value = publishedFixtures.count { it.status == "CONFIRMED" }.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 StatTile(
@@ -216,7 +223,10 @@ fun HomeScreen(
                             "${nextFixture.homeTeam.name} vs ${nextFixture.awayTeam.name}",
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        Text("${nextFixture.date}, kick-off ${nextFixture.startTime}", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "${fixtureDateLabel(nextFixture.date, today)}, kick-off ${kickOffLabel(nextFixture.startTime)}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
                 Spacer(Modifier.height(12.dp))

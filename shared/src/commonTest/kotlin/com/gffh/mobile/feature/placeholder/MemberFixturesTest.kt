@@ -31,6 +31,25 @@ class MemberFixturesTest {
     }
 
     @Test
+    fun upcomingIsEmptyWhenEveryConfirmedFixtureIsInThePast() {
+        assertTrue(upcomingFixtures(listOf(fixture("past", date = "2026-10-15")), today).isEmpty())
+    }
+
+    @Test
+    fun onlyFixturesOnPublishedAvailabilityDatesAreShown() {
+        val fixtures = listOf(
+            fixture("published", date = "2026-10-18"),
+            fixture("unpublished", date = "2026-10-25"),
+            fixture("sameDateDifferentTime", date = "2026-10-18", startTime = "14:00:00")
+        )
+
+        assertEquals(
+            listOf("published", "sameDateDifferentTime"),
+            fixturesMatchingPublishedAvailability(fixtures, setOf("2026-10-18")).map { it.id }
+        )
+    }
+
+    @Test
     fun theHomeTeamIsTheOneHosting() {
         val f = fixture("f1", date = "2026-10-18")
 

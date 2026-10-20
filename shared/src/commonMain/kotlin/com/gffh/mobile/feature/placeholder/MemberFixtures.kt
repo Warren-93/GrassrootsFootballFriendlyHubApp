@@ -28,6 +28,12 @@ fun upcomingFixtures(fixtures: List<FixtureView>, today: LocalDate): List<Fixtur
         .sortedWith(compareBy({ it.date }, { it.startTime }))
 }
 
+/** Fixtures shown as published matches must fall on a currently published availability date. */
+fun fixturesMatchingPublishedAvailability(
+    fixtures: List<FixtureView>,
+    publishedAvailabilityDates: Set<String>
+): List<FixtureView> = fixtures.filter { it.date in publishedAvailabilityDates }
+
 /**
  * "Saturday 18 October", with the year only when it isn't [today]'s. The
  * API's text unchanged if it isn't a date.
