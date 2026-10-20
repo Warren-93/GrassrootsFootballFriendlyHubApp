@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.model.MatchSummary
+import com.gffh.mobile.model.formatMatchDate
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.session.SearchFilterState
@@ -94,8 +95,12 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
             }
             Spacer(Modifier.height(8.dp))
             Text("${match.milesApart} miles away", style = MaterialTheme.typography.bodySmall)
-            match.earliestOverlap?.let {
-                Text("First free: ${it.date} ${it.startTime}", style = MaterialTheme.typography.bodySmall)
+            val overlapDates = match.overlappingDates.ifEmpty { listOfNotNull(match.earliestOverlap?.date) }
+            if (overlapDates.isNotEmpty()) {
+                Text(
+                    "Shared published dates: ${overlapDates.joinToString { formatMatchDate(it) }}",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             if (match.reasons.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))

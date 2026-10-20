@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.MatchSummary
+import com.gffh.mobile.model.formatMatchDate
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.GeocodeRepository
@@ -115,6 +116,15 @@ fun ResultsMapScreen(
                         Column {
                             Text(p.match.team.name, style = MaterialTheme.typography.titleSmall)
                             Text("${p.match.team.generalArea ?: ""}", style = MaterialTheme.typography.bodySmall)
+                            val overlapDates = p.match.overlappingDates.ifEmpty {
+                                listOfNotNull(p.match.earliestOverlap?.date)
+                            }
+                            if (overlapDates.isNotEmpty()) {
+                                Text(
+                                    "Shared dates: ${overlapDates.joinToString { formatMatchDate(it) }}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                         Text("${p.match.milesApart} mi", style = MaterialTheme.typography.bodySmall)
                     }

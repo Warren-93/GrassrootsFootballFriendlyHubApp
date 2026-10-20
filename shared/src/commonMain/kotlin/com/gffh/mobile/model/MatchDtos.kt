@@ -35,7 +35,8 @@ data class MatchSummary(
     val factors: List<FactorView>,
     val earliestOverlap: OverlapView? = null,
     /** False until the opponent is verified and has a venue. Null from older servers. */
-    val canReceiveRequests: Boolean? = null
+    val canReceiveRequests: Boolean? = null,
+    val overlappingDates: List<String> = emptyList()
 )
 
 @Serializable

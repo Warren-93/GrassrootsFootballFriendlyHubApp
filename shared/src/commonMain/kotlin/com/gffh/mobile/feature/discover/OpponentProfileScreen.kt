@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.model.formatMatchDate
 import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchResultsCache
@@ -117,7 +118,9 @@ fun OpponentProfileScreen(
             match.earliestOverlap?.let { overlap ->
                 Spacer(Modifier.height(16.dp))
                 Text("Overlapping availability", style = MaterialTheme.typography.titleSmall)
-                Text("${overlap.date}, from ${overlap.startTime} (${overlap.overlapMinutes} min overlap)")
+                val dates = match.overlappingDates.ifEmpty { listOf(overlap.date) }
+                Text("Published dates: ${dates.joinToString { formatMatchDate(it) }}")
+                Text("Earliest shared slot starts at ${overlap.startTime} (${overlap.overlapMinutes} min overlap)")
             }
 
             if (!match.team.description.isNullOrBlank()) {
