@@ -2,6 +2,8 @@ package com.gffh.mobile.feature.placeholder
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Notifications
@@ -118,7 +120,7 @@ fun HomeScreen(
     val needsAttention = actionItems.size +
         (team?.profileChecklist?.count { it.requiredForRequests && !it.done } ?: 0)
 
-    Column(Modifier.fillMaxSize().padding(24.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp)) {
         HeroBand(
             title = "Welcome, ${session?.displayName ?: ""}",
             eyebrow = activeTeam?.teamName,
@@ -323,7 +325,7 @@ fun HomeScreen(
             ) { Text("Team profile") }
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(12.dp))
         TextButton(
             onClick = {
                 // Suspends only to withdraw this device's push token first.
