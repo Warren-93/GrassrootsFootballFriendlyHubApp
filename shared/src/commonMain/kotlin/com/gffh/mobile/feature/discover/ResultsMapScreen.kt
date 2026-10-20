@@ -171,4 +171,3 @@ private fun buildMapHtml(homeLat: Double, homeLon: Double, plotted: List<Plotted
         </html>
     """.trimIndent()
 }
-
