@@ -58,9 +58,12 @@ fun DayDetailScreen(
                 is ApiResult.Success -> { slots = result.value; errorMessage = null }
                 is ApiResult.Failure -> errorMessage = result.message
             }
+            val hasPublishedAvailability = (result as? ApiResult.Success)?.value.orEmpty().any { it.date == date }
 
             (fixtureRepository.list(t.teamId) as? ApiResult.Success)?.let { r ->
-                fixtures = r.value.filter { it.date == date && it.status == "CONFIRMED" }
+                fixtures = r.value.filter {
+                    hasPublishedAvailability && it.date == date && it.status == "CONFIRMED"
+                }
             }
             (friendlyRequestRepository.list(t.teamId) as? ApiResult.Success)?.let { r ->
                 pendingRequests = r.value.filter { it.date == date && it.status in PENDING_STATUSES }

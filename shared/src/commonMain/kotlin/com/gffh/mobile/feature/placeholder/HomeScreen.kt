@@ -59,6 +59,7 @@ fun HomeScreen(
 
     var team by remember { mutableStateOf<TeamView?>(null) }
     var futureSlots by remember { mutableStateOf<List<SlotView>>(emptyList()) }
+    var publishedDates by remember { mutableStateOf<Set<String>>(emptySet()) }
     var fixtures by remember { mutableStateOf<List<FixtureView>>(emptyList()) }
     var unreadCount by remember { mutableStateOf(0L) }
     var loaded by remember { mutableStateOf(false) }
@@ -104,8 +105,11 @@ fun HomeScreen(
 
         val today = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())
         val horizon = today.plus(56, DateTimeUnit.DAY)
-        val slotResult = availabilityRepository.list(t.teamId, today.toString(), horizon.toString())
-        if (slotResult is ApiResult.Success) futureSlots = slotResult.value
+        val slotResult = availabilityRepository.list(t.teamId)
+        if (slotResult is ApiResult.Success) {
+            publishedDates = slotResult.value.map { it.date }.toSet()
+            futureSlots = slotResult.value.filter { it.date >= today.toString() && it.date <= horizon.toString() }
+        }
 
         val fixtureResult = fixtureRepository.list(t.teamId)
         if (fixtureResult is ApiResult.Success) fixtures = fixtureResult.value
@@ -113,7 +117,8 @@ fun HomeScreen(
     }
 
     val today = remember { todayDate() }
-    val nextFixture = upcomingFixtures(fixtures, today).firstOrNull()
+    val publishedFixtures = fixturesMatchingPublishedAvailability(fixtures, publishedDates)
+    val nextFixture = upcomingFixtures(publishedFixtures, today).firstOrNull()
     val completeness = team?.completenessPercent
     val actionItems = buildList {
         if (loaded && futureSlots.isEmpty()) add("No availability published yet.")
@@ -185,7 +190,7 @@ fun HomeScreen(
             StatTileRow {
                 StatTile(
                     label = "Confirmed fixtures",
-                    value = fixtures.count { it.status == "CONFIRMED" }.toString(),
+                    value = publishedFixtures.count { it.status == "CONFIRMED" }.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 StatTile(

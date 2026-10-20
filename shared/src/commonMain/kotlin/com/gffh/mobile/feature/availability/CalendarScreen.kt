@@ -67,9 +67,16 @@ fun CalendarScreen(
         loading = true
         scope.launch {
             val slotsResult = availabilityRepository.list(t.teamId, monthStart.toString(), monthEnd.toString())
-            when (slotsResult) {
-                is ApiResult.Success -> { slots = slotsResult.value; errorMessage = null }
-                is ApiResult.Failure -> errorMessage = slotsResult.message
+            val publishedDates = when (slotsResult) {
+                is ApiResult.Success -> {
+                    slots = slotsResult.value
+                    errorMessage = null
+                    slotsResult.value.map { it.date }.toSet()
+                }
+                is ApiResult.Failure -> {
+                    errorMessage = slotsResult.message
+                    emptySet()
+                }
             }
 
             // Fixtures/requests aren't month-scoped server-side (small per-team
@@ -77,7 +84,10 @@ fun CalendarScreen(
             // already being compared against.
             (fixtureRepository.list(t.teamId) as? ApiResult.Success)?.let { result ->
                 confirmedDates = result.value
-                    .filter { it.status == "CONFIRMED" && it.date >= monthStart.toString() && it.date <= monthEnd.toString() }
+                    .filter {
+                        it.status == "CONFIRMED" && it.date in publishedDates &&
+                            it.date >= monthStart.toString() && it.date <= monthEnd.toString()
+                    }
                     .map { it.date }.toSet()
             }
             (friendlyRequestRepository.list(t.teamId) as? ApiResult.Success)?.let { result ->
