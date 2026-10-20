@@ -8,6 +8,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.feature.availability.todayDate
+import com.gffh.mobile.feature.placeholder.fixtureDateLabel
+import com.gffh.mobile.feature.placeholder.kickOffLabel
 import com.gffh.mobile.model.FixtureView
 import com.gffh.mobile.model.FriendlyRequestView
 import com.gffh.mobile.navigation.Navigator
@@ -130,6 +133,7 @@ private fun RequestRow(request: FriendlyRequestView, ourTeamId: String?, navigat
 
 @Composable
 private fun FixtureRow(fixture: FixtureView, navigator: Navigator) {
+    val today = remember { todayDate() }
     Card(
         onClick = { navigator.push(Route.FixtureDetail(fixture.id)) },
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
@@ -144,7 +148,10 @@ private fun FixtureRow(fixture: FixtureView, navigator: Navigator) {
             CrestAvatar(fixture.awayTeam.name, size = 30.dp, badgeUrl = fixture.awayTeam.badgeUrl)
             Column(Modifier.weight(1f)) {
                 Text("${fixture.homeTeam.name} vs ${fixture.awayTeam.name}", style = MaterialTheme.typography.bodyMedium)
-                Text("${fixture.date} ${fixture.startTime}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "${fixtureDateLabel(fixture.date, today)} ${kickOffLabel(fixture.startTime)}",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }

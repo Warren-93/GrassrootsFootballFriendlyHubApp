@@ -31,6 +31,11 @@ class MemberFixturesTest {
     }
 
     @Test
+    fun upcomingIsEmptyWhenEveryConfirmedFixtureIsInThePast() {
+        assertTrue(upcomingFixtures(listOf(fixture("past", date = "2026-10-15")), today).isEmpty())
+    }
+
+    @Test
     fun theHomeTeamIsTheOneHosting() {
         val f = fixture("f1", date = "2026-10-18")
 

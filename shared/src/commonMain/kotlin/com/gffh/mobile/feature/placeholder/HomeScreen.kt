@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
+import com.gffh.mobile.feature.availability.todayDate
 import com.gffh.mobile.model.FixtureView
 import com.gffh.mobile.model.SlotView
 import com.gffh.mobile.model.TeamView
@@ -111,7 +112,8 @@ fun HomeScreen(
         loaded = true
     }
 
-    val nextFixture = fixtures.filter { it.status == "CONFIRMED" }.minByOrNull { it.date }
+    val today = remember { todayDate() }
+    val nextFixture = upcomingFixtures(fixtures, today).firstOrNull()
     val completeness = team?.completenessPercent
     val actionItems = buildList {
         if (loaded && futureSlots.isEmpty()) add("No availability published yet.")
@@ -216,7 +218,10 @@ fun HomeScreen(
                             "${nextFixture.homeTeam.name} vs ${nextFixture.awayTeam.name}",
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        Text("${nextFixture.date}, kick-off ${nextFixture.startTime}", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "${fixtureDateLabel(nextFixture.date, today)}, kick-off ${kickOffLabel(nextFixture.startTime)}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
                 Spacer(Modifier.height(12.dp))
