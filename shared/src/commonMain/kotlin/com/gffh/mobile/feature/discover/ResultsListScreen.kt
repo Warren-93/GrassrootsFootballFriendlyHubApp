@@ -11,19 +11,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.MatchSummary
-import com.gffh.mobile.model.SearchRequest
 import com.gffh.mobile.model.formatMatchDate
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
-import com.gffh.mobile.repository.MatchRepository
-import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchFilterState
 import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.MatchScoreChip
-import kotlinx.coroutines.launch
+import com.gffh.mobile.ui.components.codeLabel
 
 /**
  * SCR-FF-03 Results list. Purpose: present ranked opponents so fit can be
@@ -37,32 +33,11 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultsListScreen(
-    matchRepository: MatchRepository,
-    currentTeamStore: CurrentTeamStore,
     filterState: SearchFilterState,
     resultsCache: SearchResultsCache,
     navigator: Navigator
 ) {
     val response by resultsCache.lastResponse.collectAsState()
-    var relaxing by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
-    fun relaxAndResearch(mutate: SearchFilterState.() -> Unit) {
-        val team = currentTeamStore.active.value ?: return
-        filterState.mutate()
-        relaxing = true
-        scope.launch {
-            val request = SearchRequest(
-                teamId = team.teamId,
-                maxDistanceMiles = filterState.maxDistanceMiles,
-                formats = filterState.formats.toList().ifEmpty { null },
-                abilityLevels = filterState.abilityLevels.toList().ifEmpty { null },
-                verifiedOnly = filterState.verifiedOnly.takeIf { it }
-            )
-            (matchRepository.search(request) as? ApiResult.Success)?.let { resultsCache.store(it.value) }
-            relaxing = false
-        }
-    }
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -71,19 +46,15 @@ fun ResultsListScreen(
                 IconButton(onClick = { navigator.pop() }) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
             },
             actions = {
+                val active = filterState.activeCount()
+                TextButton(onClick = { navigator.push(Route.Filters) }) { Text(if (active > 0) "Filters ($active)" else "Filters") }
                 TextButton(onClick = { navigator.push(Route.ResultsMap) }) { Text("Map") }
             }
         )
 
         val results = response?.results.orEmpty()
-        if (relaxing) {
-            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        } else if (results.isEmpty()) {
-            NoResultsContent(
-                onRelaxDistance = { relaxAndResearch { maxDistanceMiles = (maxDistanceMiles ?: 15) + 25 } },
-                onRelaxAbility = { relaxAndResearch { abilityLevels = emptySet() } },
-                onOpenFilters = { navigator.push(Route.Filters) }
-            )
+        if (results.isEmpty()) {
+            NoResultsContent(filtered = filterState.activeCount() > 0, onOpenFilters = { navigator.push(Route.Filters) })
         } else {
             LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                 items(results) { match ->
@@ -104,7 +75,7 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
     Card(onClick = onCardClick, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CrestAvatar(match.team.name)
+                CrestAvatar(match.team.name, badgeUrl = match.team.badgeUrl)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -115,7 +86,7 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
                         }
                     }
                     Text(
-                        "${match.team.clubName} - ${match.team.ageGroup} - ${match.team.format}",
+                        "${match.team.clubName} - ${codeLabel(match.team.ageGroup)} - ${codeLabel(match.team.format)}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -138,30 +109,27 @@ private fun TeamCard(match: MatchSummary, onCardClick: () -> Unit, onScoreClick:
                 }
             }
             Spacer(Modifier.height(8.dp))
-            Button(onClick = onInviteClick, modifier = Modifier.fillMaxWidth()) { Text("Invite") }
+            Button(
+                onClick = onInviteClick,
+                enabled = match.canReceiveRequests != false,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(if (match.canReceiveRequests == false) "Can't receive requests yet" else "Invite") }
         }
     }
 }
 
 @Composable
-private fun NoResultsContent(onRelaxDistance: () -> Unit, onRelaxAbility: () -> Unit, onOpenFilters: () -> Unit) {
+private fun NoResultsContent(filtered: Boolean, onOpenFilters: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(24.dp)) {
-        Text("No teams match right now", style = MaterialTheme.typography.titleMedium)
+        Text("No teams to show yet", style = MaterialTheme.typography.titleMedium)
         Text(
-            "Try widening your search.",
+            if (filtered) "No teams match these filters. Clear them to see every team in your age group and gender."
+            else "No other teams in your age group and gender have joined yet. Check back soon.",
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            modifier = Modifier.padding(top = 4.dp)
         )
-        ActionRow("Search further away", onRelaxDistance)
-        ActionRow("Include other ability levels", onRelaxAbility)
-        ActionRow("Adjust filters", onOpenFilters)
+        if (filtered) {
+            TextButton(onClick = onOpenFilters, modifier = Modifier.padding(top = 8.dp)) { Text("Change filters") }
+        }
     }
 }
-
-@Composable
-private fun ActionRow(label: String, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(label, modifier = Modifier.padding(16.dp))
-    }
-}
-
