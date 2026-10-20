@@ -13,15 +13,13 @@ import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
+import com.gffh.mobile.model.formatMatchDate
 import com.gffh.mobile.repository.ConversationRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.SearchResultsCache
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.MatchScoreChip
 import kotlinx.coroutines.launch
-import com.gffh.mobile.ui.components.codeLabel
-import com.gffh.mobile.ui.components.divisionLabel
-import com.gffh.mobile.ui.components.organisationLabel
 
 /**
  * SCR-FF-05 Opponent profile. Purpose: give a manager everything needed to
@@ -80,7 +78,7 @@ fun OpponentProfileScreen(
 
         Column(Modifier.padding(24.dp).weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CrestAvatar(match.team.name, size = 48.dp, badgeUrl = match.team.badgeUrl)
+                CrestAvatar(match.team.name, size = 48.dp)
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -98,10 +96,9 @@ fun OpponentProfileScreen(
             MatchScoreChip(match.score, onClick = { navigator.push(Route.MatchExplanation(teamId)) })
 
             Spacer(Modifier.height(16.dp))
-            InfoRow("Age group", codeLabel(match.team.ageGroup))
-            InfoRow("Format", codeLabel(match.team.format))
-            match.team.organisation?.let { InfoRow("Organisation", organisationLabel(it)) }
-            InfoRow("Division", divisionLabel(match.team.abilityLevel))
+            InfoRow("Age group", match.team.ageGroup)
+            InfoRow("Format", match.team.format)
+            InfoRow("Ability", match.team.abilityLevel)
             match.team.league?.let { InfoRow("League", it) }
             InfoRow("Distance", "${match.milesApart} miles")
             match.team.generalArea?.let { InfoRow("Area", it) }
@@ -117,7 +114,9 @@ fun OpponentProfileScreen(
             match.earliestOverlap?.let { overlap ->
                 Spacer(Modifier.height(16.dp))
                 Text("Overlapping availability", style = MaterialTheme.typography.titleSmall)
-                Text("${overlap.date}, from ${overlap.startTime} (${overlap.overlapMinutes} min overlap)")
+                val dates = match.overlappingDates.ifEmpty { listOf(overlap.date) }
+                Text("Published dates: ${dates.joinToString { formatMatchDate(it) }}")
+                Text("Earliest shared slot starts at ${overlap.startTime} (${overlap.overlapMinutes} min overlap)")
             }
 
             if (!match.team.description.isNullOrBlank()) {
@@ -131,16 +130,8 @@ fun OpponentProfileScreen(
             messageError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp))
             }
-            if (match.canReceiveRequests == false) {
-                Text(
-                    "${match.team.name} can't receive friendly requests yet. They need to be verified and add a venue first. You can still message them.",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
             Button(
                 onClick = { navigator.push(Route.InvitationComposer(match.team.id)) },
-                enabled = match.canReceiveRequests != false,
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Invite to friendly") }
             OutlinedButton(
@@ -167,3 +158,4 @@ private fun InfoRow(label: String, value: String) {
         Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
