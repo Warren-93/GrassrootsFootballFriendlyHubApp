@@ -17,7 +17,6 @@ import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.repository.FriendlyRequestRepository
-import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
 import com.gffh.mobile.ui.components.codeLabel
@@ -31,23 +30,18 @@ import com.gffh.mobile.ui.components.codeLabel
 fun FixturesScreen(
     friendlyRequestRepository: FriendlyRequestRepository,
     fixtureRepository: FixtureRepository,
-    availabilityRepository: AvailabilityRepository,
     currentTeamStore: CurrentTeamStore,
     navigator: Navigator
 ) {
     val team = currentTeamStore.active.collectAsState().value
     var requests by remember { mutableStateOf<List<FriendlyRequestView>>(emptyList()) }
     var fixtures by remember { mutableStateOf<List<FixtureView>>(emptyList()) }
-    var publishedDates by remember { mutableStateOf<Set<String>>(emptySet()) }
     var loading by remember { mutableStateOf(true) }
     var tab by remember { mutableStateOf(0) }
 
     LaunchedEffect(team?.teamId) {
         val t = team ?: return@LaunchedEffect
         (friendlyRequestRepository.list(t.teamId) as? ApiResult.Success)?.let { requests = it.value }
-        (availabilityRepository.list(t.teamId) as? ApiResult.Success)?.let { slots ->
-            publishedDates = slots.value.map { it.date }.toSet()
-        }
         (fixtureRepository.list(t.teamId) as? ApiResult.Success)?.let { fixtures = it.value }
         loading = false
     }
@@ -56,8 +50,11 @@ fun FixturesScreen(
     val pending = requests.filter { it.status in openStatuses }
     val waitingOnYou = pending.filter { !(it.availableActions.size == 1 && it.availableActions.first() == "withdraw") }
     val waitingOnThem = pending.filter { it.availableActions.size == 1 && it.availableActions.first() == "withdraw" }
-    val confirmed = fixtures.filter { it.status == "CONFIRMED" && it.date in publishedDates }
-    val completed = fixtures.filter { it.status == "COMPLETED" && it.date in publishedDates }
+    // Every fixture the API returns, unfiltered: a confirmed fixture books both
+    // teams' availability slots, so they never appear among published dates.
+    val confirmed = fixtures.filter { it.status == "CONFIRMED" }.sortedWith(compareBy({ it.date }, { it.startTime }))
+    val completed = fixtures.filter { it.status == "COMPLETED" }
+        .sortedWith(compareByDescending<FixtureView> { it.date }.thenByDescending { it.startTime })
 
     // Nothing to load without a team - the effect above returns early, so
     // this can't wait on loading, which would spin for good.

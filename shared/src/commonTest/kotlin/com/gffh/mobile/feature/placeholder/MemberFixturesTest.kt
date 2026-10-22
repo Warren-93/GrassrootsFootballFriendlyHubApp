@@ -36,17 +36,10 @@ class MemberFixturesTest {
     }
 
     @Test
-    fun onlyFixturesOnPublishedAvailabilityDatesAreShown() {
-        val fixtures = listOf(
-            fixture("published", date = "2026-10-18"),
-            fixture("unpublished", date = "2026-10-25"),
-            fixture("sameDateDifferentTime", date = "2026-10-18", startTime = "14:00:00")
-        )
-
-        assertEquals(
-            listOf("published", "sameDateDifferentTime"),
-            fixturesMatchingPublishedAvailability(fixtures, setOf("2026-10-18")).map { it.id }
-        )
+    fun shortDateLabelMatchesTheWebBanner() {
+        assertEquals("Sat 24 Oct", shortFixtureDateLabel("2026-10-24", today))
+        assertEquals("Sat 2 Jan 2027", shortFixtureDateLabel("2027-01-02", today))
+        assertEquals("TBC", shortFixtureDateLabel("TBC", today))
     }
 
     @Test
