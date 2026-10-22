@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.gffh.mobile.core.auth.TokenStore
 import com.gffh.mobile.core.auth.createSettings
+import com.gffh.mobile.core.image.GifImageLoaderSetup
 import com.gffh.mobile.core.network.ApiClient
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.core.network.defaultApiBaseUrl
@@ -119,11 +120,14 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
     val geocodeRepository = remember { GeocodeRepository() }
     val conversationRepository = remember { ConversationRepository(apiClient) }
     val configRepository = remember { ConfigRepository(apiClient) }
+    val gifRepository = remember { GifRepository(apiClient) }
     val navigator = remember { Navigator(Route.Splash) }
 
     // Sends this device's push token to the API whenever there's both a token
     // and a signed-in session, for the life of the app - see PushRegistration.
     LaunchedEffect(Unit) { pushRegistration.keepRegistered() }
+
+    GifImageLoaderSetup()
 
     GffhTheme {
         val route = navigator.current
@@ -216,7 +220,7 @@ fun App(apiBaseUrl: String = defaultApiBaseUrl()) {
             is Route.Notifications -> NotificationsScreen(notificationRepository, teamRepository, currentTeamStore, navigator)
             is Route.Messages -> ConversationsListScreen(conversationRepository, currentTeamStore, navigator)
             is Route.ConversationThread -> ConversationThreadScreen(
-                conversationRepository, currentTeamStore, navigator, route.conversationId
+                conversationRepository, gifRepository, configRepository, currentTeamStore, navigator, route.conversationId
             )
             is Route.Calendar -> CalendarScreen(availabilityRepository, fixtureRepository, friendlyRequestRepository, currentTeamStore, navigator)
             is Route.DayDetail -> DayDetailScreen(availabilityRepository, fixtureRepository, friendlyRequestRepository, currentTeamStore, navigator, route.date)
