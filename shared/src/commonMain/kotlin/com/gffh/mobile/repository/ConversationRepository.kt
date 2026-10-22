@@ -32,9 +32,10 @@ class ConversationRepository(private val api: ApiClient) {
         url("/api/v1/conversations/$conversationId/messages")
     }
 
-    suspend fun send(conversationId: String, body: String): ApiResult<MessageView> = api.request {
+    /** Text, a GIF (its id from a GIF search), or both. */
+    suspend fun send(conversationId: String, body: String, gifId: String? = null): ApiResult<MessageView> = api.request {
         method = HttpMethod.Post
         url("/api/v1/conversations/$conversationId/messages")
-        setBody(SendMessageRequest(body))
+        setBody(SendMessageRequest(body, gifId))
     }
 }

@@ -100,6 +100,11 @@ kotlin {
                 // HTML page in a WebView, same tile source gffh-web already uses, so
                 // no native map SDK/API key is needed on either platform.
                 implementation("io.github.kevinnzou:compose-webview-multiplatform:1.9.40")
+
+                // Chat GIFs (core/image/GifImageLoader.kt): Coil loads them over
+                // the app's existing Ktor 2 engines (OkHttp / Darwin).
+                implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+                implementation("io.coil-kt.coil3:coil-network-ktor2:3.3.0")
             }
         }
         val commonTest by getting {
@@ -120,6 +125,9 @@ kotlin {
                 implementation("androidx.credentials:credentials:1.6.0")
                 implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
                 implementation("com.google.android.libraries.identity.googleid:googleid:1.2.1")
+
+                // Animated GIF decoding for chat GIFs - Android only.
+                implementation("io.coil-kt.coil3:coil-gif:3.3.0")
             }
         }
         if (enableIos) {

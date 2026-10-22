@@ -4,14 +4,15 @@ import kotlinx.serialization.Serializable
 
 /**
  * `GET /api/v1/config`: what the app needs to know before anyone signs in -
- * the support address (null when none is configured) and which third-party
- * sign-in options are switched on.
+ * the support address (null when none is configured), which third-party
+ * sign-in options are switched on, and whether the chat's GIF picker works.
  */
 @Serializable
 data class ClientConfigView(
     val supportEmail: String? = null,
     val google: GoogleSignInConfig = GoogleSignInConfig(),
-    val apple: AppleSignInConfig = AppleSignInConfig()
+    val apple: AppleSignInConfig = AppleSignInConfig(),
+    val gifsEnabled: Boolean = false
 )
 
 /** [clientId] is the Google OAuth web client ID (Android's serverClientId); null when Google sign-in is off. */
