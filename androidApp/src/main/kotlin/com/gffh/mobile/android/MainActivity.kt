@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.gffh.mobile.App
 import com.gffh.mobile.core.auth.AndroidAppContext
+import com.gffh.mobile.core.lifecycle.AppVisibility
 import com.gffh.mobile.core.push.NotificationTap
 import com.gffh.mobile.core.push.NotificationTaps
 
@@ -40,6 +41,17 @@ class MainActivity : ComponentActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         enableEdgeToEdge()
+    }
+
+    /** On screen or not, so the chat stops polling while the app is in the background. */
+    override fun onStart() {
+        super.onStart()
+        AppVisibility.setInForeground(true)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        AppVisibility.setInForeground(false)
     }
 
     override fun onNewIntent(intent: Intent) {

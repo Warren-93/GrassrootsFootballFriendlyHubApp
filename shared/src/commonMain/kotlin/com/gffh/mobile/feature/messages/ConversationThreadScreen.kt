@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.gffh.mobile.core.lifecycle.AppVisibility
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.ConversationView
 import com.gffh.mobile.model.GifView
@@ -36,13 +37,14 @@ import com.gffh.mobile.repository.GifRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.ui.components.CrestAvatar
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-
-private const val POLL_MS = 4000L
+import kotlin.time.TimeSource
 
 /**
  * An instant-message-style chat with one other team. Mirrors gffh-web's
- * ConversationThreadPage, including the 4s poll for new messages, the emoji
+ * ConversationThreadPage, including the poll for new messages (see
+ * ChatPolling.kt: only what's new, slower once quiet, none in the background), the emoji
  * menu and the GIF picker (shown when the API has GIFs switched on). Bad
  * language is masked by the API before messages arrive here.
  */
@@ -69,10 +71,20 @@ fun ConversationThreadScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    // When the chat last saw a new message, to slow polling once it's quiet.
+    var lastActivity by remember { mutableStateOf(TimeSource.Monotonic.markNow()) }
 
+    fun addMessages(incoming: List<MessageView>) {
+        val merged = mergeMessages(messages, incoming)
+        if (merged === messages) return
+        messages = merged
+        lastActivity = TimeSource.Monotonic.markNow()
+    }
+
+    /** Fetches only messages since the newest one held (all of them the first time). */
     suspend fun loadMessages() {
-        when (val result = conversationRepository.messages(conversationId)) {
-            is ApiResult.Success -> messages = result.value
+        when (val result = conversationRepository.messages(conversationId, since = pollSince(messages))) {
+            is ApiResult.Success -> addMessages(result.value.filter { it.conversationId == conversationId })
             is ApiResult.Failure -> {}
         }
     }
@@ -86,7 +98,12 @@ fun ConversationThreadScreen(
         loading = false
         configRepository.get()
         while (true) {
-            delay(POLL_MS)
+            delay(nextPollDelayMs(lastActivity.elapsedNow().inWholeMilliseconds))
+            if (!AppVisibility.inForeground.value) {
+                // Nothing is fetched in the background; back on screen, check straight away.
+                AppVisibility.inForeground.first { it }
+                lastActivity = TimeSource.Monotonic.markNow()
+            }
             loadMessages()
         }
     }
@@ -105,7 +122,7 @@ fun ConversationThreadScreen(
             when (val result = conversationRepository.send(conversationId, body, gif?.id)) {
                 is ApiResult.Success -> {
                     if (gif == null) draft = TextFieldValue("")
-                    loadMessages()
+                    addMessages(listOf(result.value))
                 }
                 is ApiResult.Failure -> errorMessage = result.message
             }
