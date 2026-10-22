@@ -27,9 +27,11 @@ class ConversationRepository(private val api: ApiClient) {
         url("/api/v1/conversations/$conversationId")
     }
 
-    suspend fun messages(conversationId: String): ApiResult<List<MessageView>> = api.request {
+    /** Oldest first. With [since] (an ISO time), only messages from then on, including one at exactly that time. */
+    suspend fun messages(conversationId: String, since: String? = null): ApiResult<List<MessageView>> = api.request {
         method = HttpMethod.Get
         url("/api/v1/conversations/$conversationId/messages")
+        if (since != null) parameter("since", since)
     }
 
     /** Text, a GIF (its id from a GIF search), or both. */
