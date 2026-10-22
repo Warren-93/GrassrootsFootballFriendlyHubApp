@@ -3,6 +3,7 @@ package com.gffh.mobile.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.image.decodeBadge
 import com.gffh.mobile.theme.displayHeadlineMedium
@@ -174,6 +177,91 @@ fun StatTile(
 }
 
 enum class StatTileTone { Default, Amber }
+
+/**
+ * The navy "vs" banner for the next confirmed fixture: home crest and name on
+ * the left, away on the right, and the tag, date and kick-off in the middle.
+ * Mirrors gffh-web's FixtureBanner.tsx; [venue] is an extra line the web
+ * banner doesn't have, since on a phone this is often the only place it's seen.
+ */
+@Composable
+fun FixtureBanner(
+    tag: String,
+    homeTeam: String,
+    awayTeam: String,
+    date: String,
+    meta: String,
+    modifier: Modifier = Modifier,
+    homeBadgeUrl: String? = null,
+    awayBadgeUrl: String? = null,
+    venue: String? = null,
+    onClick: (() -> Unit)? = null,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(heroGradientBrush())
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 18.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            FixtureBannerTeam(homeTeam, homeBadgeUrl, Modifier.weight(1f))
+            Column(
+                modifier = Modifier.weight(1.2f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(tag.uppercase(), style = eyebrowLabel, color = HeroLime, textAlign = TextAlign.Center)
+                Text(
+                    date,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 2.dp)
+                )
+                Text(
+                    meta,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.72f),
+                    textAlign = TextAlign.Center
+                )
+                venue?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.72f),
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            FixtureBannerTeam(awayTeam, awayBadgeUrl, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun FixtureBannerTeam(name: String, badgeUrl: String?, modifier: Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        CrestAvatar(name, size = 44.dp, badgeUrl = badgeUrl)
+        Text(
+            name,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp)
+        )
+    }
+}
 
 /** Lays StatTiles out in a row with even spacing, wrapping the way StatTileRow does on web. */
 @Composable

@@ -31,7 +31,6 @@ import com.gffh.mobile.feature.availability.todayDate
 import com.gffh.mobile.model.FixtureView
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
-import com.gffh.mobile.repository.AvailabilityRepository
 import com.gffh.mobile.repository.FixtureRepository
 import com.gffh.mobile.session.ActiveTeam
 import com.gffh.mobile.ui.components.CrestAvatar
@@ -47,27 +46,16 @@ import kotlinx.datetime.LocalDate
  * (MemberFixtureDetailScreen).
  */
 @Composable
-fun MemberNoticeScreen(
-    team: ActiveTeam,
-    fixtureRepository: FixtureRepository,
-    availabilityRepository: AvailabilityRepository,
-    navigator: Navigator
-) {
+fun MemberNoticeScreen(team: ActiveTeam, fixtureRepository: FixtureRepository, navigator: Navigator) {
     var fixtures by remember(team.teamId) { mutableStateOf<List<FixtureView>?>(null) }
-    var publishedDates by remember(team.teamId) { mutableStateOf<Set<String>?>(null) }
     var errorMessage by remember(team.teamId) { mutableStateOf<String?>(null) }
     var attempt by remember(team.teamId) { mutableStateOf(0) }
     val today = remember { todayDate() }
 
     LaunchedEffect(team.teamId, attempt) {
         errorMessage = null
-        publishedDates = null
         when (val result = fixtureRepository.list(team.teamId)) {
             is ApiResult.Success -> fixtures = result.value
-            is ApiResult.Failure -> errorMessage = result.message
-        }
-        when (val result = availabilityRepository.list(team.teamId)) {
-            is ApiResult.Success -> publishedDates = result.value.map { it.date }.toSet()
             is ApiResult.Failure -> errorMessage = result.message
         }
     }
@@ -92,14 +80,12 @@ fun MemberNoticeScreen(
                 Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = { attempt++ }) { Text("Try again") }
             }
-            loaded == null || publishedDates == null -> CircularProgressIndicator(Modifier.padding(vertical = 8.dp))
+            loaded == null -> CircularProgressIndicator(Modifier.padding(vertical = 8.dp))
             else -> {
-                val upcoming = fixturesMatchingPublishedAvailability(
-                    upcomingFixtures(loaded, today), publishedDates.orEmpty()
-                )
+                val upcoming = upcomingFixtures(loaded, today)
                 if (upcoming.isEmpty()) {
                     Text(
-                        "No upcoming fixtures currently match the team's published availability dates.",
+                        "Nothing confirmed yet. When the team's managers confirm a friendly, it'll show here.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

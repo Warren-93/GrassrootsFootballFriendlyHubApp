@@ -28,6 +28,7 @@ import com.gffh.mobile.repository.TeamRepository
 import com.gffh.mobile.session.CurrentTeamStore
 import com.gffh.mobile.session.canManageClubOf
 import com.gffh.mobile.session.toActiveTeam
+import com.gffh.mobile.ui.components.FixtureBanner
 import com.gffh.mobile.ui.components.HeroBand
 import com.gffh.mobile.ui.components.ProfileChecklistCard
 import com.gffh.mobile.ui.components.StatTile
@@ -59,7 +60,6 @@ fun HomeScreen(
 
     var team by remember { mutableStateOf<TeamView?>(null) }
     var futureSlots by remember { mutableStateOf<List<SlotView>>(emptyList()) }
-    var publishedDates by remember { mutableStateOf<Set<String>>(emptySet()) }
     var fixtures by remember { mutableStateOf<List<FixtureView>>(emptyList()) }
     var unreadCount by remember { mutableStateOf(0L) }
     var loaded by remember { mutableStateOf(false) }
@@ -105,11 +105,8 @@ fun HomeScreen(
 
         val today = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())
         val horizon = today.plus(56, DateTimeUnit.DAY)
-        val slotResult = availabilityRepository.list(t.teamId)
-        if (slotResult is ApiResult.Success) {
-            publishedDates = slotResult.value.map { it.date }.toSet()
-            futureSlots = slotResult.value.filter { it.date >= today.toString() && it.date <= horizon.toString() }
-        }
+        val slotResult = availabilityRepository.list(t.teamId, today.toString(), horizon.toString())
+        if (slotResult is ApiResult.Success) futureSlots = slotResult.value
 
         val fixtureResult = fixtureRepository.list(t.teamId)
         if (fixtureResult is ApiResult.Success) fixtures = fixtureResult.value
@@ -117,8 +114,9 @@ fun HomeScreen(
     }
 
     val today = remember { todayDate() }
-    val publishedFixtures = fixturesMatchingPublishedAvailability(fixtures, publishedDates)
-    val nextFixture = upcomingFixtures(publishedFixtures, today).firstOrNull()
+    // Straight from the fixture list: confirming a fixture books both teams'
+    // availability slots, so filtering by published dates would hide them all.
+    val nextFixture = upcomingFixtures(fixtures, today).firstOrNull()
     val completeness = team?.completenessPercent
     val actionItems = buildList {
         if (loaded && futureSlots.isEmpty()) add("No availability published yet.")
@@ -190,7 +188,8 @@ fun HomeScreen(
             StatTileRow {
                 StatTile(
                     label = "Confirmed fixtures",
-                    value = publishedFixtures.count { it.status == "CONFIRMED" }.toString(),
+                    value = fixtures.count { it.status == "CONFIRMED" }.toString(),
+                    sub = nextFixture?.let { "Next: ${shortFixtureDateLabel(it.date, today)}" } ?: "None scheduled",
                     modifier = Modifier.weight(1f)
                 )
                 StatTile(
@@ -216,19 +215,17 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
 
             if (nextFixture != null) {
-                Card(onClick = { navigator.push(Route.FixtureDetail(nextFixture.id)) }, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Next fixture", style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            "${nextFixture.homeTeam.name} vs ${nextFixture.awayTeam.name}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            "${fixtureDateLabel(nextFixture.date, today)}, kick-off ${kickOffLabel(nextFixture.startTime)}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
+                FixtureBanner(
+                    tag = "Next fixture",
+                    homeTeam = nextFixture.homeTeam.name,
+                    awayTeam = nextFixture.awayTeam.name,
+                    homeBadgeUrl = nextFixture.homeTeam.badgeUrl,
+                    awayBadgeUrl = nextFixture.awayTeam.badgeUrl,
+                    date = shortFixtureDateLabel(nextFixture.date, today),
+                    meta = "${kickOffLabel(nextFixture.startTime)} - ${kickOffLabel(nextFixture.endTime)}",
+                    venue = nextFixture.venue?.name ?: "Venue to be confirmed",
+                    onClick = { navigator.push(Route.FixtureDetail(nextFixture.id)) }
+                )
                 Spacer(Modifier.height(12.dp))
             }
 

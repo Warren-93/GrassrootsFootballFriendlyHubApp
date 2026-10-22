@@ -28,12 +28,6 @@ fun upcomingFixtures(fixtures: List<FixtureView>, today: LocalDate): List<Fixtur
         .sortedWith(compareBy({ it.date }, { it.startTime }))
 }
 
-/** Fixtures shown as published matches must fall on a currently published availability date. */
-fun fixturesMatchingPublishedAvailability(
-    fixtures: List<FixtureView>,
-    publishedAvailabilityDates: Set<String>
-): List<FixtureView> = fixtures.filter { it.date in publishedAvailabilityDates }
-
 /**
  * "Saturday 18 October", with the year only when it isn't [today]'s. The
  * API's text unchanged if it isn't a date.
@@ -41,6 +35,17 @@ fun fixturesMatchingPublishedAvailability(
 fun fixtureDateLabel(date: String, today: LocalDate): String {
     val parsed = runCatching { LocalDate.parse(date) }.getOrNull() ?: return date
     val label = "${DAY_NAMES[parsed.dayOfWeek.isoDayNumber - 1]} ${parsed.day} ${MONTH_NAMES[parsed.month.number - 1]}"
+    return if (parsed.year == today.year) label else "$label ${parsed.year}"
+}
+
+/**
+ * "Sat 24 Oct", like the web home's next fixture banner, with the year only
+ * when it isn't [today]'s. The API's text unchanged if it isn't a date.
+ */
+fun shortFixtureDateLabel(date: String, today: LocalDate): String {
+    val parsed = runCatching { LocalDate.parse(date) }.getOrNull() ?: return date
+    val label = "${DAY_NAMES[parsed.dayOfWeek.isoDayNumber - 1].take(3)} ${parsed.day} " +
+        MONTH_NAMES[parsed.month.number - 1].take(3)
     return if (parsed.year == today.year) label else "$label ${parsed.year}"
 }
 
