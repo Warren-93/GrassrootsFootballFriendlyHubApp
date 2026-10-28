@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.gffh.mobile.core.auth.SocialProvider
 import com.gffh.mobile.core.auth.SocialSignIn
 import com.gffh.mobile.core.auth.SocialSignInResult
-import com.gffh.mobile.core.auth.rememberSocialSignIn
+import com.gffh.mobile.core.auth.rememberSocialSignIns
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.navigation.Navigator
 import com.gffh.mobile.navigation.Route
@@ -21,11 +21,11 @@ import com.gffh.mobile.repository.TeamRepository
 import kotlinx.coroutines.launch
 
 /**
- * "Continue with Google" on Android, "Continue with Apple" on iOS, under an
- * "or" divider - the same pair gffh-web shows, each only once the API's
- * config says that provider is switched on. Renders nothing while the config
- * loads, if it can't be fetched, or when the provider is off, leaving the
- * screen exactly as it was.
+ * "Continue with Google" on Android, "Continue with Apple" (and Google, when
+ * built for it) on iOS, under one "or" divider - the same buttons gffh-web
+ * shows, each only once the API's config says that provider is switched on.
+ * Renders nothing while the config loads, if it can't be fetched, or when
+ * every provider is off, leaving the screen exactly as it was.
  *
  * The provider's ID token is traded for a session by
  * [AuthRepository.signInWith], the same path as a password sign-in (which
@@ -57,40 +57,23 @@ fun SocialSignInSection(
     val config by configRepository.config.collectAsState()
     LaunchedEffect(Unit) { configRepository.get() }
 
-    val socialSignIn = rememberSocialSignIn(config)
-    if (socialSignIn != null) {
-        SocialSignInButton(
-            socialSignIn, authRepository, teamRepository, navigator, enabled, onWorkingChange, onError,
-            lightBackground, modifier
-        )
-    }
-}
+    val socialSignIns = rememberSocialSignIns(config)
+    if (socialSignIns.isEmpty()) return
 
-@Composable
-private fun SocialSignInButton(
-    socialSignIn: SocialSignIn,
-    authRepository: AuthRepository,
-    teamRepository: TeamRepository,
-    navigator: Navigator,
-    enabled: Boolean,
-    onWorkingChange: (Boolean) -> Unit,
-    onError: (String?) -> Unit,
-    lightBackground: Boolean,
-    modifier: Modifier
-) {
-    val provider = socialSignIn.provider
-    var working by remember { mutableStateOf(false) }
+    // The provider whose sheet is up, if any: one at a time, and the others wait.
+    var working by remember { mutableStateOf<SocialProvider?>(null) }
     val scope = rememberCoroutineScope()
 
     fun stop(message: String?) {
-        working = false
+        working = null
         onWorkingChange(false)
         onError(message)
     }
 
-    val onClick: () -> Unit = {
+    fun start(socialSignIn: SocialSignIn) {
+        val provider = socialSignIn.provider
         onError(null)
-        working = true
+        working = provider
         onWorkingChange(true)
         scope.launch {
             when (val token = socialSignIn.idToken()) {
@@ -109,10 +92,6 @@ private fun SocialSignInButton(
             }
         }
     }
-    val label: @Composable () -> Unit = {
-        if (working) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-        else Text("Continue with ${provider.label}")
-    }
 
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -126,22 +105,15 @@ private fun SocialSignInButton(
             HorizontalDivider(Modifier.weight(1f))
         }
 
-        when (provider) {
-            // Apple's guidelines: a black button on a light background, a white one on a dark background.
-            SocialProvider.APPLE -> Button(
-                onClick = onClick,
-                enabled = enabled && !working,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (lightBackground) Color.Black else Color.White,
-                    contentColor = if (lightBackground) Color.White else Color.Black
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) { label() }
-            SocialProvider.GOOGLE -> OutlinedButton(
-                onClick = onClick,
-                enabled = enabled && !working,
-                modifier = Modifier.fillMaxWidth()
-            ) { label() }
+        socialSignIns.forEachIndexed { index, socialSignIn ->
+            if (index > 0) Spacer(Modifier.height(8.dp))
+            SocialSignInButton(
+                provider = socialSignIn.provider,
+                working = working == socialSignIn.provider,
+                enabled = enabled && working == null,
+                lightBackground = lightBackground,
+                onClick = { start(socialSignIn) }
+            )
         }
 
         Text(
@@ -151,6 +123,37 @@ private fun SocialSignInButton(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp)
         )
+    }
+}
+
+@Composable
+private fun SocialSignInButton(
+    provider: SocialProvider,
+    working: Boolean,
+    enabled: Boolean,
+    lightBackground: Boolean,
+    onClick: () -> Unit
+) {
+    val label: @Composable () -> Unit = {
+        if (working) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        else Text("Continue with ${provider.label}")
+    }
+    when (provider) {
+        // Apple's guidelines: a black button on a light background, a white one on a dark background.
+        SocialProvider.APPLE -> Button(
+            onClick = onClick,
+            enabled = enabled,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (lightBackground) Color.Black else Color.White,
+                contentColor = if (lightBackground) Color.White else Color.Black
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) { label() }
+        SocialProvider.GOOGLE -> OutlinedButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth()
+        ) { label() }
     }
 }
 

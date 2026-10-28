@@ -16,6 +16,7 @@ import platform.AuthenticationServices.ASAuthorizationControllerDelegateProtocol
 import platform.AuthenticationServices.ASAuthorizationControllerPresentationContextProvidingProtocol
 import platform.AuthenticationServices.ASAuthorizationScopeEmail
 import platform.AuthenticationServices.ASAuthorizationScopeFullName
+import platform.Foundation.NSBundle
 import platform.Foundation.NSData
 import platform.Foundation.NSError
 import platform.Foundation.NSString
@@ -32,12 +33,32 @@ import kotlin.coroutines.resume
  * Sign in with Apple capability on the bundle ID - see the README's "Google
  * and Apple sign-in" section. The token's audience is the bundle ID, which
  * the API accepts as APPLE_BUNDLE_ID.
+ *
+ * Then Google ([GoogleWebSignIn]), when the API has Google on and this build
+ * has an iOS client ID - but only alongside Apple: App Review (guideline 4.8)
+ * turns down an app that offers Google sign-in without Apple's.
  */
 @Composable
-actual fun rememberSocialSignIn(config: ClientConfigView?): SocialSignIn? {
-    val enabled = config?.apple?.availableOnIos == true
-    return remember(enabled) { if (enabled) AppleSignIn else null }
+actual fun rememberSocialSignIns(config: ClientConfigView?): List<SocialSignIn> {
+    val apple = config?.apple?.availableOnIos == true
+    val googleClientId = googleIosClientId()?.takeIf { apple && config?.google?.enabled == true }
+    return remember(apple, googleClientId) {
+        listOfNotNull(
+            AppleSignIn.takeIf { apple },
+            googleClientId?.let { GoogleWebSignIn(it) }
+        )
+    }
 }
+
+/**
+ * The Google OAuth iOS client ID, from the app's Info.plist key
+ * GFFHGoogleIosClientId (the GFFH_GOOGLE_IOS_CLIENT_ID build setting, which
+ * the TestFlight workflow fills from the repository variable of that name).
+ * Null when the build has none, and then Google isn't offered.
+ */
+private fun googleIosClientId(): String? =
+    (NSBundle.mainBundle.objectForInfoDictionaryKey("GFFHGoogleIosClientId") as? String)
+        ?.trim()?.takeIf { it.endsWith(".apps.googleusercontent.com") }
 
 /**
  * ASAuthorizationController holds its delegate and presentation context

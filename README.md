@@ -22,8 +22,12 @@ Windows, no Xcode. The Android target builds and has been verified with
 the `iosArm64` equivalent both succeed on plain Windows — Kotlin/Native's
 frontend/klib compilation is host-independent) but the final Xcode-level
 framework link genuinely does need a Mac, so that step - and the actual
-`iosApp` build - is verified by the `iOS Simulator Build` GitHub Actions
-workflow (macOS runner) rather than locally on this machine.
+`iosApp` build - is verified by the `iOS TestFlight` GitHub Actions workflow
+(macOS runner) rather than locally on this machine: pull requests that touch
+`iosApp/` or `shared/src/iosMain/` build the app unsigned, and running it by
+hand signs it and uploads it to TestFlight. Setting that up needs no Mac
+either - see [docs/ios-testflight.md](docs/ios-testflight.md). (The older
+`iOS Simulator Build` workflow, for Appetize, is manual-only and unused.)
 
 To build the full iOS app on a Mac with Xcode:
 
@@ -150,7 +154,8 @@ account, the same key the API is given as `APNS_PRIVATE_KEY`.
 ## Google and Apple sign-in
 
 Welcome, Sign in and Register show "Continue with Google" on Android and
-"Continue with Apple" on iOS, under an "or" divider, whenever
+"Continue with Apple" (then "Continue with Google") on iOS, under an "or"
+divider, whenever
 `GET /api/v1/config` says that provider is on (`google.enabled` with a
 `clientId`; `apple.enabled`). With neither set up on the API, those screens are
 just the email and password forms. The platform's own sheet hands over an ID
@@ -161,7 +166,7 @@ phone for push. A brand-new account (`newUser: true`) goes on to role
 selection, as after registering, unless an invitation the API applied at that
 sign-in already put it on a team; anyone else goes to the dashboard. Backing out
 of the Google or Apple sheet shows nothing; any other failure shows on the
-screen's usual error line. Google on iOS and Apple on Android aren't offered.
+screen's usual error line. Apple on Android isn't offered.
 
 ### Android: Google OAuth clients
 
@@ -195,7 +200,7 @@ on Android 13 and older and the system's own on Android 14 and later.
 
 1. In the Apple developer account (Certificates, Identifiers & Profiles >
    Identifiers), turn on **Sign in with Apple** for the app's App ID - bundle
-   ID `com.gffh.mobile.iosApp`, from `iosApp/project.yml` - as a primary App
+   ID `com.gffh.mobile.ios`, from `iosApp/project.yml` - as a primary App
    ID, then regenerate its provisioning profiles.
 2. `iosApp/project.yml` already adds the `com.apple.developer.applesignin`
    entitlement (`[Default]`, next to `aps-environment`) and links
@@ -203,7 +208,7 @@ on Android 13 and older and the system's own on Android 14 and later.
    Simulator CI builds sign nothing, so the entitlement is inert there and the
    build still passes - but Apple only signs in a signed build, so in that
    unsigned simulator build the button shows an error.
-3. On the API, set `APPLE_BUNDLE_ID=com.gffh.mobile.iosApp`: a token from the
+3. On the API, set `APPLE_BUNDLE_ID=com.gffh.mobile.ios`: a token from the
    app has the bundle ID as its audience, and `apple.enabled` is on once
    `APPLE_BUNDLE_ID` or `APPLE_SERVICES_ID` is set (`APPLE_SERVICES_ID` is
    only for the web).
@@ -211,6 +216,23 @@ on Android 13 and older and the system's own on Android 14 and later.
 Apple shares the person's name and email only the first time they sign in to
 the app. The app sends that name as `displayName`, so the new account isn't
 named after its email address.
+
+### iOS: Google
+
+Google has no Credential Manager on iOS, so `core/auth/GoogleWebSignIn.kt`
+(iosMain) opens Google's own sign-in page in Apple's system browser sheet
+(ASWebAuthenticationSession) and runs the installed-app OAuth flow with PKCE
+(`core/auth/GoogleOAuth.kt`, tested in commonTest). The token's audience is a
+Google OAuth **iOS** client (bundle ID `com.gffh.mobile.ios`), so:
+
+1. Create that iOS client in the same Google Cloud project.
+2. Add its client ID to the API's `GOOGLE_ADDITIONAL_CLIENT_IDS`.
+3. Set the App repository variable `GOOGLE_IOS_CLIENT_ID` to it; the TestFlight
+   workflow builds it into Info.plist (`GFFHGoogleIosClientId`).
+
+Without it, iOS offers Apple only. Google is also only offered on iOS when
+Apple is (App Review guideline 4.8), so someone who signed up with Google on
+Android or the web can still sign in on an iPhone as the same account.
 
 ## Architecture
 
@@ -314,10 +336,10 @@ device, not from reading the code:
 
 ## What was simplified from spec, deliberately
 
-- **One social sign-in per platform.** Volume 1/2 both list Apple and Google
-  sign-in on SCR-AU-02. Android offers Google and iOS offers Apple, each
-  through the platform's own sheet; Google on iOS and Apple on Android would
-  each need a browser-based flow, so they're left out.
+- **No Apple sign-in on Android.** Volume 1/2 both list Apple and Google
+  sign-in on SCR-AU-02. Android offers Google; iOS offers Apple and Google.
+  Apple on Android would need a browser-based flow with a web Services ID, so
+  it's left out.
 - **No password-reset confirmation screen.** SCR-AU-05 only specifies the
   *request* screen; the emailed link's destination isn't one of the 38
   screens in Volume 2, so it isn't guessed at here.

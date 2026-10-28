@@ -34,11 +34,13 @@ interface SocialSignIn {
 }
 
 /**
- * The sign-in this platform offers, when [config] (`GET /api/v1/config`)
- * has it switched on - Google through Credential Manager on Android, Sign in
- * with Apple through AuthenticationServices on iOS - else null, including
- * while the config hasn't loaded yet. Google on iOS and Apple on Android
- * aren't offered.
+ * The sign-ins this platform offers, in the order they're shown, for the
+ * providers [config] (`GET /api/v1/config`) has switched on - empty while
+ * the config hasn't loaded yet. Android offers Google, through Credential
+ * Manager. iOS offers Sign in with Apple, plus Google through Google's own
+ * page when the app was built with an iOS client ID; Apple's App Review
+ * rule 4.8 means Google is only offered there alongside Apple. Apple on
+ * Android isn't offered.
  */
 @Composable
-expect fun rememberSocialSignIn(config: ClientConfigView?): SocialSignIn?
+expect fun rememberSocialSignIns(config: ClientConfigView?): List<SocialSignIn>
