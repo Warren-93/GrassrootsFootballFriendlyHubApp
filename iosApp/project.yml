@@ -10,8 +10,15 @@ settings:
     CODE_SIGNING_ALLOWED: NO
     CODE_SIGNING_REQUIRED: NO
     ENABLE_BITCODE: NO
-    MARKETING_VERSION: "1.0"
+    # The version people see, and the build number - every upload to App
+    # Store Connect needs a new one. The TestFlight workflow passes both
+    # (0.1.0, like Android, and its run number) on the xcodebuild line.
+    MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
+    # The Google OAuth iOS client ID for "Continue with Google". Empty: the
+    # app offers only Apple. The TestFlight workflow fills it from the
+    # repository variable GOOGLE_IOS_CLIENT_ID.
+    GFFH_GOOGLE_IOS_CLIENT_ID: ""
 
 targets:
   iosApp:
@@ -45,7 +52,16 @@ targets:
       path: Generated/Info.plist
       properties:
         CFBundleDisplayName: Kickabout
+        CFBundleName: Kickabout
+        # XcodeGen's defaults are a fixed 1.0 (1), which App Store Connect
+        # would refuse from the second upload on.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         GFFHApiBaseUrl: $(GFFH_API_BASE_URL)
+        GFFHGoogleIosClientId: $(GFFH_GOOGLE_IOS_CLIENT_ID)
+        # HTTPS only, which is exempt from export compliance: this answers
+        # App Store Connect's encryption question for every build.
+        ITSAppUsesNonExemptEncryption: false
         # Lets a push wake the app to refresh in the background.
         UIBackgroundModes:
           - remote-notification
@@ -65,7 +81,10 @@ targets:
         CADisableMinimumFrameDurationOnPhone: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.gffh.mobile.iosApp
+        # Permanent once registered with Apple. Mirrors Android's
+        # com.gffh.mobile.android; the API's APPLE_BUNDLE_ID and
+        # APNS_BUNDLE_ID must be this too.
+        PRODUCT_BUNDLE_IDENTIFIER: com.gffh.mobile.ios
         PRODUCT_NAME: iosApp
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

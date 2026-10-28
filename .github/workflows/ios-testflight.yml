@@ -1,0 +1,232 @@
+name: iOS TestFlight
+
+# Builds the signed iOS app and uploads it to App Store Connect, where it
+# shows up in TestFlight a few minutes later - the iOS twin of "Android
+# Release Bundle". Nothing here needs a Mac of your own: it runs on GitHub's.
+#
+# Run it from the Actions tab ("Run workflow"), or push a tag like v1.2.0.
+# Pull requests that change iOS-only code (iosApp/, shared/src/iosMain/) or
+# this file build the app unsigned, only to prove it still compiles; nothing
+# is uploaded and no secrets are used.
+#
+# Signing and upload need these repository secrets (Settings > Secrets and
+# variables > Actions) - see docs/ios-testflight.md for making each one
+# without a Mac:
+#   IOS_DIST_CERT_P12_BASE64        the Apple Distribution certificate and
+#                                   its private key (.p12), base64-encoded
+#   IOS_DIST_CERT_PASSWORD          the .p12's password
+#   IOS_PROVISIONING_PROFILE_BASE64 the App Store provisioning profile for
+#                                   com.gffh.mobile.ios (.mobileprovision),
+#                                   base64-encoded
+#   APP_STORE_CONNECT_KEY_ID        the App Store Connect API key's Key ID
+#   APP_STORE_CONNECT_ISSUER_ID     the API keys page's Issuer ID
+#   APP_STORE_CONNECT_KEY_BASE64    the API key's .p8 file, base64-encoded
+#
+# And these repository variables (same page, Variables tab):
+#   GFFH_API_BASE_URL     the API's https URL. Unset: the Render URL.
+#   GOOGLE_IOS_CLIENT_ID  the Google OAuth iOS client ID, for "Continue with
+#                         Google". Unset: the app offers Apple sign-in only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version shown to testers, e.g. 1.0.0. Blank = 0.1.0.'
+        required: false
+      build_number:
+        description: 'Build number (must be higher than any already uploaded for this version). Blank = this run number.'
+        required: false
+  push:
+    tags: [ 'v*' ]
+  pull_request:
+    paths:
+      - 'iosApp/**'
+      - 'shared/src/iosMain/**'
+      - '.github/workflows/ios-testflight.yml'
+
+jobs:
+  testflight:
+    # App Store Connect only takes builds made with a current Xcode and iOS
+    # SDK, which the macOS 26 image has.
+    runs-on: macos-26
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Select latest available Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: iosApp
+        run: xcodegen generate
+
+      - name: Work out the version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_BUILD: ${{ inputs.build_number }}
+        run: |
+          VERSION="${INPUT_VERSION:-0.1.0}"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then VERSION="${GITHUB_REF_NAME#v}"; fi
+          BUILD="${INPUT_BUILD:-$GITHUB_RUN_NUMBER}"
+          echo "version=$VERSION build=$BUILD"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+
+      # Pull requests: compile for a real iPhone, unsigned, and stop there.
+      - name: Build unsigned (pull request check)
+        if: github.event_name == 'pull_request'
+        run: |
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath iosApp/build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Install the signing certificate and profile
+        if: github.event_name != 'pull_request'
+        id: signing
+        env:
+          CERT_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          for name in CERT_BASE64 CERT_PASSWORD PROFILE_BASE64; do
+            if [ -z "${!name}" ]; then
+              echo "::error::A signing secret is missing ($name) - see docs/ios-testflight.md."
+              exit 1
+            fi
+          done
+
+          # A keychain of its own, unlocked for this run only.
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/dist.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/dist.p12"
+
+          # The profile names the team, and the export step names the profile.
+          PROFILE="$RUNNER_TEMP/profile.mobileprovision"
+          echo "$PROFILE_BASE64" | base64 --decode > "$PROFILE"
+          security cms -D -i "$PROFILE" > "$RUNNER_TEMP/profile.plist"
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")
+          NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")
+          TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$RUNNER_TEMP/profile.plist")
+          APP_ID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")
+          echo "Profile '$NAME' for $APP_ID (team $TEAM)"
+          if [ "$APP_ID" != "$TEAM.com.gffh.mobile.ios" ]; then
+            echo "::error::The provisioning profile is for $APP_ID, not com.gffh.mobile.ios."
+            exit 1
+          fi
+          # Older Xcodes look in the first folder, Xcode 16 and later in the second.
+          for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+            mkdir -p "$dir"
+            cp "$PROFILE" "$dir/$UUID.mobileprovision"
+          done
+          echo "team=$TEAM" >> "$GITHUB_OUTPUT"
+          echo "profile=$NAME" >> "$GITHUB_OUTPUT"
+          echo "keychain=$KEYCHAIN" >> "$GITHUB_OUTPUT"
+
+      - name: Archive
+        if: github.event_name != 'pull_request'
+        env:
+          API_BASE_URL: ${{ vars.GFFH_API_BASE_URL || 'https://grassrootsfootballfriendlyhubapi.onrender.com' }}
+          GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
+        run: |
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath iosApp/build \
+            -archivePath "$RUNNER_TEMP/Kickabout.xcarchive" \
+            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGNING_REQUIRED=YES \
+            CODE_SIGN_STYLE=Manual \
+            "CODE_SIGN_IDENTITY=Apple Distribution" \
+            "DEVELOPMENT_TEAM=${{ steps.signing.outputs.team }}" \
+            "PROVISIONING_PROFILE_SPECIFIER=${{ steps.signing.outputs.profile }}" \
+            "OTHER_CODE_SIGN_FLAGS=--keychain ${{ steps.signing.outputs.keychain }}" \
+            "MARKETING_VERSION=${{ steps.version.outputs.version }}" \
+            "CURRENT_PROJECT_VERSION=${{ steps.version.outputs.build }}" \
+            "GFFH_API_BASE_URL=$API_BASE_URL" \
+            "GFFH_GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID" \
+            archive
+
+      - name: Upload to App Store Connect
+        if: github.event_name != 'pull_request'
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+        run: |
+          for name in KEY_ID ISSUER_ID KEY_BASE64; do
+            if [ -z "${!name}" ]; then
+              echo "::error::An App Store Connect API key secret is missing ($name) - see docs/ios-testflight.md."
+              exit 1
+            fi
+          done
+          KEY_PATH="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          echo "$KEY_BASE64" | base64 --decode > "$KEY_PATH"
+
+          # Export signs the app for the App Store and, with destination
+          # "upload", sends it straight to App Store Connect.
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>teamID</key><string>${{ steps.signing.outputs.team }}</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.gffh.mobile.ios</key><string>${{ steps.signing.outputs.profile }}</string>
+            </dict>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$RUNNER_TEMP/Kickabout.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID"
+          echo "Uploaded Kickabout ${{ steps.version.outputs.version }} (${{ steps.version.outputs.build }}). It appears in App Store Connect > TestFlight once Apple has processed it (usually 5-30 minutes)."
+
+      - name: Remove signing files
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP/profile.mobileprovision" "$RUNNER_TEMP/profile.plist"
+          if [ -f "$RUNNER_TEMP/signing.keychain-db" ]; then security delete-keychain "$RUNNER_TEMP/signing.keychain-db"; fi

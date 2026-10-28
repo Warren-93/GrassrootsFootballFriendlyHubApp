@@ -139,6 +139,9 @@ kotlin {
                 iosSimulatorArm64Main.dependsOn(this)
                 dependencies {
                     implementation("io.ktor:ktor-client-darwin:2.3.12")
+                    // The iOS swipe-back gesture (navigation/SystemBackHandler.ios.kt).
+                    // Same version as the org.jetbrains.compose plugin.
+                    implementation("org.jetbrains.compose.ui:ui-backhandler:1.10.3")
                 }
             }
         }

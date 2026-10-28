@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import com.gffh.mobile.core.image.GifImage
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.GifView
 import com.gffh.mobile.repository.GifRepository
@@ -81,8 +81,8 @@ fun GifPickerSheet(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(gifs, key = { it.id }) { gif ->
-                            AsyncImage(
-                                model = gif.previewUrl,
+                            GifImage(
+                                url = gif.previewUrl,
                                 contentDescription = gif.title.ifBlank { "GIF" },
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier

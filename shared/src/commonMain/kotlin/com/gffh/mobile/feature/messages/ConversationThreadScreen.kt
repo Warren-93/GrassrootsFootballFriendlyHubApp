@@ -23,7 +23,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import com.gffh.mobile.core.image.GifImage
 import com.gffh.mobile.core.lifecycle.AppVisibility
 import com.gffh.mobile.core.network.ApiResult
 import com.gffh.mobile.model.ConversationView
@@ -201,8 +201,8 @@ fun ConversationThreadScreen(
                     ) {
                         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                             m.gif?.let { gif ->
-                                AsyncImage(
-                                    model = gif.url,
+                                GifImage(
+                                    url = gif.url,
                                     contentDescription = gif.title.ifBlank { "GIF" },
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier

@@ -19,5 +19,5 @@ fun GifImageLoaderSetup() {
     }
 }
 
-/** Android plays GIFs (coil-gif); iOS shows their first frame, as Coil has no GIF decoder there. */
+/** Android plays GIFs with coil-gif; Coil has no GIF decoder on iOS, where [GifImage] plays them itself. */
 internal expect fun ComponentRegistry.Builder.addAnimatedGifDecoder()

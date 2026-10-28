@@ -25,11 +25,11 @@ import kotlinx.coroutines.CancellationException
  * README's "Google and Apple sign-in" section.
  */
 @Composable
-actual fun rememberSocialSignIn(config: ClientConfigView?): SocialSignIn? {
+actual fun rememberSocialSignIns(config: ClientConfigView?): List<SocialSignIn> {
     // The Activity: Credential Manager shows its sheet over it.
     val context = LocalContext.current
     val clientId = config?.google?.takeIf { it.enabled }?.clientId?.takeIf { it.isNotBlank() }
-    return remember(context, clientId) { clientId?.let { GoogleSignIn(context, it) } }
+    return remember(context, clientId) { listOfNotNull(clientId?.let { GoogleSignIn(context, it) }) }
 }
 
 private class GoogleSignIn(private val context: Context, private val serverClientId: String) : SocialSignIn {

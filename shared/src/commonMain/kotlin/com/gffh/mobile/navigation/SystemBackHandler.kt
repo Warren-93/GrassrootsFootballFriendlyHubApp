@@ -3,10 +3,11 @@ package com.gffh.mobile.navigation
 import androidx.compose.runtime.Composable
 
 /**
- * Android's system Back (button or gesture): calls [onBack] while [enabled],
- * and leaves Back to the system (closing the app) otherwise. An expect/actual
- * rather than Compose Multiplatform's own BackHandler, which is still
- * experimental in 1.10. A no-op on iOS, which has no system Back.
+ * The system's "back a screen": Android's Back button or gesture, and iOS's
+ * swipe in from the left edge. Calls [onBack] while [enabled], and leaves
+ * Back to the system (on Android, closing the app) otherwise. Android uses
+ * androidx.activity's BackHandler; iOS uses Compose Multiplatform's own,
+ * which only exists there as an experimental (and already deprecated) API.
  */
 @Composable
 expect fun SystemBackHandler(enabled: Boolean, onBack: () -> Unit)
