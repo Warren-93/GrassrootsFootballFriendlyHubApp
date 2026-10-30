@@ -13,8 +13,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/AppTheme"
         android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:usesCleartextTraffic="${usesCleartextTraffic}"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        tools:targetApi="31">
 
         <!--
           singleTop: tapping a notification while the app is open hands the

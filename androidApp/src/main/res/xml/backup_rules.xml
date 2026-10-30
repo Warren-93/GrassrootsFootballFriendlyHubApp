@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 11 and below. The session (access and 30-day refresh tokens) lives
+  in the gffh_session preferences; a backup would copy it off the device and
+  restore it onto another one. Keep it out, so a restored install signs in
+  again instead.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="gffh_session.xml" />
+</full-backup-content>
